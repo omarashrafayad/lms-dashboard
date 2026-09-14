@@ -14,20 +14,37 @@ import {
   HelpCircle,
   Settings,
   ChevronRight,
+  ChevronDown,
   LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+interface SubItem {
+  label: string
+  href: string
+}
 
 interface NavItem {
   label: string
   href: string
   icon: React.ComponentType<{ className?: string }>
   hasChevron?: boolean
+  subItems?: SubItem[]
 }
 
 const mainNavItems: NavItem[] = [
   { label: "Overview", href: "/overview", icon: LayoutGrid },
-  { label: "Students", href: "/student/student_list", icon: GraduationCap, hasChevron: true },
+  {
+    label: "Students",
+    href: "/student/student_list",
+    icon: GraduationCap,
+    hasChevron: true,
+    subItems: [
+      { label: "All Students", href: "/student/student_list" },
+      { label: "Add Student", href: "/student/add" },
+      { label: "Student Requests", href: "/student/requests" },
+    ],
+  },
   { label: "Academic Management", href: "/academic", icon: BookOpen },
   { label: "Sessions & Bookings", href: "/sessions", icon: Calendar },
   { label: "Subscriptions", href: "/subscriptions", icon: CreditCard },
@@ -68,38 +85,72 @@ export function Sidebar() {
               const isActive =
                 pathname === item.href ||
                 (item.href === "/student/student_list" && pathname.startsWith("/student"))
+              const hasSub = !!item.subItems
+              const isExpanded = isActive && hasSub
 
               return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                    isActive
-                      ? "bg-zinc-100/80 text-zinc-900 font-semibold"
-                      : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                <div key={item.label} className="flex flex-col gap-1">
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                      isActive && !hasSub
+                        ? "bg-zinc-100/80 text-zinc-900 font-semibold"
+                        : isActive && hasSub
+                        ? "text-zinc-900 font-semibold"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon
+                        className={cn(
+                          "size-[18px] transition-colors",
+                          isActive
+                            ? "text-zinc-900"
+                            : "text-zinc-400 group-hover:text-zinc-600"
+                        )}
+                      />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.hasChevron && (
+                      isExpanded ? (
+                        <ChevronDown className="size-4 text-zinc-600" />
+                      ) : (
+                        <ChevronRight
+                          className={cn(
+                            "size-4 transition-transform",
+                            isActive ? "text-zinc-600" : "text-zinc-400 group-hover:text-zinc-500"
+                          )}
+                        />
+                      )
+                    )}
+                  </Link>
+
+                  {isExpanded && item.subItems && (
+                    <div className="flex flex-col gap-1 pl-7 pr-1 mt-0.5">
+                      {item.subItems.map((sub) => {
+                        const isSubActive =
+                          sub.label === "All Students" &&
+                          (pathname === "/student/student_list" || pathname.startsWith("/student/"))
+
+                        return (
+                          <Link
+                            key={sub.label}
+                            href={sub.href}
+                            className={cn(
+                              "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                              isSubActive
+                                ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                                : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                            )}
+                          >
+                            {sub.label}
+                          </Link>
+                        )
+                      })}
+                    </div>
                   )}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      className={cn(
-                        "size-[18px] transition-colors",
-                        isActive
-                          ? "text-zinc-900"
-                          : "text-zinc-400 group-hover:text-zinc-600"
-                      )}
-                    />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.hasChevron && (
-                    <ChevronRight
-                      className={cn(
-                        "size-4 transition-transform",
-                        isActive ? "text-zinc-600" : "text-zinc-400 group-hover:text-zinc-500"
-                      )}
-                    />
-                  )}
-                </Link>
+                </div>
               )
             })}
           </nav>

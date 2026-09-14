@@ -1,10 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { MoreVertical } from "lucide-react"
+import Link from "next/link"
 import UniTable, { type UniTableColumn } from "@/components/shared/uniTable"
 import { Student } from "../types/student.types"
 import { cn } from "@/lib/utils"
+import { StudentRowActions } from "./StudentRowActions"
 
 export interface StudentTableProps {
   data: Student[]
@@ -18,24 +19,27 @@ export function StudentTable({ data }: StudentTableProps) {
         header: "STUDENT",
         headerClassName: "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, student) => (
-          <div className="flex items-center gap-3">
+          <Link
+            href={`/student/${student.id}`}
+            className="flex items-center gap-3 group/student cursor-pointer"
+          >
             <div
               className={cn(
-                "size-9 rounded-full font-semibold text-xs flex items-center justify-center shrink-0 select-none",
+                "size-9 rounded-full font-semibold text-xs flex items-center justify-center shrink-0 select-none transition-transform group-hover/student:scale-105",
                 student.avatarColorClass
               )}
             >
               {student.avatarInitials}
             </div>
             <div className="flex flex-col">
-              <span className="font-semibold text-sm text-zinc-900 leading-tight">
+              <span className="font-semibold text-sm text-zinc-900 leading-tight group-hover/student:text-brand-orange transition-colors">
                 {student.name}
               </span>
               <span className="text-[11px] text-zinc-400 font-normal mt-0.5">
                 {student.code}
               </span>
             </div>
-          </div>
+          </Link>
         ),
       },
       {
@@ -141,15 +145,7 @@ export function StudentTable({ data }: StudentTableProps) {
         id: "actions",
         header: "",
         className: "w-10 text-right",
-        cell: () => (
-          <button
-            type="button"
-            title="More Options"
-            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors cursor-pointer"
-          >
-            <MoreVertical className="size-4" />
-          </button>
-        ),
+        cell: (_, student) => <StudentRowActions student={student} />,
       },
     ],
     []
