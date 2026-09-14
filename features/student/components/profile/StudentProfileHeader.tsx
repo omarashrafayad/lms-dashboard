@@ -75,13 +75,12 @@ export function StudentProfileHeader({ profile, onEdit }: StudentProfileHeaderPr
 
         {/* Right: Edit Student Button */}
         <div>
-          <button
-            type="button"
-            onClick={onEdit}
+          <Link
+            href={`/student/${profile.id}/edit`}
             className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-medium text-white bg-brand-orange hover:bg-amber-500 transition-colors shadow-2xs cursor-pointer active:scale-[0.98]"
           >
             Edit Student
-          </button>
+          </Link>
         </div>
       </div>
     </div>

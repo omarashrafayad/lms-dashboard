@@ -85,17 +85,14 @@ export function StudentRowActions({ student }: { student: Student }) {
               <Eye className="size-3.5 text-zinc-400" />
               <span>View Profile</span>
             </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false)
-                console.log("Edit student", student.id)
-              }}
+            <Link
+              href={`/student/${student.id}/edit`}
+              onClick={() => setIsOpen(false)}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 transition-colors text-left cursor-pointer"
             >
               <Pencil className="size-3.5 text-zinc-400" />
               <span>Edit Student</span>
-            </button>
+            </Link>
             <div className="my-1 border-t border-zinc-100" />
             <button
               type="button"
