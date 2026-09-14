@@ -4,6 +4,7 @@ import * as React from "react"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 export interface StudentStatsProps {
   totalCount: number
@@ -50,7 +51,7 @@ export function StudentStats({ totalCount, onAddStudent }: StudentStatsProps) {
         <span className="text-sm font-medium text-zinc-500">
           {totalCount} students found
         </span>
-
+        <Link href="/student/add">
         <Button
           onClick={onAddStudent}
           className="bg-brand-orange hover:bg-brand-orange/90 text-white font-medium rounded-xl h-10 px-4 gap-2 shadow-2xs cursor-pointer transition-all hover:brightness-95"
@@ -58,6 +59,7 @@ export function StudentStats({ totalCount, onAddStudent }: StudentStatsProps) {
           <Plus className="size-4 stroke-[2.5]" />
           <span>Add Student</span>
         </Button>
+        </Link>
       </div>
 
       {/* 3 Metric Cards */}

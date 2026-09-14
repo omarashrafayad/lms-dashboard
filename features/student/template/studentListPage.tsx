@@ -79,14 +79,13 @@ export default function StudentListPage() {
       {/* Main Page Content Body */}
       <main className="flex-1 p-8 flex flex-col gap-6 max-w-[1400px] w-full">
         {/* Top Stats Section (Count, Add Button, KPI Cards) */}
-        <Link href="/student/add">
         <StudentStats
           totalCount={filteredStudents.length}
           onAddStudent={() => {
             // router.push("/student/add")
           }}
         />
-        </Link>
+      
 
         {/* Search & Filter Controls */}
         <StudentFilters
