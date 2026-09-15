@@ -32,31 +32,28 @@ interface NavItem {
   subItems?: SubItem[]
 }
 
-const mainNavItems: NavItem[] = [
-  { label: "Overview", href: "/overview", icon: LayoutGrid },
-  {
-    label: "Students",
-    href: "/student/student_list",
-    icon: GraduationCap,
-    hasChevron: true,
-    subItems: [
-      { label: "All Students", href: "/student/student_list" },
-      { label: "Add Student", href: "/student/add" },
-    ],
-  },
-  { label: "Academic Management", href: "/academic", icon: BookOpen },
-  { label: "Sessions & Bookings", href: "/sessions", icon: Calendar },
-  { label: "Subscriptions", href: "/subscriptions", icon: CreditCard },
-  { label: "Content", href: "/content", icon: FileText },
-  { label: "Analytics", href: "/analytics", icon: TrendingUp },
-  { label: "Support", href: "/support", icon: HelpCircle },
-]
-
 export function Sidebar() {
   const pathname = usePathname()
+  const isStudentRoute = pathname.startsWith("/student")
+  const isTeacherRoute = pathname.startsWith("/teacher")
+  const isUsersActive = isStudentRoute || isTeacherRoute
+
+  const [usersExpanded, setUsersExpanded] = React.useState<boolean>(true)
+  const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || !isTeacherRoute)
+  const [teachersExpanded, setTeachersExpanded] = React.useState<boolean>(isTeacherRoute || true)
+
+  React.useEffect(() => {
+    if (isTeacherRoute) {
+      setUsersExpanded(true)
+      setTeachersExpanded(true)
+    } else if (isStudentRoute) {
+      setUsersExpanded(true)
+      setStudentsExpanded(true)
+    }
+  }, [pathname, isTeacherRoute, isStudentRoute])
 
   return (
-    <aside className="w-64 min-w-[16rem] h-screen sticky top-0 flex flex-col justify-between bg-white border-r border-zinc-200/80 px-4 py-6 select-none z-30">
+    <aside className="w-64 min-w-[16rem] h-screen sticky top-0 flex flex-col justify-between bg-white border-r border-zinc-200/80 px-4 py-6 select-none z-30 overflow-y-auto">
       {/* Top: Brand Logo */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3 px-2">
@@ -79,87 +76,251 @@ export function Sidebar() {
             MAIN
           </div>
           <nav className="flex flex-col gap-1">
-            {mainNavItems.map((item) => {
-              const Icon = item.icon
-              const isActive =
-                pathname === item.href ||
-                (item.href === "/student/student_list" && pathname.startsWith("/student"))
-              const hasSub = !!item.subItems
-              const isExpanded = isActive && hasSub
-
-              return (
-                <div key={item.label} className="flex flex-col gap-1">
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                      isActive && !hasSub
-                        ? "bg-zinc-100/80 text-zinc-900 font-semibold"
-                        : isActive && hasSub
-                        ? "text-zinc-900 font-semibold"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon
-                        className={cn(
-                          "size-[18px] transition-colors",
-                          isActive
-                            ? "text-zinc-900"
-                            : "text-zinc-400 group-hover:text-zinc-600"
-                        )}
-                      />
-                      <span>{item.label}</span>
-                    </div>
-                    {item.hasChevron && (
-                      isExpanded ? (
-                        <ChevronDown className="size-4 text-zinc-600" />
-                      ) : (
-                        <ChevronRight
-                          className={cn(
-                            "size-4 transition-transform",
-                            isActive ? "text-zinc-600" : "text-zinc-400 group-hover:text-zinc-500"
-                          )}
-                        />
-                      )
-                    )}
-                  </Link>
-
-                  {isExpanded && item.subItems && (
-                    <div className="flex flex-col gap-1 pl-7 pr-1 mt-0.5">
-                      {item.subItems.map((sub) => {
-                        let isSubActive = false
-                        if (sub.label === "Add Student") {
-                          isSubActive = pathname === "/student/add"
-                        } else if (sub.label === "All Students") {
-                          isSubActive =
-                            pathname !== "/student/add" &&
-                            pathname !== "/student/requests" &&
-                            (pathname === "/student/student_list" || pathname.startsWith("/student/"))
-                        } else if (sub.label === "Student Requests") {
-                          isSubActive = pathname === "/student/requests"
-                        }
-
-                        return (
-                          <Link
-                            key={sub.label}
-                            href={sub.href}
-                            className={cn(
-                              "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                              isSubActive
-                                ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                                : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                            )}
-                          >
-                            {sub.label}
-                          </Link>
-                        )
-                      })}
-                    </div>
+            {/* Overview */}
+            <Link
+              href="/overview"
+              className={cn(
+                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                pathname === "/overview"
+                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <LayoutGrid
+                  className={cn(
+                    "size-[18px] transition-colors",
+                    pathname === "/overview"
+                      ? "text-zinc-900"
+                      : "text-zinc-400 group-hover:text-zinc-600"
                   )}
+                />
+                <span>Overview</span>
+              </div>
+            </Link>
+
+            {/* Users (Parent Group) */}
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setUsersExpanded(!usersExpanded)}
+                className={cn(
+                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
+                  isUsersActive
+                    ? "text-zinc-900 font-semibold"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <LayoutGrid
+                    className={cn(
+                      "size-[18px] transition-colors rotate-45",
+                      isUsersActive
+                        ? "text-zinc-900"
+                        : "text-zinc-400 group-hover:text-zinc-600"
+                    )}
+                  />
+                  <span>Users</span>
                 </div>
-              )
-            })}
+                {usersExpanded ? (
+                  <ChevronDown className="size-4 text-zinc-600" />
+                ) : (
+                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
+                )}
+              </button>
+
+              {/* Sub-groups inside Users */}
+              {usersExpanded && (
+                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
+                  {/* Students Sub-group */}
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setStudentsExpanded(!studentsExpanded)}
+                      className={cn(
+                        "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group cursor-pointer text-left",
+                        isStudentRoute
+                          ? "text-zinc-900 font-semibold"
+                          : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                      )}
+                    >
+                      <span>Students</span>
+                      {studentsExpanded ? (
+                        <ChevronDown className="size-3.5 text-zinc-500" />
+                      ) : (
+                        <ChevronRight className="size-3.5 text-zinc-400" />
+                      )}
+                    </button>
+
+                    {studentsExpanded && (
+                      <div className="flex flex-col gap-1 pl-4 mt-0.5">
+                        <Link
+                          href="/student/student_list"
+                          className={cn(
+                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                            isStudentRoute &&
+                              pathname !== "/student/add" &&
+                              pathname !== "/student/requests"
+                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                          )}
+                        >
+                          All Students
+                        </Link>
+                        <Link
+                          href="/student/add"
+                          className={cn(
+                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                            pathname === "/student/add"
+                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                          )}
+                        >
+                          Add Student
+                        </Link>
+                        <Link
+                          href="/student/requests"
+                          className={cn(
+                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                            pathname === "/student/requests"
+                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                          )}
+                        >
+                          Student Requests
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Teachers Sub-group */}
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setTeachersExpanded(!teachersExpanded)}
+                      className={cn(
+                        "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group cursor-pointer text-left",
+                        isTeacherRoute
+                          ? "text-zinc-900 font-semibold"
+                          : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                      )}
+                    >
+                      <span>Teachers</span>
+                      {teachersExpanded ? (
+                        <ChevronDown className="size-3.5 text-zinc-500" />
+                      ) : (
+                        <ChevronRight className="size-3.5 text-zinc-400" />
+                      )}
+                    </button>
+
+                    {teachersExpanded && (
+                      <div className="flex flex-col gap-1 pl-4 mt-0.5">
+                        <Link
+                          href="/teacher/teacher_list"
+                          className={cn(
+                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                            isTeacherRoute && pathname !== "/teacher/add"
+                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                          )}
+                        >
+                          All Teachers
+                        </Link>
+                        <Link
+                          href="/teacher/add"
+                          className={cn(
+                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                            pathname === "/teacher/add"
+                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                          )}
+                        >
+                          Add Teacher
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Parents Sub-group */}
+                  <Link
+                    href="/parents"
+                    className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all"
+                  >
+                    <span>Parents</span>
+                    <ChevronRight className="size-3.5 text-zinc-400" />
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Academic Management */}
+            <Link
+              href="/academic"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <BookOpen className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                <span>Academic Management</span>
+              </div>
+              <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
+            </Link>
+
+            {/* Sessions & Bookings */}
+            <Link
+              href="/sessions"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <Calendar className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                <span>Sessions & Bookings</span>
+              </div>
+              <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
+            </Link>
+
+            {/* Subscriptions & Payments */}
+            <Link
+              href="/subscriptions"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <CreditCard className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                <span>Subscriptions & Payments</span>
+              </div>
+              <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
+            </Link>
+
+            {/* Content */}
+            <Link
+              href="/content"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                <span>Content</span>
+              </div>
+            </Link>
+
+            {/* Analytics */}
+            <Link
+              href="/analytics"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <TrendingUp className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                <span>Analytics</span>
+              </div>
+            </Link>
+
+            {/* Support */}
+            <Link
+              href="/support"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <HelpCircle className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                <span>Support</span>
+              </div>
+            </Link>
           </nav>
         </div>
       </div>
