@@ -42,7 +42,6 @@ const mainNavItems: NavItem[] = [
     subItems: [
       { label: "All Students", href: "/student/student_list" },
       { label: "Add Student", href: "/student/add" },
-      { label: "Student Requests", href: "/student/requests" },
     ],
   },
   { label: "Academic Management", href: "/academic", icon: BookOpen },
@@ -129,9 +128,17 @@ export function Sidebar() {
                   {isExpanded && item.subItems && (
                     <div className="flex flex-col gap-1 pl-7 pr-1 mt-0.5">
                       {item.subItems.map((sub) => {
-                        const isSubActive =
-                          sub.label === "All Students" &&
-                          (pathname === "/student/student_list" || pathname.startsWith("/student/"))
+                        let isSubActive = false
+                        if (sub.label === "Add Student") {
+                          isSubActive = pathname === "/student/add"
+                        } else if (sub.label === "All Students") {
+                          isSubActive =
+                            pathname !== "/student/add" &&
+                            pathname !== "/student/requests" &&
+                            (pathname === "/student/student_list" || pathname.startsWith("/student/"))
+                        } else if (sub.label === "Student Requests") {
+                          isSubActive = pathname === "/student/requests"
+                        }
 
                         return (
                           <Link

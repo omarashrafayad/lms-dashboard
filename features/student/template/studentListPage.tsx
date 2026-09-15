@@ -1,11 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { StudentStats } from "../components/StudentStats"
 import { StudentFilters, FilterState } from "../components/StudentFilters"
 import { StudentTable } from "../components/StudentTable"
 import { mockStudents } from "../data/mockStudents"
+import Link from "next/link"
 
 const initialFilters: FilterState = {
   search: "",
@@ -16,6 +18,7 @@ const initialFilters: FilterState = {
 }
 
 export default function StudentListPage() {
+  const router = useRouter()
   const [filters, setFilters] = React.useState<FilterState>(initialFilters)
 
   const handleFilterChange = (updated: Partial<FilterState>) => {
@@ -69,9 +72,10 @@ export default function StudentListPage() {
         <StudentStats
           totalCount={filteredStudents.length}
           onAddStudent={() => {
-            console.log("Add Student clicked")
+            // router.push("/student/add")
           }}
         />
+      
 
         <StudentFilters
           filters={filters}
