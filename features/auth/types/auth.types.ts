@@ -4,16 +4,16 @@ export interface User {
   _id?: string;
   name: string;
   email: string;
-  role: string;
   active: boolean;
   phone: string;
   profileImg: string;
   createdAt: string;
+  roles: string[];
 }
 
 export interface AuthResponse {
-  token: string;
-  data: User;
+  accessToken: string;
+  user: User;
 }
 
 export interface AuthActionResult {
