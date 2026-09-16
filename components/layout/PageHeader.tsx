@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Bell, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/stores/useAuthStore"
 
 export interface PageHeaderProps {
   title: string
@@ -17,6 +18,7 @@ export function PageHeader({
   actions,
   className,
 }: PageHeaderProps) {
+  const user = useAuthStore().user;
   return (
     <header
       className={cn(
@@ -53,20 +55,15 @@ export function PageHeader({
 
         {/* User Profile Pill */}
         <div className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-full border border-zinc-200/80 bg-white hover:bg-zinc-50 transition-colors shadow-2xs cursor-pointer select-none">
-          <div className="relative size-7 rounded-full overflow-hidden shrink-0 border border-zinc-200">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80"
-              alt="Nadia Farouk"
-              className="size-full object-cover"
-            />
+          <div className="size-7 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center shrink-0">
+            {user?.fullName?.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex flex-col text-left leading-none">
             <span className="text-xs font-semibold text-zinc-900">
-              Nadia Farouk
+              {user?.fullName}
             </span>
             <span className="text-[10px] text-zinc-400 mt-0.5">
-              Administrator
+              {user?.email}
             </span>
           </div>
           <ChevronDown className="size-3.5 text-zinc-400 ml-0.5" />

@@ -60,8 +60,9 @@ export async function getProfile() {
     }
 
     const response = await serverAxios.get("users/me");
+    console.log(response)
     return {
-      user: response.data?.data || null,
+      user: response.data || null,
       token,
     };
   } catch (error) {
@@ -83,6 +84,3 @@ export async function logoutAction() {
   cookieStore.delete("token");
   cookieStore.delete("role");
 }
-
-
-
