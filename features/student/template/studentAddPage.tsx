@@ -16,6 +16,7 @@ interface BasicInfo {
   gender: string
   phone: string
   email: string
+  password: string
 }
 
 interface AcademicInfo {
@@ -24,16 +25,16 @@ interface AcademicInfo {
   grade: string
 }
 
-interface AccountInfo {
-  loginMethod: "Email" | "Phone Number"
-  accountStatus: "Active" | "Inactive"
-}
+// interface AccountInfo {
+//   loginMethod: "Email" | "Phone Number"
+//   accountStatus: "Active" | "Inactive"
+// }
 
 const STEPS = [
   { number: 1, label: "Basic", sublabel: "Information" },
   { number: 2, label: "Academic", sublabel: "Information" },
-  { number: 3, label: "Account", sublabel: "Setup" },
-  { number: 4, label: "Review & Create", sublabel: "" },
+  // { number: 3, label: "Account", sublabel: "Setup" },
+  { number: 3, label: "Review & Create", sublabel: "" },
 ] as const
 
 /* ──────────────────────────────────────────────────────────
@@ -161,6 +162,7 @@ function StepBasicInfo({
       {/* Date of Birth & Gender */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
+          
           <label className="block text-xs font-medium text-zinc-700 mb-1.5">
             Date of Birth <span className="text-amber-500">*</span>
           </label>
@@ -224,6 +226,19 @@ function StepBasicInfo({
             value={data.email}
             onChange={(e) => onChange({ email: e.target.value })}
             placeholder="student@example.com"
+            className="w-full h-10 px-3.5 text-xs text-zinc-800 bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 transition-all placeholder:text-zinc-400"
+          />
+        </div>
+                <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">
+            Password <span className="text-amber-500">*</span>
+          </label>
+          <input
+            type="password"
+            required
+            value={data.password}
+            onChange={(e) => onChange({ password: e.target.value })}
+            placeholder="Password"
             className="w-full h-10 px-3.5 text-xs text-zinc-800 bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 transition-all placeholder:text-zinc-400"
           />
         </div>
@@ -343,115 +358,115 @@ function StepAcademicInfo({
 /* ──────────────────────────────────────────────────────────
    Step 3 — Account Setup
    ────────────────────────────────────────────────────────── */
-function StepAccountSetup({
-  data,
-  onChange,
-}: {
-  data: AccountInfo
-  onChange: (d: Partial<AccountInfo>) => void
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-2xs">
-      <h2 className="text-base font-bold text-zinc-900">Account Setup</h2>
-      <p className="text-xs text-zinc-500 mt-1 mb-6">
-        Configure login and account preferences.
-      </p>
+// function StepAccountSetup({
+//   data,
+//   onChange,
+// }: {
+//   data: AccountInfo
+//   onChange: (d: Partial<AccountInfo>) => void
+// }) {
+//   return (
+//     <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-2xs">
+//       <h2 className="text-base font-bold text-zinc-900">Account Setup</h2>
+//       <p className="text-xs text-zinc-500 mt-1 mb-6">
+//         Configure login and account preferences.
+//       </p>
 
-      {/* Login Method */}
-      <div className="mb-5">
-        <label className="block text-xs font-medium text-zinc-700 mb-2">
-          Login Method <span className="text-amber-500">*</span>
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {(["Email", "Phone Number"] as const).map((method) => (
-            <button
-              key={method}
-              type="button"
-              onClick={() => onChange({ loginMethod: method })}
-              className={cn(
-                "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer",
-                data.loginMethod === method
-                  ? "border-amber-400 bg-[#FFFBEB] ring-1 ring-amber-400/60"
-                  : "border-zinc-200 bg-white hover:border-zinc-300"
-              )}
-            >
-              <div
-                className={cn(
-                  "size-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-                  data.loginMethod === method
-                    ? "border-amber-500 bg-white"
-                    : "border-zinc-300 bg-white"
-                )}
-              >
-                {data.loginMethod === method && (
-                  <div className="size-2 rounded-full bg-amber-500" />
-                )}
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-zinc-900 leading-tight">
-                  {method}
-                </div>
-                <div className="text-[11px] text-zinc-500 mt-0.5">
-                  {method === "Email"
-                    ? "Sign in with an email address"
-                    : "Sign in with a phone number"}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+//       {/* Login Method */}
+//       <div className="mb-5">
+//         <label className="block text-xs font-medium text-zinc-700 mb-2">
+//           Login Method <span className="text-amber-500">*</span>
+//         </label>
+//         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+//           {(["Email", "Phone Number"] as const).map((method) => (
+//             <button
+//               key={method}
+//               type="button"
+//               onClick={() => onChange({ loginMethod: method })}
+//               className={cn(
+//                 "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer",
+//                 data.loginMethod === method
+//                   ? "border-amber-400 bg-[#FFFBEB] ring-1 ring-amber-400/60"
+//                   : "border-zinc-200 bg-white hover:border-zinc-300"
+//               )}
+//             >
+//               <div
+//                 className={cn(
+//                   "size-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
+//                   data.loginMethod === method
+//                     ? "border-amber-500 bg-white"
+//                     : "border-zinc-300 bg-white"
+//                 )}
+//               >
+//                 {data.loginMethod === method && (
+//                   <div className="size-2 rounded-full bg-amber-500" />
+//                 )}
+//               </div>
+//               <div>
+//                 <div className="text-xs font-semibold text-zinc-900 leading-tight">
+//                   {method}
+//                 </div>
+//                 <div className="text-[11px] text-zinc-500 mt-0.5">
+//                   {method === "Email"
+//                     ? "Sign in with an email address"
+//                     : "Sign in with a phone number"}
+//                 </div>
+//               </div>
+//             </button>
+//           ))}
+//         </div>
+//       </div>
 
-      {/* Account Status */}
-      <div>
-        <label className="block text-xs font-medium text-zinc-700 mb-2">
-          Account Status <span className="text-amber-500">*</span>
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {(
-            [
-              { value: "Active", desc: "Student can sign in" },
-              { value: "Inactive", desc: "Access disabled" },
-            ] as const
-          ).map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => onChange({ accountStatus: opt.value })}
-              className={cn(
-                "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer",
-                data.accountStatus === opt.value
-                  ? "border-amber-400 bg-[#FFFBEB] ring-1 ring-amber-400/60"
-                  : "border-zinc-200 bg-white hover:border-zinc-300"
-              )}
-            >
-              <div
-                className={cn(
-                  "size-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-                  data.accountStatus === opt.value
-                    ? "border-amber-500 bg-white"
-                    : "border-zinc-300 bg-white"
-                )}
-              >
-                {data.accountStatus === opt.value && (
-                  <div className="size-2 rounded-full bg-amber-500" />
-                )}
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-zinc-900 leading-tight">
-                  {opt.value}
-                </div>
-                <div className="text-[11px] text-zinc-500 mt-0.5">
-                  {opt.desc}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
+//       {/* Account Status */}
+//       <div>
+//         <label className="block text-xs font-medium text-zinc-700 mb-2">
+//           Account Status <span className="text-amber-500">*</span>
+//         </label>
+//         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+//           {(
+//             [
+//               { value: "Active", desc: "Student can sign in" },
+//               { value: "Inactive", desc: "Access disabled" },
+//             ] as const
+//           ).map((opt) => (
+//             <button
+//               key={opt.value}
+//               type="button"
+//               onClick={() => onChange({ accountStatus: opt.value })}
+//               className={cn(
+//                 "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer",
+//                 data.accountStatus === opt.value
+//                   ? "border-amber-400 bg-[#FFFBEB] ring-1 ring-amber-400/60"
+//                   : "border-zinc-200 bg-white hover:border-zinc-300"
+//               )}
+//             >
+//               <div
+//                 className={cn(
+//                   "size-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
+//                   data.accountStatus === opt.value
+//                     ? "border-amber-500 bg-white"
+//                     : "border-zinc-300 bg-white"
+//                 )}
+//               >
+//                 {data.accountStatus === opt.value && (
+//                   <div className="size-2 rounded-full bg-amber-500" />
+//                 )}
+//               </div>
+//               <div>
+//                 <div className="text-xs font-semibold text-zinc-900 leading-tight">
+//                   {opt.value}
+//                 </div>
+//                 <div className="text-[11px] text-zinc-500 mt-0.5">
+//                   {opt.desc}
+//                 </div>
+//               </div>
+//             </button>
+//           ))}
+//         </div>
+//       </div>
+//     </div>
+//   )
+// }
 
 /* ──────────────────────────────────────────────────────────
    Step 4 — Review & Create
@@ -459,12 +474,12 @@ function StepAccountSetup({
 function StepReview({
   basic,
   academic,
-  account,
+  // account,
   onEditStep,
 }: {
   basic: BasicInfo
   academic: AcademicInfo
-  account: AccountInfo
+  // account: AccountInfo
   onEditStep: (step: number) => void
 }) {
   return (
@@ -571,7 +586,7 @@ function StepReview({
         </div>
 
         {/* Account Information Card */}
-        <div className="rounded-xl border border-zinc-200/80 p-5">
+        {/* <div className="rounded-xl border border-zinc-200/80 p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-zinc-900">
               Account Information
@@ -602,7 +617,7 @@ function StepReview({
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   )
@@ -665,6 +680,7 @@ export default function StudentAddPage() {
     gender: "",
     phone: "",
     email: "",
+    password: "",
   })
 
   const [academic, setAcademic] = React.useState<AcademicInfo>({
@@ -673,10 +689,10 @@ export default function StudentAddPage() {
     grade: "",
   })
 
-  const [account, setAccount] = React.useState<AccountInfo>({
-    loginMethod: "Email",
-    accountStatus: "Active",
-  })
+  // const [account, setAccount] = React.useState<AccountInfo>({
+  //   loginMethod: "Email",
+  //   accountStatus: "Active",
+  // })
 
   const handleBasicChange = (d: Partial<BasicInfo>) =>
     setBasic((prev) => ({ ...prev, ...d }))
@@ -684,8 +700,8 @@ export default function StudentAddPage() {
   const handleAcademicChange = (d: Partial<AcademicInfo>) =>
     setAcademic((prev) => ({ ...prev, ...d }))
 
-  const handleAccountChange = (d: Partial<AccountInfo>) =>
-    setAccount((prev) => ({ ...prev, ...d }))
+  // const handleAccountChange = (d: Partial<AccountInfo>) =>
+  //   setAccount((prev) => ({ ...prev, ...d }))
 
   // Validate each step
   const isStep1Valid =
@@ -713,11 +729,6 @@ export default function StudentAddPage() {
         prev.includes(2) ? prev : [...prev, 2]
       )
       setCurrentStep(3)
-    } else if (currentStep === 3 && isStep3Valid) {
-      setCompletedSteps((prev) =>
-        prev.includes(3) ? prev : [...prev, 3]
-      )
-      setCurrentStep(4)
     }
   }
 
@@ -782,17 +793,17 @@ export default function StudentAddPage() {
               onChange={handleAcademicChange}
             />
           )}
-          {currentStep === 3 && (
+          {/* {currentStep === 3 && (
             <StepAccountSetup
               data={account}
               onChange={handleAccountChange}
             />
-          )}
-          {currentStep === 4 && (
+          )} */}
+          {currentStep === 3 && (
             <StepReview
               basic={basic}
               academic={academic}
-              account={account}
+              // account={account}
               onEditStep={handleEditStep}
             />
           )}
@@ -820,14 +831,15 @@ export default function StudentAddPage() {
             )}
 
             {/* Right: Save & Continue / Create Student */}
-            {currentStep < 4 ? (
+            {currentStep < 3 ? (
               <button
                 type="button"
                 onClick={handleNext}
                 disabled={
                   (currentStep === 1 && !isStep1Valid) ||
-                  (currentStep === 2 && !isStep2Valid) ||
-                  (currentStep === 3 && !isStep3Valid)
+                  (currentStep === 2 && !isStep2Valid) 
+                  // ||
+                  // (currentStep === 3 && !isStep3Valid)
                 }
                 className="inline-flex items-center gap-1.5 px-6 py-2 rounded-xl bg-brand-orange hover:bg-amber-500 text-xs font-semibold text-white transition-all shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
