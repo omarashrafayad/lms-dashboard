@@ -10,7 +10,7 @@ import { motion } from "motion/react";
 import {Mail,ArrowRight,Loader2,ArrowLeft,} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import PageHeader from "@/components/shared/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { UniInput } from "@/components/shared/UniInput";
 import { Form } from "@/components/ui/form";
 

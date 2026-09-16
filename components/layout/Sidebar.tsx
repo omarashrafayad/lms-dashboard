@@ -34,6 +34,7 @@ interface NavItem {
 
 export function Sidebar() {
   const pathname = usePathname()
+  const isOverviewActive = pathname === "/" || pathname === "/overview"
   const isStudentRoute = pathname.startsWith("/student")
   const isTeacherRoute = pathname.startsWith("/teacher")
   const isUsersActive = isStudentRoute || isTeacherRoute
@@ -78,10 +79,10 @@ export function Sidebar() {
           <nav className="flex flex-col gap-1">
             {/* Overview */}
             <Link
-              href="/overview"
+              href="/"
               className={cn(
                 "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                pathname === "/overview"
+                isOverviewActive
                   ? "bg-zinc-100/80 text-zinc-900 font-semibold"
                   : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
               )}
@@ -90,7 +91,7 @@ export function Sidebar() {
                 <LayoutGrid
                   className={cn(
                     "size-[18px] transition-colors",
-                    pathname === "/overview"
+                    isOverviewActive
                       ? "text-zinc-900"
                       : "text-zinc-400 group-hover:text-zinc-600"
                   )}

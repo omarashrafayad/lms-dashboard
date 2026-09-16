@@ -11,9 +11,7 @@ async function postAuth(
   try {
     const res = await serverAxios.post<AuthResponse>(endpoint, payload);
 
-    const token = res.data.token;
-    const role = res.data.data.role;
-
+    const token = res.data.accessToken;
     if (token) {
       const cookieStore = await cookies();
       cookieStore.set({
@@ -23,16 +21,6 @@ async function postAuth(
         path: "/",
         maxAge: 60 * 60 * 24 * 7,
       });
-
-      if (role) {
-        cookieStore.set({
-          name: "role",
-          value: role,
-          httpOnly: true,
-          path: "/",
-          maxAge: 60 * 60 * 24 * 7,
-        });
-      }
     }
 
     return { success: true, data: res.data };
@@ -71,7 +59,7 @@ export async function getProfile() {
       };
     }
 
-    const response = await serverAxios.get("user/getMe");
+    const response = await serverAxios.get("users/me");
     return {
       user: response.data?.data || null,
       token,
