@@ -43,15 +43,15 @@ export function Sidebar() {
   const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || !isTeacherRoute)
   const [teachersExpanded, setTeachersExpanded] = React.useState<boolean>(isTeacherRoute || true)
 
-  React.useEffect(() => {
-    if (isTeacherRoute) {
-      setUsersExpanded(true)
-      setTeachersExpanded(true)
-    } else if (isStudentRoute) {
-      setUsersExpanded(true)
-      setStudentsExpanded(true)
-    }
-  }, [pathname, isTeacherRoute, isStudentRoute])
+  // React.useEffect(() => {
+  //   if (isTeacherRoute) {
+  //     setUsersExpanded(true)
+  //     setTeachersExpanded(true)
+  //   } else if (isStudentRoute) {
+  //     setUsersExpanded(true)
+  //     setStudentsExpanded(true)
+  //   }
+  // }, [pathname, isTeacherRoute, isStudentRoute])
 
   return (
     <aside className="w-64 min-w-[16rem] h-screen sticky top-0 flex flex-col justify-between bg-white border-r border-zinc-200/80 px-4 py-6 select-none z-30 overflow-y-auto">

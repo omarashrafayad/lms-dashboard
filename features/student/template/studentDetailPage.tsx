@@ -12,15 +12,50 @@ import { StudentExamsTable } from "../components/profile/StudentExamsTable"
 import { StudentSessionsCard } from "../components/profile/StudentSessionsCard"
 import { StudentSubscriptionAndParent } from "../components/profile/StudentSubscriptionAndParent"
 import { StudentActivityHistory } from "../components/profile/StudentActivityHistory"
+import { useStudent } from "../hooks/useStudents"
+import { Loader2 } from "lucide-react"
 
 interface StudentDetailPageProps {
   studentId: string
 }
 
 export default function StudentDetailPage({ studentId }: StudentDetailPageProps) {
+  const { data: apiStudent, isLoading } = useStudent(studentId)
+
   const profile = React.useMemo(() => {
-    return getStudentProfile(studentId)
-  }, [studentId])
+    const defaultProfile = getStudentProfile(studentId)
+    if (!apiStudent) return defaultProfile
+
+    const initials = (apiStudent.fullName || defaultProfile.name || "S")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((n) => n[0].toUpperCase())
+      .join("")
+
+    return {
+      ...defaultProfile,
+      id: apiStudent.id || defaultProfile.id,
+      name: apiStudent.fullName || defaultProfile.name,
+      fullName: apiStudent.fullName || defaultProfile.fullName,
+      email: apiStudent.email || defaultProfile.email,
+      phone: apiStudent.phoneNumber || defaultProfile.phone,
+      stage: apiStudent.educationStage || defaultProfile.stage,
+      educationStage: apiStudent.educationStage || defaultProfile.educationStage,
+      grade: apiStudent.grade || defaultProfile.grade,
+      system: apiStudent.educationSystem || defaultProfile.system,
+      educationSystem: apiStudent.educationSystem || defaultProfile.educationSystem,
+      gender: (apiStudent.gender === "Female" || apiStudent.gender === "Male"
+        ? apiStudent.gender
+        : defaultProfile.gender) as "Male" | "Female",
+      dateOfBirth: apiStudent.dateOfBirth || defaultProfile.dateOfBirth,
+      status: (apiStudent.isActive ? "Active" : "Inactive") as "Active" | "Inactive",
+      avatarInitials: initials || defaultProfile.avatarInitials,
+      studentId: `STU-${(apiStudent.id || "").slice(0, 5).toUpperCase()}`,
+      code: `STD-${(apiStudent.id || "").slice(0, 5).toUpperCase()}`,
+    }
+  }, [studentId, apiStudent])
 
   return (
     <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto pb-16">
