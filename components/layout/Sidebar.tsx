@@ -37,21 +37,26 @@ export function Sidebar() {
   const isOverviewActive = pathname === "/" || pathname === "/overview"
   const isStudentRoute = pathname.startsWith("/student")
   const isTeacherRoute = pathname.startsWith("/teacher")
-  const isUsersActive = isStudentRoute || isTeacherRoute
+  const isParentRoute = pathname.startsWith("/parent") || pathname.startsWith("/parents")
+  const isUsersActive = isStudentRoute || isTeacherRoute || isParentRoute
 
-  const [usersExpanded, setUsersExpanded] = React.useState<boolean>(true)
-  const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || !isTeacherRoute)
-  const [teachersExpanded, setTeachersExpanded] = React.useState<boolean>(isTeacherRoute || true)
+  const [usersExpanded, setUsersExpanded] = React.useState<boolean>(isUsersActive)
+  const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || false)
+  const [teachersExpanded, setTeachersExpanded] = React.useState<boolean>(isTeacherRoute || false)
+  const [parentsExpanded, setParentsExpanded] = React.useState<boolean>(isParentRoute || true)
 
   React.useEffect(() => {
-    if (isTeacherRoute) {
+    if (isParentRoute) {
+      setUsersExpanded(true)
+      setParentsExpanded(true)
+    } else if (isTeacherRoute) {
       setUsersExpanded(true)
       setTeachersExpanded(true)
     } else if (isStudentRoute) {
       setUsersExpanded(true)
       setStudentsExpanded(true)
     }
-  }, [pathname, isTeacherRoute, isStudentRoute])
+  }, [pathname, isTeacherRoute, isStudentRoute, isParentRoute])
 
   return (
     <aside className="w-64 min-w-[16rem] h-screen sticky top-0 flex flex-col justify-between bg-white border-r border-zinc-200/80 px-4 py-6 select-none z-30 overflow-y-auto">
@@ -63,10 +68,10 @@ export function Sidebar() {
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-base text-zinc-900 tracking-tight leading-tight">
-              Lumina
+              Scholar
             </span>
             <span className="text-xs text-zinc-400 font-normal">
-              Learning Admin
+              Admin Console
             </span>
           </div>
         </div>
@@ -179,7 +184,7 @@ export function Sidebar() {
                         >
                           Add Student
                         </Link>
-                        <Link
+                        {/* <Link
                           href="/student/requests"
                           className={cn(
                             "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
@@ -189,7 +194,7 @@ export function Sidebar() {
                           )}
                         >
                           Student Requests
-                        </Link>
+                        </Link> */}
                       </div>
                     )}
                   </div>
@@ -243,13 +248,52 @@ export function Sidebar() {
                   </div>
 
                   {/* Parents Sub-group */}
-                  <Link
-                    href="/parents"
-                    className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all"
-                  >
-                    <span>Parents</span>
-                    <ChevronRight className="size-3.5 text-zinc-400" />
-                  </Link>
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setParentsExpanded(!parentsExpanded)}
+                      className={cn(
+                        "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group cursor-pointer text-left",
+                        isParentRoute
+                          ? "text-zinc-900 font-semibold"
+                          : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                      )}
+                    >
+                      <span>Parents</span>
+                      {parentsExpanded ? (
+                        <ChevronDown className="size-3.5 text-zinc-500" />
+                      ) : (
+                        <ChevronRight className="size-3.5 text-zinc-400" />
+                      )}
+                    </button>
+
+                    {parentsExpanded && (
+                      <div className="flex flex-col gap-1 pl-4 mt-0.5">
+                        <Link
+                          href="/parent/parent_list"
+                          className={cn(
+                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                            isParentRoute && pathname !== "/parent/add"
+                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                          )}
+                        >
+                          All Parents
+                        </Link>
+                        <Link
+                          href="/parent/add"
+                          className={cn(
+                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                            pathname === "/parent/add"
+                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                          )}
+                        >
+                          Add Parent
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -337,28 +381,34 @@ export function Sidebar() {
         </Link>
 
         {/* User Card */}
-        <div className="flex items-center justify-between p-2.5 rounded-2xl border border-zinc-200/80 bg-zinc-50/60">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="size-9 rounded-full bg-purple-100 text-purple-700 font-semibold text-xs flex items-center justify-center shrink-0">
-              SA
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs font-semibold text-zinc-900 truncate">
-                Sara Adel
-              </span>
-              <span className="text-[11px] text-zinc-400 truncate">
-                Administrator
-              </span>
-            </div>
+        <div className="flex items-center gap-2.5 px-2 py-1.5">
+          <div className="relative size-8 rounded-full overflow-hidden shrink-0 border border-zinc-200">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80"
+              alt="Nadia Farouk"
+              className="size-full object-cover"
+            />
           </div>
-          <button
-            type="button"
-            title="Log Out"
-            className="text-zinc-400 hover:text-zinc-700 transition-colors p-1.5 rounded-lg hover:bg-zinc-100 cursor-pointer"
-          >
-            <LogOut className="size-4" />
-          </button>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-semibold text-zinc-900 truncate">
+              Nadia Farouk
+            </span>
+            <span className="text-[11px] text-zinc-400 truncate">
+              Administrator
+            </span>
+          </div>
         </div>
+
+        {/* Logout */}
+        <button
+          type="button"
+          onClick={() => alert("Logout")}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors cursor-pointer text-left"
+        >
+          <LogOut className="size-[18px] text-zinc-400" />
+          <span>Logout</span>
+        </button>
       </div>
     </aside>
   )
