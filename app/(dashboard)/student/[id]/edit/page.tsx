@@ -1,4 +1,4 @@
-import StudentEditPage from "@/features/student/template/studentEditPage"
+import StudentEditPage from "@/features/dashboard/student/template/studentEditPage"
 
 interface PageProps {
   params: Promise<{ id: string }>

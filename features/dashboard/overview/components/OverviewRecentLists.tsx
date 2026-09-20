@@ -3,8 +3,8 @@
 import * as React from "react"
 import Link from "next/link"
 import { ChevronRight, ExternalLink } from "lucide-react"
-import { mockStudents } from "@/features/student/data/mockStudents"
-import { mockTeachers } from "@/features/teacher/data/mockTeachers"
+import { mockStudents } from "@/features/dashboard/student/data/mockStudents"
+import { mockTeachers } from "@/features/dashboard/teacher/data/mockTeachers"
 import { cn } from "@/lib/utils"
 
 export function OverviewRecentLists() {
@@ -163,8 +163,8 @@ export function OverviewRecentLists() {
                       teacher.availability === "Available"
                         ? "text-emerald-700 bg-emerald-50 border-emerald-100"
                         : teacher.availability === "Busy"
-                        ? "text-amber-700 bg-amber-50 border-amber-100"
-                        : "text-zinc-600 bg-zinc-50 border-zinc-200"
+                          ? "text-amber-700 bg-amber-50 border-amber-100"
+                          : "text-zinc-600 bg-zinc-50 border-zinc-200"
                     )}
                   >
                     {teacher.availability}

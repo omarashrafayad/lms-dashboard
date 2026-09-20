@@ -1,4 +1,4 @@
-import StudentListPage from "@/features/student/template/studentListPage";
+import StudentListPage from "@/features/dashboard/student/template/studentListPage";
 
 export default function page() {
   return <StudentListPage />;

@@ -1,4 +1,4 @@
-import ParentEditPage from "@/features/parent/template/parentEditPage"
+import ParentEditPage from "@/features/dashboard/parent/template/parentEditPage"
 
 interface PageProps {
   params: Promise<{ id: string }>

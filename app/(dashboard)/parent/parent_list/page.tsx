@@ -1,4 +1,4 @@
-import ParentListPage from "@/features/parent/template/parentListPage"
+import ParentListPage from "@/features/dashboard/parent/template/parentListPage"
 
 export default function Page() {
   return <ParentListPage />

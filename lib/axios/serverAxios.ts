@@ -2,7 +2,7 @@
 "use server";
 import axios, { AxiosInstance } from "axios";
 import { cookies } from "next/headers";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = "http://lmssiteapi.runasp.net/api/v1";
 export const serverAxios: AxiosInstance = axios.create({
   baseURL: API_URL,
   withCredentials: true,

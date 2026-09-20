@@ -1,4 +1,4 @@
-import ParentDetailPage from "@/features/parent/template/parentDetailPage"
+import ParentDetailPage from "@/features/dashboard/parent/template/parentDetailPage"
 
 interface PageProps {
   params: Promise<{ id: string }>

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, Plus, X, Search, Check } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
-import { mockStudents } from "@/features/student/data/mockStudents"
+import { mockStudents } from "@/features/dashboard/student/data/mockStudents"
 
 interface LinkedChildItem {
   id: string
@@ -193,11 +193,10 @@ export default function ParentAddPage() {
                   <button
                     type="button"
                     onClick={() => setStatus("Active")}
-                    className={`flex-1 sm:flex-none sm:w-36 h-10 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
-                      status === "Active"
+                    className={`flex-1 sm:flex-none sm:w-36 h-10 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${status === "Active"
                         ? "bg-[#FEF3C7] text-zinc-900 border-[#FDE68A] shadow-2xs"
                         : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
-                    }`}
+                      }`}
                   >
                     Active
                   </button>
@@ -205,11 +204,10 @@ export default function ParentAddPage() {
                   <button
                     type="button"
                     onClick={() => setStatus("Inactive")}
-                    className={`flex-1 sm:flex-none sm:w-36 h-10 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
-                      status === "Inactive"
+                    className={`flex-1 sm:flex-none sm:w-36 h-10 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${status === "Inactive"
                         ? "bg-[#FEF3C7] text-zinc-900 border-[#FDE68A] shadow-2xs"
                         : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
-                    }`}
+                      }`}
                   >
                     Inactive
                   </button>
@@ -225,11 +223,10 @@ export default function ParentAddPage() {
                   className="sr-only"
                 />
                 <div
-                  className={`size-4 rounded-sm border flex items-center justify-center transition-colors ${
-                    sendWelcomeEmail
+                  className={`size-4 rounded-sm border flex items-center justify-center transition-colors ${sendWelcomeEmail
                       ? "bg-[#F59E0B] border-[#F59E0B] text-white"
                       : "border-zinc-300 bg-white"
-                  }`}
+                    }`}
                 >
                   {sendWelcomeEmail && <Check className="size-3 stroke-[3]" />}
                 </div>
@@ -412,16 +409,14 @@ export default function ParentAddPage() {
                       Account Status
                     </span>
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${
-                        status === "Active"
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${status === "Active"
                           ? "text-emerald-700 bg-emerald-50 border-emerald-200/60"
                           : "text-zinc-500 bg-zinc-50 border-zinc-200"
-                      }`}
+                        }`}
                     >
                       <span
-                        className={`size-1.5 rounded-full ${
-                          status === "Active" ? "bg-emerald-500" : "bg-zinc-400"
-                        }`}
+                        className={`size-1.5 rounded-full ${status === "Active" ? "bg-emerald-500" : "bg-zinc-400"
+                          }`}
                       />
                       {status}
                     </span>

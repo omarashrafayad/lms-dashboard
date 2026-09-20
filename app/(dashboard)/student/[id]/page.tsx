@@ -1,4 +1,4 @@
-import StudentDetailPage from "@/features/student/template/studentDetailPage"
+import StudentDetailPage from "@/features/dashboard/student/template/studentDetailPage"
 
 interface PageProps {
   params: Promise<{ id: string }>
