@@ -19,18 +19,18 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-interface SubItem {
-  label: string
-  href: string
-}
+// interface SubItem {
+//   label: string
+//   href: string
+// }
 
-interface NavItem {
-  label: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-  hasChevron?: boolean
-  subItems?: SubItem[]
-}
+// interface NavItem {
+//   label: string
+//   href: string
+//   icon: React.ComponentType<{ className?: string }>
+//   hasChevron?: boolean
+//   subItems?: SubItem[]
+// }
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -45,18 +45,6 @@ export function Sidebar() {
   const [teachersExpanded, setTeachersExpanded] = React.useState<boolean>(isTeacherRoute || false)
   const [parentsExpanded, setParentsExpanded] = React.useState<boolean>(isParentRoute || true)
 
-  React.useEffect(() => {
-    if (isParentRoute) {
-      setUsersExpanded(true)
-      setParentsExpanded(true)
-    } else if (isTeacherRoute) {
-      setUsersExpanded(true)
-      setTeachersExpanded(true)
-    } else if (isStudentRoute) {
-      setUsersExpanded(true)
-      setStudentsExpanded(true)
-    }
-  }, [pathname, isTeacherRoute, isStudentRoute, isParentRoute])
 
   return (
     <aside className="w-64 min-w-[16rem] h-screen sticky top-0 flex flex-col justify-between bg-white border-r border-zinc-200/80 px-4 py-6 select-none z-30 overflow-y-auto">

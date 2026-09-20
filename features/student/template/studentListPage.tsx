@@ -23,8 +23,7 @@ export default function StudentListPage() {
   const router = useRouter()
   const [filters, setFilters] = React.useState<FilterState>(initialFilters)
 
-  const { data: apiStudents, isLoading, error } = useStudents()
-  console.log(apiStudents)
+  const { data: apiStudents, isLoading } = useStudents()
 
   const handleFilterChange = (updated: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))

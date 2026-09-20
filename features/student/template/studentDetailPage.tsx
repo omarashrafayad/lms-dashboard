@@ -13,14 +13,13 @@ import { StudentSessionsCard } from "../components/profile/StudentSessionsCard"
 import { StudentSubscriptionAndParent } from "../components/profile/StudentSubscriptionAndParent"
 import { StudentActivityHistory } from "../components/profile/StudentActivityHistory"
 import { useStudent } from "../hooks/useStudents"
-import { Loader2 } from "lucide-react"
 
 interface StudentDetailPageProps {
   studentId: string
 }
 
 export default function StudentDetailPage({ studentId }: StudentDetailPageProps) {
-  const { data: apiStudent, isLoading } = useStudent(studentId)
+  const { data: apiStudent } = useStudent(studentId)
 
   const profile = React.useMemo(() => {
     const defaultProfile = getStudentProfile(studentId)
