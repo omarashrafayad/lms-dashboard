@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { TeacherFilterState } from "../types/teacher.types"
+import { useTeacherSubjects } from "../hooks/useTeachers"
 
 export interface TeacherFiltersProps {
   filters: TeacherFilterState
@@ -19,11 +20,31 @@ export interface TeacherFiltersProps {
   onReset: () => void
 }
 
+const FALLBACK_SUBJECTS = [
+  "Mathematics",
+  "English",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Computer Science",
+  "Arabic",
+  "History",
+]
+
 export function TeacherFilters({
   filters,
   onFilterChange,
   onReset,
 }: TeacherFiltersProps) {
+  const { data: subjectsData } = useTeacherSubjects()
+
+  const subjectsList = React.useMemo(() => {
+    if (subjectsData && Array.isArray(subjectsData) && subjectsData.length > 0) {
+      return subjectsData.map((s) => s.name)
+    }
+    return FALLBACK_SUBJECTS
+  }, [subjectsData])
+
   return (
     <div className="p-4 rounded-2xl bg-white border border-zinc-200/80 shadow-2xs flex flex-col gap-3">
       {/* Top: Full width Search Input with Icon */}
@@ -51,14 +72,11 @@ export function TeacherFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Subjects</SelectItem>
-              <SelectItem value="Mathematics">Mathematics</SelectItem>
-              <SelectItem value="English">English</SelectItem>
-              <SelectItem value="Physics">Physics</SelectItem>
-              <SelectItem value="Chemistry">Chemistry</SelectItem>
-              <SelectItem value="Biology">Biology</SelectItem>
-              <SelectItem value="Computer Science">Computer Science</SelectItem>
-              <SelectItem value="Arabic">Arabic</SelectItem>
-              <SelectItem value="History">History</SelectItem>
+              {subjectsList.map((subjectName) => (
+                <SelectItem key={subjectName} value={subjectName}>
+                  {subjectName}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 

@@ -7,6 +7,9 @@ import { TeacherFilters } from "../components/TeacherFilters"
 import { TeacherTable } from "../components/TeacherTable"
 import { mockTeachers } from "../data/mockTeachers"
 import { TeacherFilterState } from "../types/teacher.types"
+import { useTeachers } from "../hooks/useTeachers"
+import { mapApiTeacherToTeacher } from "../utils/teacher.mapper"
+import { Loader2 } from "lucide-react"
 
 const initialFilters: TeacherFilterState = {
   search: "",
@@ -19,6 +22,8 @@ const initialFilters: TeacherFilterState = {
 export default function TeacherListPage() {
   const [filters, setFilters] = React.useState<TeacherFilterState>(initialFilters)
 
+  const { data: apiTeachers, isLoading } = useTeachers()
+
   const handleFilterChange = (updated: Partial<TeacherFilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))
   }
@@ -27,8 +32,25 @@ export default function TeacherListPage() {
     setFilters(initialFilters)
   }
 
+  const baseTeachers = React.useMemo(() => {
+    if (apiTeachers && Array.isArray(apiTeachers)) {
+      if (apiTeachers.length > 0) {
+        return apiTeachers.map((t, idx) => mapApiTeacherToTeacher(t, idx))
+      }
+      return []
+    }
+    return mockTeachers
+  }, [apiTeachers])
+
+  const statsCounts = React.useMemo(() => {
+    const active = baseTeachers.filter((t) => t.status === "Active").length
+    const available = baseTeachers.filter((t) => t.availability === "Available").length
+    const upcoming = baseTeachers.reduce((acc, t) => acc + (t.upcomingSessions || 0), 0)
+    return { active, available, upcoming }
+  }, [baseTeachers])
+
   const filteredTeachers = React.useMemo(() => {
-    return mockTeachers.filter((teacher) => {
+    return baseTeachers.filter((teacher) => {
       // Search term filter
       if (filters.search.trim()) {
         const query = filters.search.toLowerCase()
@@ -46,7 +68,7 @@ export default function TeacherListPage() {
       // Subject filter
       if (
         filters.subject !== "all" &&
-        !teacher.subjects.includes(filters.subject)
+        !teacher.subjects.some((s) => s.toLowerCase() === filters.subject.toLowerCase())
       ) {
         return false
       }
@@ -66,20 +88,23 @@ export default function TeacherListPage() {
 
       return true
     })
-  }, [filters])
+  }, [baseTeachers, filters])
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Reusable Page Header matching screenshot */}
       <PageHeader
         title="All Teachers"
         description="Manage teachers, availability, sessions, students, and account status."
       />
 
-      {/* Main Page Content Body */}
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto">
-        {/* Top Stats Section (Count, Add Button, 4 KPI Cards) */}
-        <TeacherStats totalCount={filteredTeachers.length} />
+        {/* Top Stats Section */}
+        <TeacherStats
+          totalCount={filteredTeachers.length}
+          activeCount={statsCounts.active}
+          availableCount={statsCounts.available}
+          upcomingSessionsCount={statsCounts.upcoming}
+        />
 
         {/* Search & Filter Controls */}
         <TeacherFilters
@@ -88,8 +113,15 @@ export default function TeacherListPage() {
           onReset={handleReset}
         />
 
-        {/* Teacher Table */}
-        <TeacherTable data={filteredTeachers} />
+        {/* Teacher Table or Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center p-12 bg-white rounded-2xl border border-zinc-200/80 shadow-2xs">
+            <Loader2 className="size-6 text-brand-orange animate-spin mr-2" />
+            <span className="text-sm text-zinc-500">Loading teachers...</span>
+          </div>
+        ) : (
+          <TeacherTable data={filteredTeachers} />
+        )}
       </main>
     </div>
   )

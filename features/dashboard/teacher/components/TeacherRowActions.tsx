@@ -3,8 +3,9 @@
 import * as React from "react"
 import Link from "next/link"
 import { createPortal } from "react-dom"
-import { MoreVertical, Eye, Pencil, Trash2 } from "lucide-react"
+import { MoreVertical, Eye, Pencil, Trash2, Loader2 } from "lucide-react"
 import { Teacher } from "../types/teacher.types"
+import { useDeleteTeacher } from "../hooks/useTeachers"
 import { toast } from "sonner"
 
 export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
@@ -12,6 +13,8 @@ export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
   const [coords, setCoords] = React.useState({ top: 0, left: 0 })
   const buttonRef = React.useRef<HTMLButtonElement>(null)
   const menuRef = React.useRef<HTMLDivElement>(null)
+
+  const deleteTeacherMutation = useDeleteTeacher()
 
   const toggleMenu = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -54,9 +57,22 @@ export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
     }
   }, [isOpen])
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     setIsOpen(false)
-    toast.success(`Teacher ${teacher.name} deleted successfully`)
+    if (!confirm(`Are you sure you want to delete teacher ${teacher.name}?`)) {
+      return
+    }
+
+    try {
+      await deleteTeacherMutation.mutateAsync(teacher.id)
+      toast.success(`Teacher ${teacher.name} deleted successfully`)
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to delete teacher"
+      toast.error(errorMsg)
+    }
   }
 
   return (
@@ -65,10 +81,15 @@ export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
         ref={buttonRef}
         type="button"
         onClick={toggleMenu}
+        disabled={deleteTeacherMutation.isPending}
         title="More Options"
-        className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
+        className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer disabled:opacity-50"
       >
-        <MoreVertical className="size-4" />
+        {deleteTeacherMutation.isPending ? (
+          <Loader2 className="size-4 animate-spin text-zinc-400" />
+        ) : (
+          <MoreVertical className="size-4" />
+        )}
       </button>
 
       {isOpen &&
@@ -103,7 +124,8 @@ export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
             <button
               type="button"
               onClick={handleDelete}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer"
+              disabled={deleteTeacherMutation.isPending}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer disabled:opacity-50"
             >
               <Trash2 className="size-3.5 text-red-400" />
               <span>Delete</span>
