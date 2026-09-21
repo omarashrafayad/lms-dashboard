@@ -39,11 +39,15 @@ export function Sidebar() {
   const isTeacherRoute = pathname.startsWith("/teacher")
   const isParentRoute = pathname.startsWith("/parent") || pathname.startsWith("/parents")
   const isUsersActive = isStudentRoute || isTeacherRoute || isParentRoute
+  const isCurriculumRoute = pathname.startsWith("/curriculum")
+  const isLessonsRoute = pathname.startsWith("/lessons") || pathname.startsWith("/academic/lessons")
+  const isAcademicActive = isCurriculumRoute || pathname.startsWith("/academic") || isLessonsRoute
 
   const [usersExpanded, setUsersExpanded] = React.useState<boolean>(isUsersActive)
   const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || false)
   const [teachersExpanded, setTeachersExpanded] = React.useState<boolean>(isTeacherRoute || false)
   const [parentsExpanded, setParentsExpanded] = React.useState<boolean>(isParentRoute || true)
+  const [academicExpanded, setAcademicExpanded] = React.useState<boolean>(isAcademicActive || true)
 
 
   return (
@@ -276,16 +280,84 @@ export function Sidebar() {
             </div>
 
             {/* Academic Management */}
-            <Link
-              href="/academic"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <BookOpen className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
-                <span>Academic Management</span>
-              </div>
-              <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
-            </Link>
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setAcademicExpanded(!academicExpanded)}
+                className={cn(
+                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
+                  isAcademicActive
+                    ? "text-zinc-900 font-semibold"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <GraduationCap
+                    className={cn(
+                      "size-[18px] transition-colors",
+                      isAcademicActive
+                        ? "text-zinc-900"
+                        : "text-zinc-400 group-hover:text-zinc-600"
+                    )}
+                  />
+                  <span>Academic Management</span>
+                </div>
+                {academicExpanded ? (
+                  <ChevronDown className="size-4 text-zinc-600" />
+                ) : (
+                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
+                )}
+              </button>
+
+              {academicExpanded && (
+                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
+                  <Link
+                    href="/curriculum"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isCurriculumRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Subjects
+                  </Link>
+                  <Link
+                    href="/academic/courses"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      pathname.startsWith("/academic/courses")
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Courses
+                  </Link>
+                  <Link
+                    href="/lessons"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isLessonsRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Lessons
+                  </Link>
+                  <Link
+                    href="/academic/exams"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      pathname.startsWith("/academic/exams")
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Exams
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {/* Sessions & Bookings */}
             <Link

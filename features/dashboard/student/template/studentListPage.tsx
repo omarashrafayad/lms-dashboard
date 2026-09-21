@@ -23,7 +23,7 @@ export default function StudentListPage() {
   const router = useRouter()
   const [filters, setFilters] = React.useState<FilterState>(initialFilters)
 
-  const { data: apiStudents, isLoading } = useStudents()
+  const { data: apiStudents, isLoading , error} = useStudents()
 
   const handleFilterChange = (updated: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))
@@ -37,10 +37,11 @@ export default function StudentListPage() {
     if (apiStudents && Array.isArray(apiStudents)) {
       return apiStudents.map(mapApiStudentToStudent)
     }
-    return mockStudents
+    return null
   }, [apiStudents])
 
   const filteredStudents = React.useMemo(() => {
+    if (!baseStudents) return []
     return baseStudents.filter((student) => {
       if (filters.search.trim()) {
         const query = filters.search.toLowerCase()
