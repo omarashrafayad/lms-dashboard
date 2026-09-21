@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { X, Search, Heart, User, LogIn, ShoppingCart, Home, ShoppingBag, Info, PhoneCall, ShieldCheck } from "lucide-react";
+import { X, Heart, User, LogIn, ShoppingCart, Home, ShoppingBag, Info, PhoneCall, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 

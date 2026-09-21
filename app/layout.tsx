@@ -16,8 +16,6 @@ export const metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { user, token } = await getProfile();
-  console.log(user)
-  
 
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>

@@ -172,17 +172,6 @@ export function Sidebar() {
                         >
                           Add Student
                         </Link>
-                        {/* <Link
-                          href="/student/requests"
-                          className={cn(
-                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                            pathname === "/student/requests"
-                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                          )}
-                        >
-                          Student Requests
-                        </Link> */}
                       </div>
                     )}
                   </div>
