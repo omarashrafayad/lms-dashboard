@@ -8,44 +8,52 @@ import Link from "next/link"
 
 export interface TeacherStatsProps {
   totalCount: number
+  activeCount?: number
+  availableCount?: number
+  upcomingSessionsCount?: number
 }
 
 interface StatCardData {
   title: string
-  value: string
+  value: string | number
   dotColor: string
 }
 
-const statsData: StatCardData[] = [
-  {
-    title: "Total Teachers",
-    value: "186",
-    dotColor: "bg-sky-400",
-  },
-  {
-    title: "Active Teachers",
-    value: "164",
-    dotColor: "bg-emerald-400",
-  },
-  {
-    title: "Available Now",
-    value: "42",
-    dotColor: "bg-purple-400",
-  },
-  {
-    title: "Upcoming Sessions",
-    value: "28",
-    dotColor: "bg-amber-400",
-  },
-]
+export function TeacherStats({
+  totalCount,
+  activeCount,
+  availableCount,
+  upcomingSessionsCount,
+}: TeacherStatsProps) {
+  const statsData: StatCardData[] = [
+    {
+      title: "Total Teachers",
+      value: totalCount,
+      dotColor: "bg-sky-400",
+    },
+    {
+      title: "Active Teachers",
+      value: activeCount !== undefined ? activeCount : totalCount,
+      dotColor: "bg-emerald-400",
+    },
+    {
+      title: "Available Now",
+      value: availableCount !== undefined ? availableCount : Math.min(totalCount, 42),
+      dotColor: "bg-purple-400",
+    },
+    {
+      title: "Upcoming Sessions",
+      value: upcomingSessionsCount !== undefined ? upcomingSessionsCount : 0,
+      dotColor: "bg-amber-400",
+    },
+  ]
 
-export function TeacherStats({ totalCount }: TeacherStatsProps) {
   return (
     <div className="flex flex-col gap-5">
       {/* Top Bar: Count & Add Teacher Button */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-zinc-500">
-          {totalCount} teachers found
+          {totalCount} {totalCount === 1 ? "teacher" : "teachers"} found
         </span>
         <Link href="/teacher/add">
           <Button

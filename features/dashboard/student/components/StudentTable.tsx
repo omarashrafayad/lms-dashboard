@@ -77,24 +77,6 @@ export function StudentTable({ data }: StudentTableProps) {
           </span>
         ),
       },
-      // {
-      //   id: "progress",
-      //   header: "PROGRESS",
-      //   headerClassName: "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
-      //   cell: (_, student) => (
-      //     <div className="flex items-center gap-3 w-32">
-      //       <div className="w-20 h-1.5 bg-zinc-100 rounded-full overflow-hidden shrink-0">
-      //         <div
-      //           className="h-full bg-brand-orange rounded-full transition-all duration-300"
-      //           style={{ width: `${student.progress}%` }}
-      //         />
-      //       </div>
-      //       <span className="text-xs text-zinc-500 font-normal shrink-0">
-      //         {student.progress}%
-      //       </span>
-      //     </div>
-      //   ),
-      // },
       {
         id: "average_score",
         header: "AVERAGE SCORE",
