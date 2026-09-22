@@ -3,10 +3,13 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, Check, X, Search } from "lucide-react"
+import { ChevronLeft, Check, X, Search, Loader2 } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { getParentProfile } from "../data/mockParentProfile"
 import { mockStudents } from "@/features/dashboard/student/data/mockStudents"
+import { useParent, useUpdateParent } from "../hooks/useParents"
+import { updateParentSchema } from "../schema/parent.schema"
+import { toast } from "sonner"
 
 export interface ParentEditPageProps {
   parentId: string
@@ -23,18 +26,40 @@ interface LinkedChildItem {
 export default function ParentEditPage({ parentId }: ParentEditPageProps) {
   const router = useRouter()
 
+  const { data: apiParent, isLoading: isFetchingParent } = useParent(parentId)
+  const updateParentMutation = useUpdateParent()
+
   const profile = React.useMemo(() => {
     return getParentProfile(parentId)
   }, [parentId])
 
-  // Form State initialized with profile data
-  const [fullName, setFullName] = React.useState(profile.name === "Hana Mostafa" ? "Hana" : profile.name)
-  const [email, setEmail] = React.useState(profile.email)
-  const [phone, setPhone] = React.useState(profile.phone)
-  const [status, setStatus] = React.useState<"Active" | "Inactive">(profile.status)
+  // Form State initialized
+  const [firstName, setFirstName] = React.useState("")
+  const [lastName, setLastName] = React.useState("")
+  const [email, setEmail] = React.useState("")
+  const [phone, setPhone] = React.useState("")
+  const [status, setStatus] = React.useState<"Active" | "Inactive">("Active")
   const [sendWelcomeEmail, setSendWelcomeEmail] = React.useState(false)
 
-  // Linked Children initialized with profile's linked children
+  // Sync state when apiParent or profile is ready
+  React.useEffect(() => {
+    if (apiParent) {
+      setFirstName(apiParent.firstName || "")
+      setLastName(apiParent.lastName || "")
+      setEmail(apiParent.email || "")
+      setPhone(apiParent.phoneNumber || "")
+      setStatus(apiParent.isActive ? "Active" : "Inactive")
+    } else if (profile) {
+      const parts = (profile.name || "").split(" ")
+      setFirstName(parts[0] || "")
+      setLastName(parts.slice(1).join(" ") || "")
+      setEmail(profile.email || "")
+      setPhone(profile.phone || "")
+      setStatus(profile.status || "Active")
+    }
+  }, [apiParent, profile])
+
+  // Linked Children
   const [linkedChildren, setLinkedChildren] = React.useState<LinkedChildItem[]>(() =>
     profile.linkedChildren.map((c) => ({
       id: c.id,
@@ -46,6 +71,9 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
   )
   const [searchQuery, setSearchQuery] = React.useState("")
   const [isSearching, setIsSearching] = React.useState(false)
+
+  // Derived Full Name
+  const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
 
   // Search Results
   const searchResults = React.useMemo(() => {
@@ -78,15 +106,57 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
     setLinkedChildren((prev) => prev.filter((c) => c.id !== id))
   }
 
-  const handleSaveChanges = (e: React.FormEvent) => {
+  const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault()
-    alert(`Changes saved for ${fullName || profile.name}!`)
-    router.push(`/parent/${parentId}`)
+
+    const parseResult = updateParentSchema.safeParse({
+      firstName,
+      lastName,
+      email,
+      phoneNumber: phone,
+      isActive: status === "Active",
+    })
+
+    if (!parseResult.success) {
+      const errorMsg = parseResult.error.issues[0]?.message || "Please check required fields."
+      toast.error(errorMsg)
+      return
+    }
+
+    try {
+      await updateParentMutation.mutateAsync({
+        parentId,
+        data: {
+          firstName: parseResult.data.firstName,
+          lastName: parseResult.data.lastName,
+          email: parseResult.data.email,
+          phoneNumber: parseResult.data.phoneNumber,
+          isActive: parseResult.data.isActive,
+        },
+      })
+      toast.success("Parent updated successfully")
+      router.push("/parent/parent_list")
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to update parent. Please check input data."
+      toast.error(errorMsg)
+    }
+  }
+
+  if (isFetchingParent) {
+    return (
+      <div className="flex flex-col min-h-full items-center justify-center p-12">
+        <Loader2 className="size-8 text-brand-orange animate-spin mb-3" />
+        <span className="text-sm text-zinc-500">Loading parent details...</span>
+      </div>
+    )
   }
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Page Header matching Image 1 */}
+      {/* Page Header */}
       <PageHeader
         title="Edit Parent"
         description="Update this parent's account information and linked children."
@@ -104,7 +174,7 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
           </Link>
         </div>
 
-        {/* 2-Column Grid Layout matching screenshot */}
+        {/* 2-Column Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Left Column (Forms): Span 2 */}
           <div className="lg:col-span-2 flex flex-col gap-6">
@@ -119,54 +189,66 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
                 </h2>
               </div>
 
-              <div className="flex flex-col gap-4">
-                {/* Full Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* First Name */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-medium text-zinc-700">
-                    Full Name <span className="text-rose-500">*</span>
+                    First Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Hana Mostafa"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="e.g. Hana"
                     className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Email */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-zinc-700">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="hana@example.com"
-                      className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
-                    />
-                  </div>
+                {/* Last Name */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-zinc-700">
+                    Last Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="e.g. Mostafa"
+                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
+                  />
+                </div>
 
-                  {/* Phone Number */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-zinc-700">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+20 100 447 2210"
-                      className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
-                    />
-                  </div>
+                {/* Email */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-zinc-700">
+                    Email <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="hana@example.com"
+                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
+                  />
+                </div>
+
+                {/* Phone Number */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-zinc-700">
+                    Phone Number <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+20 100 447 2210"
+                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
+                  />
                 </div>
               </div>
 
               <span className="text-[11px] text-zinc-400 font-normal">
-                Email or phone number is required — at least one valid contact method.
+                Email and phone number are required for parent account notification and access.
               </span>
             </div>
 
@@ -228,7 +310,7 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
                   {sendWelcomeEmail && <Check className="size-3 stroke-[3]" />}
                 </div>
                 <span className="text-xs text-zinc-700 font-normal">
-                  Send welcome email
+                  Resend welcome email / notification
                 </span>
               </label>
             </div>
@@ -245,11 +327,11 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
                   </h2>
                 </div>
                 <p className="text-xs text-zinc-400 font-normal ml-9">
-                  Connect existing student accounts to this parent. Linking children is optional.
+                  Manage the students connected to this parent account.
                 </p>
               </div>
 
-              {/* Search Bar */}
+              {/* Search Bar for adding children */}
               <div className="relative w-full">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
                 <input
@@ -260,103 +342,68 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
                     setIsSearching(true)
                   }}
                   onFocus={() => setIsSearching(true)}
-                  placeholder="Search students by name or ID..."
+                  placeholder="Search students by name or code to link..."
                   className="w-full h-10 pl-10 pr-4 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
                 />
 
                 {/* Autocomplete Dropdown */}
                 {isSearching && searchResults.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-zinc-200 rounded-xl shadow-lg z-20 py-1.5 divide-y divide-zinc-50">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200/90 rounded-xl shadow-lg z-20 overflow-hidden divide-y divide-zinc-100">
                     {searchResults.map((student) => (
-                      <button
+                      <div
                         key={student.id}
-                        type="button"
                         onClick={() => handleAddChild(student)}
-                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-zinc-50 transition-colors text-left cursor-pointer"
+                        className="px-4 py-2.5 flex items-center justify-between hover:bg-zinc-50 cursor-pointer transition-colors"
                       >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`size-7 rounded-full text-xs font-semibold flex items-center justify-center ${student.avatarColorClass}`}
-                          >
-                            {student.avatarInitials}
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-semibold text-zinc-900">
-                              {student.name}
-                            </span>
-                            <span className="text-[11px] text-zinc-400">
-                              {student.code} · {student.grade}
-                            </span>
-                          </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-zinc-900">
+                            {student.name}
+                          </span>
+                          <span className="text-[11px] text-zinc-400">
+                            {student.grade} • {student.code}
+                          </span>
                         </div>
-                        <span className="text-xs font-medium text-[#D97706]">
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-[#D97706] hover:underline"
+                        >
                           + Link
-                        </span>
-                      </button>
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Linked Children List / Table */}
+              {/* Linked Children List */}
               {linkedChildren.length === 0 ? (
-                <div className="p-8 border border-dashed border-zinc-200 rounded-xl text-center flex items-center justify-center">
-                  <span className="text-xs text-zinc-400 font-normal">
-                    No children linked yet. Search above to connect existing students.
+                <div className="p-6 rounded-xl border border-dashed border-zinc-200 text-center">
+                  <span className="text-xs text-zinc-400">
+                    No children linked yet. Use the search bar above to link students.
                   </span>
                 </div>
               ) : (
                 <div className="border border-zinc-200/80 rounded-xl overflow-hidden">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-zinc-200/80 bg-zinc-50/60">
-                        <th className="py-3 px-4 text-[11px] font-semibold text-zinc-400 uppercase">
-                          STUDENT NAME
-                        </th>
-                        <th className="py-3 px-4 text-[11px] font-semibold text-zinc-400 uppercase">
-                          GRADE
-                        </th>
-                        <th className="py-3 px-4 text-[11px] font-semibold text-zinc-400 uppercase">
-                          EDUCATION STAGE
-                        </th>
-                        <th className="py-3 px-4 text-[11px] font-semibold text-zinc-400 uppercase">
-                          RELATIONSHIP STATUS
-                        </th>
-                        <th className="py-3 px-4 w-10"></th>
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-zinc-50 border-b border-zinc-200/80 text-zinc-400 uppercase text-[10px] font-semibold">
+                      <tr>
+                        <th className="py-2.5 px-4">Student</th>
+                        <th className="py-2.5 px-4">Grade & Stage</th>
+                        <th className="py-2.5 px-4">Status</th>
+                        <th className="py-2.5 px-4 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-100 text-xs">
+                    <tbody className="divide-y divide-zinc-100">
                       {linkedChildren.map((child) => (
                         <tr key={child.id} className="hover:bg-zinc-50/50">
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2.5">
-                              <div className="size-7 rounded-full overflow-hidden shrink-0 border border-zinc-200 bg-zinc-100 flex items-center justify-center">
-                                {child.avatarUrl ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={child.avatarUrl}
-                                    alt={child.name}
-                                    className="size-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="font-semibold text-[10px] text-zinc-700">
-                                    {child.name.slice(0, 2).toUpperCase()}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="font-semibold text-zinc-900">
-                                {child.name}
-                              </span>
-                            </div>
+                          <td className="py-3 px-4 font-semibold text-zinc-900">
+                            {child.name}
                           </td>
                           <td className="py-3 px-4 text-zinc-600">
-                            {child.grade}
-                          </td>
-                          <td className="py-3 px-4 text-zinc-600">
-                            {child.stage}
+                            {child.grade} ({child.stage})
                           </td>
                           <td className="py-3 px-4">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-[#ECFCCB] text-[#65A30D] border border-lime-200/60">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium text-[#4D7C0F] bg-[#ECFCCB]">
                               <span className="size-1.5 rounded-full bg-[#65A30D]" />
                               Linked
                             </span>
@@ -489,15 +536,20 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
                 <button
                   type="button"
                   onClick={handleSaveChanges}
-                  className="w-full h-10 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white font-medium text-xs flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer active:scale-[0.99]"
+                  disabled={updateParentMutation.isPending}
+                  className="w-full h-10 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white font-medium text-xs flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Check className="size-4 stroke-[2.5]" />
-                  <span>Save Changes</span>
+                  {updateParentMutation.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Check className="size-4 stroke-[2.5]" />
+                  )}
+                  <span>{updateParentMutation.isPending ? "Saving..." : "Save Changes"}</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => router.push(`/parent/${parentId}`)}
+                  onClick={() => router.push("/parent/parent_list")}
                   className="w-full h-10 rounded-xl bg-white border border-zinc-200/90 hover:bg-zinc-50 text-zinc-700 font-medium text-xs flex items-center justify-center transition-all cursor-pointer"
                 >
                   Cancel

@@ -9,7 +9,6 @@ import { LessonListFilters } from "../components/LessonListFilters"
 import { LessonListTable } from "../components/LessonListTable"
 import { useLessonList, useDeleteLesson } from "../hooks/useLessons"
 import { LessonFilterState } from "../types/lesson.types"
-import { AddLessonModal } from "@/features/dashboard/curriculum/components/structure/AddLessonModal"
 
 const initialFilters: LessonFilterState = {
   search: "",
@@ -28,7 +27,6 @@ const initialFilters: LessonFilterState = {
 export default function LessonListPage() {
   const router = useRouter()
   const [filters, setFilters] = React.useState<LessonFilterState>(initialFilters)
-  const [isAddOpen, setIsAddOpen] = React.useState(false)
 
   const { data: lessons = [], isLoading } = useLessonList(filters)
   const deleteMutation = useDeleteLesson()
@@ -126,7 +124,7 @@ export default function LessonListPage() {
 
           <Button
             type="button"
-            onClick={() => setIsAddOpen(true)}
+            onClick={() => router.push("/lessons/add")}
             className="bg-brand-orange hover:bg-brand-orange/90 text-white font-medium rounded-xl h-10 px-4 gap-2 shadow-2xs cursor-pointer transition-all hover:brightness-95"
           >
             <Plus className="size-4 stroke-[2.5]" />
@@ -154,17 +152,6 @@ export default function LessonListPage() {
           />
         )}
       </main>
-
-      {/* Add Lesson Modal */}
-      <AddLessonModal
-        open={isAddOpen}
-        onOpenChange={setIsAddOpen}
-        chapterId="ch-1"
-        unitId="u-1-1"
-        onAddLesson={(_, __, title) => {
-          router.push(`/lessons/les-reading-comp`)
-        }}
-      />
     </div>
   )
 }

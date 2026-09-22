@@ -1,12 +1,15 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { ParentStats } from "../components/ParentStats"
 import { ParentFilters } from "../components/ParentFilters"
 import { ParentTable } from "../components/ParentTable"
-import { mockParents } from "../data/mockParents"
 import { ParentFilterState } from "../types/parent.types"
+import { useParents } from "../hooks/useParents"
+import { mapApiParentToParent } from "../utils/parent.mapper"
+import { Loader2 } from "lucide-react"
 
 const initialFilters: ParentFilterState = {
   search: "",
@@ -17,7 +20,12 @@ const initialFilters: ParentFilterState = {
 }
 
 export default function ParentListPage() {
+  const router = useRouter()
   const [filters, setFilters] = React.useState<ParentFilterState>(initialFilters)
+
+  const { data: apiParents, isLoading, error } = useParents({
+    search: filters.search.trim() || undefined,
+  })
 
   const handleFilterChange = (updated: Partial<ParentFilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))
@@ -27,9 +35,16 @@ export default function ParentListPage() {
     setFilters(initialFilters)
   }
 
+  const baseParents = React.useMemo(() => {
+    if (apiParents && Array.isArray(apiParents)) {
+      return apiParents.map(mapApiParentToParent)
+    }
+    return []
+  }, [apiParents])
+
   const filteredParents = React.useMemo(() => {
-    return mockParents.filter((parent) => {
-      // Search
+    return baseParents.filter((parent) => {
+      // Client-side search check
       if (filters.search.trim()) {
         const query = filters.search.toLowerCase()
         const matchesName = parent.name.toLowerCase().includes(query)
@@ -66,7 +81,7 @@ export default function ParentListPage() {
 
       return true
     })
-  }, [filters])
+  }, [baseParents, filters])
 
   const totalCount = filteredParents.length
   const activeCount = filteredParents.filter((p) => p.status === "Active").length
@@ -78,31 +93,40 @@ export default function ParentListPage() {
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Top Page Header matching Image 1 */}
       <PageHeader
         title="All Parents"
         description="Manage parent accounts, linked children, subscriptions, and payments."
       />
 
-      {/* Main Content Area */}
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full">
-        {/* Parent Directory Header + 4 Metric Cards */}
         <ParentStats
           totalCount={totalCount}
           activeCount={activeCount}
           withChildrenCount={withChildrenCount}
           activeSubscriptionsCount={activeSubscriptionsCount}
+          onAddParent={() => {
+            router.push("/parent/add")
+          }}
         />
 
-        {/* Filter Bar */}
         <ParentFilters
           filters={filters}
           onFilterChange={handleFilterChange}
           onReset={handleReset}
         />
 
-        {/* Parents Table */}
-        <ParentTable data={filteredParents} />
+        {isLoading ? (
+          <div className="flex items-center justify-center p-12 bg-white rounded-2xl border border-zinc-200/80 shadow-2xs">
+            <Loader2 className="size-6 text-brand-orange animate-spin mr-2" />
+            <span className="text-sm text-zinc-500">Loading parents...</span>
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm">
+            Failed to load parents. Please try again later.
+          </div>
+        ) : (
+          <ParentTable data={filteredParents} />
+        )}
       </main>
     </div>
   )

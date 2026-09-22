@@ -87,3 +87,58 @@ export interface LessonDetailFull {
   }
   history: ActivityHistoryItem[]
 }
+
+export interface VideoContentItem {
+  id: string
+  order: number
+  title: string
+  duration: string
+  access: "Free" | "Premium"
+  offlineAvailable: boolean
+  file?: File | null
+  fileName?: string
+}
+
+export interface CreateLessonPayload {
+  stage: string
+  year: string
+  system: string
+  term: string
+  subject: string
+  chapter: string
+  unit: string
+  title: string
+  description: string
+  order: number
+  duration: string
+  thumbnailUrl?: string
+  videos: VideoContentItem[]
+  pdf?: {
+    title: string
+    size: string
+    offlineAvailable: boolean
+    file?: File | null
+  } | null
+  quiz?: {
+    enabled: boolean
+    title: string
+    questionsCount: number
+    passingScore: string
+    timeLimit: string
+  } | null
+  settings: {
+    freePlanFirstVideoOnly: boolean
+    premiumContent: boolean
+    videoOfflineDownload: boolean
+    pdfOfflineDownload: boolean
+  }
+  status?: LessonStatus
+}
+
+export interface UpdateLessonPayload {
+  title: string
+  description: string
+  order: number
+  duration: string
+}
+

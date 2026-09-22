@@ -1,9 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, Eye, Pencil, UserX, Trash2 } from "lucide-react"
+import { MoreHorizontal, Eye, Pencil, UserX, Trash2, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Parent } from "../types/parent.types"
+import { useDeleteParent } from "../hooks/useParents"
+import { toast } from "sonner"
 
 export interface ParentRowActionsProps {
   parent: Parent
@@ -12,6 +14,8 @@ export interface ParentRowActionsProps {
 export function ParentRowActions({ parent }: ParentRowActionsProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const menuRef = React.useRef<HTMLDivElement>(null)
+
+  const deleteParentMutation = useDeleteParent()
 
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -27,15 +31,38 @@ export function ParentRowActions({ parent }: ParentRowActionsProps) {
     }
   }, [isOpen])
 
+  const handleDelete = async () => {
+    setIsOpen(false)
+    if (!confirm(`Are you sure you want to delete parent ${parent.name}?`)) {
+      return
+    }
+
+    try {
+      await deleteParentMutation.mutateAsync(parent.id)
+      toast.success(`Parent ${parent.name} deleted successfully`)
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to delete parent"
+      toast.error(errorMsg)
+    }
+  }
+
   return (
     <div className="relative flex justify-end" ref={menuRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        disabled={deleteParentMutation.isPending}
         aria-label="Parent options"
-        className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors cursor-pointer"
+        className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors cursor-pointer disabled:opacity-50"
       >
-        <MoreHorizontal className="size-4" />
+        {deleteParentMutation.isPending ? (
+          <Loader2 className="size-4 animate-spin text-zinc-400" />
+        ) : (
+          <MoreHorizontal className="size-4" />
+        )}
       </button>
 
       {isOpen && (
@@ -62,23 +89,9 @@ export function ParentRowActions({ parent }: ParentRowActionsProps) {
 
           <button
             type="button"
-            onClick={() => {
-              setIsOpen(false)
-              alert(`${parent.status === "Active" ? "Deactivate" : "Activate"} account for ${parent.name}`)
-            }}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors text-left cursor-pointer"
-          >
-            <UserX className="size-3.5 text-zinc-400" />
-            <span>{parent.status === "Active" ? "Deactivate" : "Activate"}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(false)
-              alert(`Delete parent record: ${parent.name}`)
-            }}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+            onClick={handleDelete}
+            disabled={deleteParentMutation.isPending}
+            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer disabled:opacity-50"
           >
             <Trash2 className="size-3.5 text-rose-500" />
             <span>Delete</span>

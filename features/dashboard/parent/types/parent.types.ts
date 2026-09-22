@@ -24,3 +24,43 @@ export interface ParentFilterState {
   subscriptionStatus: string
   registrationDate: string
 }
+
+export interface ApiParentLinkedStudent {
+  id?: string
+  fullName?: string
+  name?: string
+  email?: string
+  grade?: string
+  educationStage?: string
+}
+
+export interface ApiParent {
+  id: string
+  firstName: string
+  lastName: string
+  fullName: string
+  email: string
+  phoneNumber: string
+  isActive: boolean
+  createdAt: string
+  role: string
+  linkedStudents?: ApiParentLinkedStudent[]
+}
+
+export interface CreateParentPayload {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  phoneNumber: string
+  isActive: boolean
+}
+
+export interface UpdateParentPayload {
+  firstName: string
+  lastName: string
+  email: string
+  phoneNumber: string
+  isActive: boolean
+}
+

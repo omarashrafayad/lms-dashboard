@@ -3,9 +3,12 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, Plus, X, Search, Check } from "lucide-react"
+import { ChevronLeft, Plus, X, Search, Check, Eye, EyeOff, Loader2 } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { mockStudents } from "@/features/dashboard/student/data/mockStudents"
+import { useCreateParent } from "../hooks/useParents"
+import { createParentSchema } from "../schema/parent.schema"
+import { toast } from "sonner"
 
 interface LinkedChildItem {
   id: string
@@ -23,8 +26,12 @@ export default function ParentAddPage() {
   const [lastName, setLastName] = React.useState("")
   const [email, setEmail] = React.useState("")
   const [phone, setPhone] = React.useState("")
+  const [password, setPassword] = React.useState("")
+  const [showPassword, setShowPassword] = React.useState(false)
   const [status, setStatus] = React.useState<"Active" | "Inactive">("Active")
   const [sendWelcomeEmail, setSendWelcomeEmail] = React.useState(true)
+
+  const createParentMutation = useCreateParent()
 
   // Linked Children State
   const [linkedChildren, setLinkedChildren] = React.useState<LinkedChildItem[]>([])
@@ -65,14 +72,42 @@ export default function ParentAddPage() {
     setLinkedChildren((prev) => prev.filter((c) => c.id !== id))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fullName && !email && !phone) {
-      alert("Please fill in the parent information before creating.")
+    
+    const parseResult = createParentSchema.safeParse({
+      firstName,
+      lastName,
+      email,
+      password,
+      phoneNumber: phone,
+      isActive: status === "Active",
+    })
+
+    if (!parseResult.success) {
+      const errorMsg = parseResult.error.issues[0]?.message || "Please fill in required fields."
+      toast.error(errorMsg)
       return
     }
-    alert(`Parent ${fullName || "account"} created successfully!`)
-    router.push("/parent/parent_list")
+
+    try {
+      await createParentMutation.mutateAsync({
+        firstName: parseResult.data.firstName,
+        lastName: parseResult.data.lastName,
+        email: parseResult.data.email,
+        password: parseResult.data.password,
+        phoneNumber: parseResult.data.phoneNumber,
+        isActive: parseResult.data.isActive,
+      })
+      toast.success("Parent created successfully")
+      router.push("/parent/parent_list")
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to create parent. Please check input data."
+      toast.error(errorMsg)
+    }
   }
 
   return (
@@ -156,7 +191,7 @@ export default function ParentAddPage() {
                 {/* Phone Number */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-medium text-zinc-700">
-                    Phone Number
+                    Phone Number <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -166,10 +201,36 @@ export default function ParentAddPage() {
                     className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
                   />
                 </div>
+
+                {/* Password */}
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="text-xs font-medium text-zinc-700">
+                    Password <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full h-10 pl-3.5 pr-10 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                  <span className="text-[11px] text-zinc-400">
+                    Minimum 6 characters.
+                  </span>
+                </div>
               </div>
 
               <span className="text-[11px] text-zinc-400 font-normal">
-                Email or phone number is required — at least one valid contact method.
+                Email and phone number are required for parent account notification and access.
               </span>
             </div>
 
@@ -463,10 +524,15 @@ export default function ParentAddPage() {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="w-full h-10 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white font-medium text-xs flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer active:scale-[0.99]"
+                  disabled={createParentMutation.isPending}
+                  className="w-full h-10 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white font-medium text-xs flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Plus className="size-4 stroke-[2.5]" />
-                  <span>Create Parent</span>
+                  {createParentMutation.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Plus className="size-4 stroke-[2.5]" />
+                  )}
+                  <span>{createParentMutation.isPending ? "Creating..." : "Create Parent"}</span>
                 </button>
 
                 <button
