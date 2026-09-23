@@ -41,7 +41,8 @@ export function Sidebar() {
   const isUsersActive = isStudentRoute || isTeacherRoute || isParentRoute
   const isCurriculumRoute = pathname.startsWith("/curriculum")
   const isLessonsRoute = pathname.startsWith("/lessons") || pathname.startsWith("/academic/lessons")
-  const isAcademicActive = isCurriculumRoute || pathname.startsWith("/academic") || isLessonsRoute
+  const isCoursesRoute = pathname.startsWith("/courses") || pathname.startsWith("/academic/courses")
+  const isAcademicActive = isCurriculumRoute || pathname.startsWith("/academic") || isLessonsRoute || isCoursesRoute
 
   const [usersExpanded, setUsersExpanded] = React.useState<boolean>(isUsersActive)
   const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || false)
@@ -323,10 +324,10 @@ export function Sidebar() {
                     Subjects
                   </Link>
                   <Link
-                    href="/academic/courses"
+                    href="/courses"
                     className={cn(
                       "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      pathname.startsWith("/academic/courses")
+                      pathname.startsWith("/courses") || pathname.startsWith("/academic/courses")
                         ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
                         : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
                     )}

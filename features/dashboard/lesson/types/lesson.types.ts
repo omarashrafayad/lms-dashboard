@@ -99,6 +99,31 @@ export interface VideoContentItem {
   fileName?: string
 }
 
+export interface QuizOption {
+  id: string
+  text: string
+  isCorrect: boolean
+}
+
+export interface QuizQuestion {
+  id: string
+  text: string
+  type: "Multiple Choice" | "True / False" | "Short Answer"
+  points: number
+  options: QuizOption[]
+  required: boolean
+}
+
+export interface LessonQuizData {
+  title: string
+  description?: string
+  timeLimit: number
+  passingScore: number
+  courseLevel?: string
+  questions: QuizQuestion[]
+  isPublished?: boolean
+}
+
 export interface CreateLessonPayload {
   stage: string
   year: string
@@ -125,6 +150,7 @@ export interface CreateLessonPayload {
     questionsCount: number
     passingScore: string
     timeLimit: string
+    data?: LessonQuizData
   } | null
   settings: {
     freePlanFirstVideoOnly: boolean
@@ -140,5 +166,43 @@ export interface UpdateLessonPayload {
   description: string
   order: number
   duration: string
+}
+
+export interface LessonFormValues {
+  // Step 1
+  stage: string
+  year: string
+  system: string
+  term: string
+  subject: string
+  chapter: string
+  unit: string
+
+  // Step 2
+  title: string
+  description: string
+  order: string
+  duration: string
+  thumbnailFile: File | null
+  thumbnailPreview: string | null
+
+  // Step 3
+  videos: VideoContentItem[]
+
+  // Step 4
+  hasPdf: boolean
+  pdfTitle: string
+  pdfOffline: boolean
+  pdfFile: File | null
+
+  // Step 5
+  quiz: LessonQuizData
+
+  // Step 6
+  allowVideoDownload: boolean
+  allowPdfDownload: boolean
+
+  // Status
+  status: LessonStatus
 }
 
