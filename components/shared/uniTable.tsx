@@ -42,7 +42,7 @@ export interface UniTableProps<TData> {
     className?: string
     enablePagination?: boolean
     pageSize?: number
-    emptyMessage?: string
+    emptyMessage?: React.ReactNode
     itemLabel?: string
     showSelection?: boolean
     onSelectionChange?: (selectedRows: TData[]) => void

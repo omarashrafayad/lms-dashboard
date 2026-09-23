@@ -38,7 +38,6 @@ export default function TeacherAddPage() {
   const router = useRouter()
   const createTeacherMutation = useCreateTeacher()
 
-  // Additional form state for multi-selects, files, and schedule
   const [isActive, setIsActive] = React.useState(true)
   const [selectedSubjectIds, setSelectedSubjectIds] = React.useState<string[]>([])
   const [selectedEducationStageIds, setSelectedEducationStageIds] = React.useState<string[]>([])
