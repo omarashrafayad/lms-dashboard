@@ -42,13 +42,15 @@ export function Sidebar() {
   const isCurriculumRoute = pathname.startsWith("/curriculum")
   const isLessonsRoute = pathname.startsWith("/lessons") || pathname.startsWith("/academic/lessons")
   const isCoursesRoute = pathname.startsWith("/courses") || pathname.startsWith("/academic/courses")
+  const isSessionsRoute = pathname.startsWith("/sessions")
   const isAcademicActive = isCurriculumRoute || pathname.startsWith("/academic") || isLessonsRoute || isCoursesRoute
 
   const [usersExpanded, setUsersExpanded] = React.useState<boolean>(isUsersActive)
   const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || false)
   const [teachersExpanded, setTeachersExpanded] = React.useState<boolean>(isTeacherRoute || false)
-  const [parentsExpanded, setParentsExpanded] = React.useState<boolean>(isParentRoute || true)
-  const [academicExpanded, setAcademicExpanded] = React.useState<boolean>(isAcademicActive || true)
+  const [parentsExpanded, setParentsExpanded] = React.useState<boolean>(isParentRoute || false)
+  const [academicExpanded, setAcademicExpanded] = React.useState<boolean>(isAcademicActive || false)
+  const [sessionsExpanded, setSessionsExpanded] = React.useState<boolean>(isSessionsRoute || false)
 
 
   return (
@@ -360,17 +362,76 @@ export function Sidebar() {
               )}
             </div>
 
-            {/* Sessions & Bookings */}
-            <Link
-              href="/sessions"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <Calendar className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
-                <span>Sessions & Bookings</span>
-              </div>
-              <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
-            </Link>
+            {/* Sessions & Bookings matching Screenshots */}
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setSessionsExpanded(!sessionsExpanded)}
+                className={cn(
+                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
+                  isSessionsRoute
+                    ? "text-zinc-900 font-semibold"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <Calendar
+                    className={cn(
+                      "size-[18px] transition-colors",
+                      isSessionsRoute
+                        ? "text-zinc-900"
+                        : "text-zinc-400 group-hover:text-zinc-600"
+                    )}
+                  />
+                  <span>Sessions & Bookings</span>
+                </div>
+                {sessionsExpanded ? (
+                  <ChevronDown className="size-4 text-zinc-600" />
+                ) : (
+                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
+                )}
+              </button>
+
+              {sessionsExpanded && (
+                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
+                  <Link
+                    href="/sessions"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isSessionsRoute &&
+                        !pathname.startsWith("/sessions/requests") &&
+                        !pathname.startsWith("/sessions/availability")
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    All Sessions
+                  </Link>
+                  <Link
+                    href="/sessions/requests"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      pathname.startsWith("/sessions/requests")
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Booking Requests
+                  </Link>
+                  <Link
+                    href="/sessions/availability"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      pathname.startsWith("/sessions/availability")
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Availability
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {/* Subscriptions & Payments */}
             <Link
