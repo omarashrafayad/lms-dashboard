@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import {
   GraduationCap,
   LayoutGrid,
@@ -18,14 +18,22 @@ import {
   LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAuthStore } from "@/stores/useAuthStore"
-import { logoutAction } from "@/features/auth/api/auth"
 
+// interface SubItem {
+//   label: string
+//   href: string
+// }
 
+// interface NavItem {
+//   label: string
+//   href: string
+//   icon: React.ComponentType<{ className?: string }>
+//   hasChevron?: boolean
+//   subItems?: SubItem[]
+// }
 
 export function Sidebar() {
   const pathname = usePathname()
-  const router = useRouter()
   const isOverviewActive = pathname === "/" || pathname === "/overview"
   const isStudentRoute = pathname.startsWith("/student")
   const isTeacherRoute = pathname.startsWith("/teacher")
@@ -55,10 +63,10 @@ export function Sidebar() {
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-base text-zinc-900 tracking-tight leading-tight">
-              Lumina
+              Scholar
             </span>
             <span className="text-xs text-zinc-400 font-normal">
-              Learning Admin
+              Admin Console
             </span>
           </div>
         </div>
@@ -487,16 +495,18 @@ export function Sidebar() {
         <div className="flex items-center gap-2.5 px-2 py-1.5">
           <div className="relative size-8 rounded-full overflow-hidden shrink-0 border border-zinc-200">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <div className="size-full rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center shrink-0">
-              {user?.fullName?.slice(0, 2).toUpperCase()}
-            </div>
+            <img
+              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80"
+              alt="Nadia Farouk"
+              className="size-full object-cover"
+            />
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-semibold text-zinc-900 truncate">
-              {user?.fullName}
+              Nadia Farouk
             </span>
             <span className="text-[11px] text-zinc-400 truncate">
-              {user?.roles[0]}
+              Administrator
             </span>
           </div>
         </div>
@@ -504,7 +514,7 @@ export function Sidebar() {
         {/* Logout */}
         <button
           type="button"
-          onClick={handleLogout}
+          onClick={() => alert("Logout")}
           className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors cursor-pointer text-left"
         >
           <LogOut className="size-[18px] text-zinc-400" />
