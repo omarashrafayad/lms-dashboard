@@ -6,10 +6,11 @@ import { PageHeader } from "@/components/layout/PageHeader"
 import { StudentStats } from "../components/StudentStats"
 import { StudentFilters, FilterState } from "../components/StudentFilters"
 import { StudentTable } from "../components/StudentTable"
-import { mockStudents } from "../data/mockStudents"
 import { useStudents } from "../hooks/useStudents"
 import { mapApiStudentToStudent } from "../utils/student.mapper"
 import { Loader2 } from "lucide-react"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
 
 const initialFilters: FilterState = {
   search: "",
@@ -23,7 +24,8 @@ export default function StudentListPage() {
   const router = useRouter()
   const [filters, setFilters] = React.useState<FilterState>(initialFilters)
 
-  const { data: apiStudents, isLoading , error} = useStudents()
+  const { data: apiStudents, isLoading , error,isError} = useStudents()
+  console.log(error)
 
   const handleFilterChange = (updated: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))
@@ -95,13 +97,13 @@ export default function StudentListPage() {
         />
 
         {isLoading ? (
-          <div className="flex items-center justify-center p-12 bg-white rounded-2xl border border-zinc-200/80 shadow-2xs">
-            <Loader2 className="size-6 text-brand-orange animate-spin mr-2" />
-            <span className="text-sm text-zinc-500">Loading students...</span>
-          </div>
+            <LoadingSpinner title="loading students"/>
+        ) : isError ? (
+          <GlobalError />
         ) : (
           <StudentTable data={filteredStudents} />
         )}
+      
       </main>
     </div>
   )

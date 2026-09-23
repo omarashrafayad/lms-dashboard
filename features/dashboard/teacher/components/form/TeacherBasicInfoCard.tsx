@@ -109,7 +109,7 @@ export function TeacherBasicInfoCard<TFieldValues extends FieldValues = any>({
               name={"password" as FieldPath<TFieldValues>}
               label="Password"
               type="password"
-              placeholder="••••••••"
+              placeholder="password"
               required
               inputClassName="h-10 text-xs rounded-xl"
               labelClassName="text-xs font-medium text-zinc-700"
@@ -120,7 +120,7 @@ export function TeacherBasicInfoCard<TFieldValues extends FieldValues = any>({
               name={"confirmPassword" as FieldPath<TFieldValues>}
               label="Confirm Password"
               type="password"
-              placeholder="••••••••"
+              placeholder="password"
               required
               inputClassName="h-10 text-xs rounded-xl"
               labelClassName="text-xs font-medium text-zinc-700"
