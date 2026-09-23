@@ -23,7 +23,7 @@ export default function StudentAddPage() {
 
   const form = useForm<CreateStudentFormData>({
     resolver: zodResolver(createStudentSchema),
-    mode: "onTouched",
+    mode: "all",
     defaultValues: {
       fullName: "",
       dateOfBirth: "",

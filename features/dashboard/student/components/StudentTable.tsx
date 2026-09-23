@@ -6,6 +6,8 @@ import UniTable, { type UniTableColumn } from "@/components/shared/uniTable"
 import { Student } from "../types/student.types"
 import { cn } from "@/lib/utils"
 import { StudentRowActions } from "./StudentRowActions"
+import EmptyState from "@/components/shared/EmptyState"
+import { User2 } from "lucide-react"
 
 export interface StudentTableProps {
   data: Student[]
@@ -139,7 +141,13 @@ export function StudentTable({ data }: StudentTableProps) {
         data={data}
         columns={columns}
         enablePagination={false}
-        emptyMessage="No students found matching your filters"
+        emptyMessage={<EmptyState
+          icon={User2}
+          title="No students found"
+          description="No students found matching your filters"
+          actionLabel="Add student"
+          actionHref="/student/add"
+        />}
         className="rounded-2xl border-zinc-200/80 shadow-2xs"
       />
     </div>
