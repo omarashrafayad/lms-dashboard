@@ -10,6 +10,8 @@ import { TeacherFilterState } from "../types/teacher.types"
 import { useTeachers } from "../hooks/useTeachers"
 import { mapApiTeacherToTeacher } from "../utils/teacher.mapper"
 import { Loader2 } from "lucide-react"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
 
 const initialFilters: TeacherFilterState = {
   search: "",
@@ -22,7 +24,7 @@ const initialFilters: TeacherFilterState = {
 export default function TeacherListPage() {
   const [filters, setFilters] = React.useState<TeacherFilterState>(initialFilters)
 
-  const { data: apiTeachers, isLoading } = useTeachers()
+  const { data: apiTeachers, isLoading,error:isError } = useTeachers()
 
   const handleFilterChange = (updated: Partial<TeacherFilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))
@@ -115,11 +117,10 @@ export default function TeacherListPage() {
 
         {/* Teacher Table or Loading State */}
         {isLoading ? (
-          <div className="flex items-center justify-center p-12 bg-white rounded-2xl border border-zinc-200/80 shadow-2xs">
-            <Loader2 className="size-6 text-brand-orange animate-spin mr-2" />
-            <span className="text-sm text-zinc-500">Loading teachers...</span>
-          </div>
-        ) : (
+          <LoadingSpinner title="Loading Teachers" />
+        ) :isError? (
+          <GlobalError/>
+        ): (
           <TeacherTable data={filteredTeachers} />
         )}
       </main>
