@@ -38,11 +38,6 @@ export default function TeacherAddPage() {
   const router = useRouter()
   const createTeacherMutation = useCreateTeacher()
 
-  const [isActive, setIsActive] = React.useState(true)
-  const [selectedSubjectIds, setSelectedSubjectIds] = React.useState<string[]>([])
-  const [selectedEducationStageIds, setSelectedEducationStageIds] = React.useState<string[]>([])
-  const [selectedTeachingLevelIds, setSelectedTeachingLevelIds] = React.useState<string[]>([])
-
   const [degreeFile, setDegreeFile] = React.useState<File | null>(null)
   const [nationalIdFile, setNationalIdFile] = React.useState<File | null>(null)
 
@@ -83,31 +78,34 @@ export default function TeacherAddPage() {
     control,
     handleSubmit,
     setValue,
+    watch,
     formState: { isSubmitting },
   } = form
 
+  const isActive = watch("isActive")
+  const selectedSubjectIds = watch("subjectIds")
+  const selectedEducationStageIds = watch("educationStageIds")
+  const selectedTeachingLevelIds = watch("teachingLevelIds")
+
   const toggleSubject = (id: string) => {
-    setSelectedSubjectIds((prev) => {
-      const next = prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-      setValue("subjectIds", next)
-      return next
-    })
+    const next = selectedSubjectIds.includes(id)
+      ? selectedSubjectIds.filter((s) => s !== id)
+      : [...selectedSubjectIds, id]
+    setValue("subjectIds", next)
   }
 
   const toggleEducationStage = (id: string) => {
-    setSelectedEducationStageIds((prev) => {
-      const next = prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-      setValue("educationStageIds", next)
-      return next
-    })
+    const next = selectedEducationStageIds.includes(id)
+      ? selectedEducationStageIds.filter((s) => s !== id)
+      : [...selectedEducationStageIds, id]
+    setValue("educationStageIds", next)
   }
 
   const toggleTeachingLevel = (id: string) => {
-    setSelectedTeachingLevelIds((prev) => {
-      const next = prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]
-      setValue("teachingLevelIds", next)
-      return next
-    })
+    const next = selectedTeachingLevelIds.includes(id)
+      ? selectedTeachingLevelIds.filter((l) => l !== id)
+      : [...selectedTeachingLevelIds, id]
+    setValue("teachingLevelIds", next)
   }
 
   const addTimeSlot = (dayOfWeek: number) => {
@@ -232,7 +230,6 @@ export default function TeacherAddPage() {
               control={control}
               isActive={isActive}
               onIsActiveChange={(val) => {
-                setIsActive(val)
                 setValue("isActive", val)
               }}
             />
