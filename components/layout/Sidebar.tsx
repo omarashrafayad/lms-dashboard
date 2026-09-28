@@ -363,10 +363,10 @@ export function Sidebar() {
             </div>
 
             {/* Sessions & Bookings matching Screenshots */}
-            <div className="flex flex-col gap-1">
+            {/* <div className="flex flex-col gap-1">
               <button
                 type="button"
-                onClick={() => setSessionsExpanded(!sessionsExpanded)}
+                // onClick={() => setSessionsExpanded(!sessionsExpanded)}
                 className={cn(
                   "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
                   isSessionsRoute
@@ -431,7 +431,7 @@ export function Sidebar() {
                   </Link>
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Subscriptions & Payments */}
             <Link
