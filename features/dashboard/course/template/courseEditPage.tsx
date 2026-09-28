@@ -6,12 +6,9 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import {
   ChevronLeft,
-  ChevronRight,
   Plus,
   Trash2,
   FileQuestion,
-  FileText,
-  Play,
   HelpCircle,
   Clock,
   Check,
@@ -60,7 +57,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
   const { data: course, isLoading } = useCourseDetail(courseId)
   const updateCourseMutation = useUpdateCourse(courseId)
 
-  const { register, watch, setValue, getValues, reset } =
+  const { register, watch, setValue, reset } =
     useForm<EditCourseFormValues>({
       defaultValues: {
         courseName: "",
@@ -192,11 +189,11 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
     toast.info("Lesson removed")
   }
 
-  const handleSaveExam = (examData: CourseExamData) => {
-    setValue("exam", examData)
-    setIsExamBuilding(false)
-    toast.success("Exam details updated successfully")
-  }
+  // const handleSaveExam = (examData: CourseExamData) => {
+  //   setValue("exam", examData)
+  //   setIsExamBuilding(false)
+  //   toast.success("Exam details updated successfully")
+  // }
 
   const handleSaveCourse = async () => {
     try {
@@ -215,7 +212,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
 
       toast.success("Course updated successfully!")
       router.push(`/courses/${courseId}`)
-    } catch (err) {
+    } catch  {
       toast.error("Failed to update course. Please try again.")
     }
   }
@@ -327,7 +324,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                   </label>
                   <Select
                     value={stage}
-                    onValueChange={(val) => setValue("educationStage", val)}
+                    onValueChange={(val) => setValue("educationStage", val ?? "")}
                   >
                     <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
                       <SelectValue placeholder="Select education stage" />
@@ -378,7 +375,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                   </label>
                   <Select
                     value={subject}
-                    onValueChange={(val) => setValue("subject", val)}
+                    onValueChange={(val) => setValue("subject", val ?? "")}
                   >
                     <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
                       <SelectValue placeholder="Select subject" />
@@ -459,7 +456,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                   </label>
                   <Select
                     value={formValues.educationSystem}
-                    onValueChange={(val) => setValue("educationSystem", val)}
+                    onValueChange={(val) => setValue("educationSystem", val ?? "")}
                   >
                     <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
                       <SelectValue placeholder="Select system" />
@@ -494,7 +491,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                   </label>
                   <Select
                     value={formValues.academicYear}
-                    onValueChange={(val) => setValue("academicYear", val)}
+                    onValueChange={(val) => setValue("academicYear", val ?? "")}
                   >
                     <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
                       <SelectValue placeholder="Select year" />
@@ -547,7 +544,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                   </label>
                   <Select
                     value={formValues.term}
-                    onValueChange={(val) => setValue("term", val)}
+                    onValueChange={(val) => setValue("term", val ?? "")}
                   >
                     <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
                       <SelectValue placeholder="Select term" />

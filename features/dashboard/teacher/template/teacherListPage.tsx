@@ -9,7 +9,6 @@ import { mockTeachers } from "../data/mockTeachers"
 import { TeacherFilterState } from "../types/teacher.types"
 import { useTeachers } from "../hooks/useTeachers"
 import { mapApiTeacherToTeacher } from "../utils/teacher.mapper"
-import { Loader2 } from "lucide-react"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 

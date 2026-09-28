@@ -633,7 +633,7 @@ export default function CourseAddPage() {
                         toast.success("Exam draft saved")
                       }}
                       onPublish={(publishedExam) => {
-                        setValue("exam", savedExam)
+                        setValue("exam", publishedExam)
                         setIsExamBuilding(false)
                         toast.success("Exam published")
                       }}

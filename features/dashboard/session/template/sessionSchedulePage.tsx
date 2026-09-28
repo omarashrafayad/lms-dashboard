@@ -432,7 +432,7 @@ export default function SessionSchedulePage() {
                 <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
                   DURATION *
                 </label>
-                <Select value={duration} onValueChange={setDuration}>
+                <Select value={duration} onValueChange={(val) => val && setDuration(val)}>
                   <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-900 bg-white shadow-2xs">
                     <SelectValue placeholder="Select duration" />
                   </SelectTrigger>

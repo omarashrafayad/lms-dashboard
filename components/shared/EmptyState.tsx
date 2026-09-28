@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { LucideIcon } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 interface EmptyStateProps {
     icon?: LucideIcon;
@@ -36,11 +36,9 @@ export default function EmptyState({
             </p>
 
             {actionHref ? (
-                <Button asChild>
-                    <Link href={actionHref}>
-                        {actionLabel}
-                    </Link>
-                </Button>
+                <Link href={actionHref} className={buttonVariants()}>
+                    {actionLabel}
+                </Link>
             ) : onAction ? (
                 <Button onClick={onAction}>
                     {actionLabel}

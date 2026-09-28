@@ -41,7 +41,7 @@ export function SessionFilters({
         {/* Date Filter */}
         <Select
           value={filters.date}
-          onValueChange={(val) => onChange("date", val)}
+          onValueChange={(val) => onChange("date", val ?? "all")}
         >
           <SelectTrigger className="h-10 min-w-[130px] rounded-xl border-zinc-200 bg-white text-xs text-zinc-700 shadow-2xs">
             <SelectValue placeholder="Date" />
@@ -65,7 +65,7 @@ export function SessionFilters({
         {/* Session Status Filter */}
         <Select
           value={filters.status}
-          onValueChange={(val) => onChange("status", val)}
+          onValueChange={(val) => onChange("status", val ?? "all")}
         >
           <SelectTrigger className="h-10 min-w-[140px] rounded-xl border-zinc-200 bg-white text-xs text-zinc-700 shadow-2xs">
             <SelectValue placeholder="Session Status" />
@@ -95,7 +95,7 @@ export function SessionFilters({
         {/* Teacher Filter */}
         <Select
           value={filters.teacher}
-          onValueChange={(val) => onChange("teacher", val)}
+          onValueChange={(val) => onChange("teacher", val ?? "all")}
         >
           <SelectTrigger className="h-10 min-w-[130px] rounded-xl border-zinc-200 bg-white text-xs text-zinc-700 shadow-2xs">
             <SelectValue placeholder="Teacher" />
@@ -115,7 +115,7 @@ export function SessionFilters({
         {/* Student Filter */}
         <Select
           value={filters.student}
-          onValueChange={(val) => onChange("student", val)}
+          onValueChange={(val) => onChange("student", val ?? "all")}
         >
           <SelectTrigger className="h-10 min-w-[130px] rounded-xl border-zinc-200 bg-white text-xs text-zinc-700 shadow-2xs">
             <SelectValue placeholder="Student" />
