@@ -9,6 +9,8 @@ export interface StudentAddActionsProps {
   onCancel: () => void
   onBack: () => void
   onNext: () => void
+  submitLabel?: string
+  cancelLabel?: string
 }
 
 export function StudentAddActions({
@@ -17,21 +19,29 @@ export function StudentAddActions({
   onCancel,
   onBack,
   onNext,
+  submitLabel = "Create Student",
+  cancelLabel = "Cancel",
 }: StudentAddActionsProps) {
   return (
     <div className="flex items-center justify-between pt-1 pb-10">
       {currentStep === 1 ? (
         <button
+          key="btn-cancel"
           type="button"
           onClick={onCancel}
           className="px-5 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-medium text-zinc-700 transition-colors shadow-2xs cursor-pointer active:scale-[0.98]"
         >
-          Cancel
+          {cancelLabel}
         </button>
       ) : (
         <button
+          key="btn-back"
           type="button"
-          onClick={onBack}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onBack()
+          }}
           disabled={isSubmitting}
           className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-medium text-zinc-700 transition-colors shadow-2xs cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -42,8 +52,13 @@ export function StudentAddActions({
 
       {currentStep === 1 ? (
         <button
+          key="btn-next"
           type="button"
-          onClick={onNext}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onNext()
+          }}
           className="inline-flex items-center gap-1.5 px-6 py-2 rounded-xl bg-brand-orange hover:bg-amber-500 text-xs font-semibold text-white transition-all shadow-xs cursor-pointer active:scale-[0.98]"
         >
           <span>Save & Continue</span>
@@ -51,12 +66,13 @@ export function StudentAddActions({
         </button>
       ) : (
         <button
+          key="btn-submit"
           type="submit"
           disabled={isSubmitting}
           className="inline-flex items-center gap-2 px-6 py-2 rounded-xl bg-brand-orange hover:bg-amber-500 text-xs font-semibold text-white transition-all shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting && <Loader2 className="size-3.5 animate-spin" />}
-          <span>Create Student</span>
+          <span>{submitLabel}</span>
         </button>
       )}
     </div>

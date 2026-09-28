@@ -3,14 +3,18 @@
 import * as React from "react"
 import Link from "next/link"
 import { createPortal } from "react-dom"
-import { MoreVertical, Eye, Pencil, Trash2 } from "lucide-react"
+import { MoreVertical, Eye, Pencil, Trash2, Loader2 } from "lucide-react"
 import { Student } from "../types/student.types"
+import { useDeleteStudent } from "../hooks/useStudents"
+import { toast } from "sonner"
 
 export function StudentRowActions({ student }: { student: Student }) {
   const [isOpen, setIsOpen] = React.useState(false)
   const [coords, setCoords] = React.useState({ top: 0, left: 0 })
   const buttonRef = React.useRef<HTMLButtonElement>(null)
   const menuRef = React.useRef<HTMLDivElement>(null)
+
+  const deleteStudentMutation = useDeleteStudent()
 
   const toggleMenu = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -53,16 +57,39 @@ export function StudentRowActions({ student }: { student: Student }) {
     }
   }, [isOpen])
 
+  const handleDelete = async () => {
+    setIsOpen(false)
+    if (!confirm(`Are you sure you want to delete student ${student.name}?`)) {
+      return
+    }
+
+    try {
+      await deleteStudentMutation.mutateAsync(student.id)
+      toast.success(`Student ${student.name} deleted successfully`)
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to delete student"
+      toast.error(errorMsg)
+    }
+  }
+
   return (
     <div className="relative inline-block text-right">
       <button
         ref={buttonRef}
         type="button"
         onClick={toggleMenu}
+        disabled={deleteStudentMutation.isPending}
         title="More Options"
-        className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
+        className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer disabled:opacity-50"
       >
-        <MoreVertical className="size-4" />
+        {deleteStudentMutation.isPending ? (
+          <Loader2 className="size-4 animate-spin text-zinc-400" />
+        ) : (
+          <MoreVertical className="size-4" />
+        )}
       </button>
 
       {isOpen &&
@@ -96,10 +123,9 @@ export function StudentRowActions({ student }: { student: Student }) {
             <div className="my-1 border-t border-zinc-100" />
             <button
               type="button"
-              onClick={() => {
-                setIsOpen(false)
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer"
+              onClick={handleDelete}
+              disabled={deleteStudentMutation.isPending}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer disabled:opacity-50"
             >
               <Trash2 className="size-3.5 text-red-400" />
               <span>Delete</span>

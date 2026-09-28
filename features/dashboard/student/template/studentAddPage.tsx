@@ -126,7 +126,17 @@ export default function StudentAddPage() {
           </div>
 
           <Form {...form}>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <form
+              onSubmit={(e) => {
+                if (currentStep !== 2) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  return
+                }
+                handleSubmit(onSubmit)(e)
+              }}
+              className="space-y-5"
+            >
               {currentStep === 1 && <StudentBasicInfoStep control={control} />}
               {currentStep === 2 && (
                 <StudentAcademicInfoStep control={control} setValue={setValue} />

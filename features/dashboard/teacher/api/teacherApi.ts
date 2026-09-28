@@ -41,7 +41,7 @@ export const deleteTeacher = async (teacherId: string): Promise<void> => {
 }
 
 export const getSubjects = async (): Promise<ApiSubject[]> => {
-  const res = await clientAxios.get("/subjects")
+  const res = await clientAxios.get("/curriculum/subjects")
   if (Array.isArray(res.data)) {
     return res.data
   }

@@ -1,28 +1,39 @@
 "use client"
 
 import * as React from "react"
-import { Control, UseFormSetValue, useWatch } from "react-hook-form"
+import {
+  Control,
+  FieldPath,
+  FieldValues,
+  UseFormSetValue,
+  useWatch,
+} from "react-hook-form"
 import { UniSelect } from "@/components/shared/UniSelect"
-import { CreateStudentFormData } from "../schema/student.schema"
 import {
   useAcademicStages,
   useEducationSystems,
   useGrades,
 } from "../hooks/useReferenceData"
 
-export interface StudentAcademicInfoStepProps {
-  control: Control<CreateStudentFormData>
-  setValue: UseFormSetValue<CreateStudentFormData>
+export interface StudentAcademicInfoStepProps<
+  TFieldValues extends FieldValues = FieldValues
+> {
+  control: Control<TFieldValues>
+  setValue: UseFormSetValue<TFieldValues>
+  isEdit?: boolean
 }
 
-export function StudentAcademicInfoStep({
+export function StudentAcademicInfoStep<
+  TFieldValues extends FieldValues = FieldValues
+>({
   control,
   setValue,
-}: StudentAcademicInfoStepProps) {
+  isEdit = false,
+}: StudentAcademicInfoStepProps<TFieldValues>) {
   const selectedStageId = useWatch({
     control,
-    name: "academicStageId",
-  })
+    name: "academicStageId" as FieldPath<TFieldValues>,
+  }) as string | undefined
 
   const { data: educationSystems = [], isLoading: isLoadingSystems } =
     useEducationSystems()
@@ -54,7 +65,7 @@ export function StudentAcademicInfoStep({
 
   const handleStageChange = (newStageId: string) => {
     if (newStageId !== selectedStageId) {
-      setValue("gradeId", "", { shouldValidate: true })
+      ;(setValue as any)("gradeId", "", { shouldValidate: true })
     }
   }
 
@@ -72,12 +83,12 @@ export function StudentAcademicInfoStep({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <UniSelect
           control={control}
-          name="educationSystemId"
+          name={"educationSystemId" as FieldPath<TFieldValues>}
           label="Education System"
           placeholder={
             isLoadingSystems ? "Loading systems..." : "Select education system"
           }
-          required
+          required={!isEdit}
           options={systemOptions}
           isLoading={isLoadingSystems}
           labelClassName="text-xs font-medium text-zinc-700"
@@ -85,12 +96,12 @@ export function StudentAcademicInfoStep({
 
         <UniSelect
           control={control}
-          name="academicStageId"
+          name={"academicStageId" as FieldPath<TFieldValues>}
           label="Academic Stage"
           placeholder={
             isLoadingStages ? "Loading stages..." : "Select academic stage"
           }
-          required
+          required={!isEdit}
           options={stageOptions}
           isLoading={isLoadingStages}
           onChangeCallback={handleStageChange}
@@ -100,7 +111,7 @@ export function StudentAcademicInfoStep({
 
       <UniSelect
         control={control}
-        name="gradeId"
+        name={"gradeId" as FieldPath<TFieldValues>}
         label="Grade"
         placeholder={
           !selectedStageId
@@ -109,7 +120,7 @@ export function StudentAcademicInfoStep({
             ? "Loading grades..."
             : "Select grade"
         }
-        required
+        required={!isEdit}
         disabled={!selectedStageId || isLoadingGrades}
         options={gradeOptions}
         isLoading={isLoadingGrades}
