@@ -1,17 +1,24 @@
 "use client"
 
 import * as React from "react"
-import { Control } from "react-hook-form"
+import { Control, FieldPath, FieldValues } from "react-hook-form"
 import { UniInput } from "@/components/shared/UniInput"
 import { UniSelect } from "@/components/shared/UniSelect"
-import { CreateStudentFormData } from "../schema/student.schema"
 import { useGenders } from "../hooks/useReferenceData"
 
-export interface StudentBasicInfoStepProps {
-  control: Control<CreateStudentFormData>
+export interface StudentBasicInfoStepProps<
+  TFieldValues extends FieldValues = FieldValues
+> {
+  control: Control<TFieldValues>
+  isEdit?: boolean
 }
 
-export function StudentBasicInfoStep({ control }: StudentBasicInfoStepProps) {
+export function StudentBasicInfoStep<
+  TFieldValues extends FieldValues = FieldValues
+>({
+  control,
+  isEdit = false,
+}: StudentBasicInfoStepProps<TFieldValues>) {
   const { data: genders = [], isLoading: isLoadingGenders } = useGenders()
 
   const genderOptions = React.useMemo(() => {
@@ -32,10 +39,10 @@ export function StudentBasicInfoStep({ control }: StudentBasicInfoStepProps) {
 
       <UniInput
         control={control}
-        name="fullName"
+        name={"fullName" as FieldPath<TFieldValues>}
         label="Full Name"
         placeholder="e.g. Ahmed Ali"
-        required
+        required={!isEdit}
         inputClassName="h-10 text-xs rounded-xl"
         labelClassName="text-xs font-medium text-zinc-700"
       />
@@ -43,20 +50,20 @@ export function StudentBasicInfoStep({ control }: StudentBasicInfoStepProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <UniInput
           control={control}
-          name="dateOfBirth"
+          name={"dateOfBirth" as FieldPath<TFieldValues>}
           label="Date of Birth"
           type="date"
-          required
+          required={!isEdit}
           inputClassName="h-10 text-xs rounded-xl"
           labelClassName="text-xs font-medium text-zinc-700"
         />
 
         <UniSelect
           control={control}
-          name="genderId"
+          name={"genderId" as FieldPath<TFieldValues>}
           label="Gender"
           placeholder={isLoadingGenders ? "Loading genders..." : "Select gender"}
-          required
+          required={!isEdit}
           options={genderOptions}
           isLoading={isLoadingGenders}
           labelClassName="text-xs font-medium text-zinc-700"
@@ -66,36 +73,25 @@ export function StudentBasicInfoStep({ control }: StudentBasicInfoStepProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <UniInput
           control={control}
-          name="phoneNumber"
+          name={"phoneNumber" as FieldPath<TFieldValues>}
           label="Phone Number"
           placeholder="+20 100 000 0000"
-          required
+          required={!isEdit}
           inputClassName="h-10 text-xs rounded-xl"
           labelClassName="text-xs font-medium text-zinc-700"
         />
 
         <UniInput
           control={control}
-          name="email"
+          name={"email" as FieldPath<TFieldValues>}
           label="Email Address"
           type="email"
           placeholder="student@example.com"
-          required
+          required={!isEdit}
           inputClassName="h-10 text-xs rounded-xl"
           labelClassName="text-xs font-medium text-zinc-700"
         />
       </div>
-
-      <UniInput
-        control={control}
-        name="password"
-        label="Password"
-        type="password"
-        placeholder="Enter password"
-        required
-        inputClassName="h-10 text-xs rounded-xl"
-        labelClassName="text-xs font-medium text-zinc-700"
-      />
     </div>
   )
 }

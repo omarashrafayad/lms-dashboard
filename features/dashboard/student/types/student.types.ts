@@ -44,3 +44,17 @@ export interface CreateStudentPayload {
   educationSystemId: string
   genderId: string
 }
+
+export interface UpdateStudentPayload {
+  email?: string
+  password?: string
+  fullName?: string
+  phoneNumber?: string
+  academicStageId?: string
+  gradeId?: string
+  dateOfBirth?: string
+  educationSystemId?: string
+  genderId?: string
+  isActive?: boolean
+  [key: string]: any
+}
