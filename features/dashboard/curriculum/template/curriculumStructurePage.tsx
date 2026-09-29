@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { CurriculumStructure } from "../components/structure/CurriculumStructure"
 import { SubjectModal } from "../components/SubjectModal"
@@ -10,7 +11,7 @@ import {
   useUpdateCurriculumSubject,
 } from "../hooks/useCurriculum"
 import { CreateSubjectPayload } from "../types/curriculum.types"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle, ChevronLeft } from "lucide-react"
 import { toast } from "sonner"
 
 export interface CurriculumStructurePageProps {
@@ -33,12 +34,40 @@ export default function CurriculumStructurePage({
     }
   }, [data?.chapters])
 
-  if (isLoading || !data?.subject) {
+  if (isLoading) {
     return (
       <div className="flex flex-col min-h-full">
         <PageHeader title="Curriculum" description="Loading structure..." />
         <main className="flex-1 p-8 flex items-center justify-center">
           <Loader2 className="size-6 text-brand-orange animate-spin" />
+        </main>
+      </div>
+    )
+  }
+
+  if (!data?.subject) {
+    return (
+      <div className="flex flex-col min-h-full">
+        <PageHeader title="Curriculum" description="Subject not found" />
+        <main className="flex-1 p-8 flex flex-col items-center justify-center min-h-[400px]">
+          <div className="text-center max-w-md flex flex-col items-center">
+            <div className="size-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mb-3">
+              <AlertCircle className="size-6" />
+            </div>
+            <h2 className="text-lg font-bold text-zinc-900 mb-1">
+              Subject Not Found
+            </h2>
+            <p className="text-xs text-zinc-500 mb-5">
+              The requested subject could not be loaded or does not exist.
+            </p>
+            <Link
+              href="/curriculum"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-brand-orange hover:bg-brand-orange/90 shadow-2xs transition-all"
+            >
+              <ChevronLeft className="size-4" />
+              <span>Back to Curriculum</span>
+            </Link>
+          </div>
         </main>
       </div>
     )

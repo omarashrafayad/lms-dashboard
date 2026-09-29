@@ -114,7 +114,14 @@ export function ParentTransactionsTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {filteredTransactions.map((txn) => {
+              {filteredTransactions.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-xs text-zinc-400">
+                    No transactions found.
+                  </td>
+                </tr>
+              ) : (
+                filteredTransactions.map((txn) => {
                 const isPaid = txn.paymentStatus === "Paid"
                 const isPending = txn.paymentStatus === "Pending"
                 const isFailed = txn.paymentStatus === "Failed"
@@ -213,7 +220,7 @@ export function ParentTransactionsTab({
                     </td>
                   </tr>
                 )
-              })}
+              }))}
             </tbody>
           </table>
         </div>

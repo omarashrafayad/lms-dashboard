@@ -106,7 +106,7 @@ export function SubjectModal({
         // Grade ID
         setGradeId(subjectToEdit.gradeId || "")
         setTerm(subjectToEdit.term || "Term 1")
-
+        setStatus(subjectToEdit.status || "Active")
       } else {
         setName("")
         const defaultStageId = stages[0]?.id || ""
@@ -115,7 +115,7 @@ export function SubjectModal({
         const defaultSystemId = systems[0]?.id || ""
         setEducationSystemId(defaultSystemId)
         setTerm("Term 1")
-        setStatus("")
+        setStatus("Active")
       }
       setErrors({})
     }
@@ -495,8 +495,8 @@ export function SubjectModal({
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
               {errors.status && (
