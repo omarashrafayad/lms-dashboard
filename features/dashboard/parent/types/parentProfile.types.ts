@@ -11,6 +11,7 @@ export interface ParentLinkedChild {
   relationshipStatus: "Linked" | "Pending" | "Unlinked"
   activeSubscriptionStatus: "Active" | "Inactive" | "Subscribed" | "No subscription"
   hasSubscription: boolean
+  email?: string
 }
 
 export interface ParentActivity {

@@ -18,6 +18,7 @@ import {
   SubjectFilterState,
   CreateSubjectPayload,
 } from "../types/curriculum.types"
+import { toast } from "sonner"
 
 const initialFilters: SubjectFilterState = {
   search: "",
@@ -56,27 +57,55 @@ export default function CurriculumListPage() {
     setIsModalOpen(true)
   }
 
-  const handleModalSubmit = (payload: CreateSubjectPayload) => {
-    if (subjectToEdit) {
-      updateMutation.mutate({ id: subjectToEdit.id, data: payload })
-    } else {
-      createMutation.mutate(payload)
+  const handleModalSubmit = async (payload: CreateSubjectPayload) => {
+    try {
+      if (subjectToEdit) {
+        await updateMutation.mutateAsync({ id: subjectToEdit.id, data: payload })
+        toast.success(`Subject "${payload.name}" updated successfully!`)
+      } else {
+        await createMutation.mutateAsync(payload)
+        toast.success(`Subject "${payload.name}" created successfully!`)
+      }
+      setIsModalOpen(false)
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.title ||
+        err?.message ||
+        "An error occurred while saving the subject"
+      toast.error(msg)
     }
   }
 
-  const handleDeleteSubject = (id: string) => {
-    deleteMutation.mutate(id)
+  const handleDeleteSubject = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id)
+      toast.success("Subject deleted successfully!")
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.title ||
+        err?.message ||
+        "Failed to delete subject"
+      toast.error(msg)
+    }
   }
 
   const filteredSubjects = React.useMemo(() => {
     if (!subjects) return []
     return subjects.filter((subject) => {
+      const stageName = subject.educationStageName || subject.stage || ""
+      const gradeName = subject.gradeName || subject.year || ""
+      const systemName = subject.educationSystemName || subject.system || ""
+      const termName = subject.term || ""
+      const subjectName = subject.name || ""
+
       if (filters.search.trim()) {
         const query = filters.search.toLowerCase()
-        const matchName = subject.name.toLowerCase().includes(query)
-        const matchStage = subject.educationStageName.toLowerCase().includes(query)
-        const matchYear = subject.gradeName.toLowerCase().includes(query)
-        const matchSystem = subject.educationSystemName.toLowerCase().includes(query)
+        const matchName = subjectName.toLowerCase().includes(query)
+        const matchStage = stageName.toLowerCase().includes(query)
+        const matchYear = gradeName.toLowerCase().includes(query)
+        const matchSystem = systemName.toLowerCase().includes(query)
         if (!matchName && !matchStage && !matchYear && !matchSystem) {
           return false
         }
@@ -84,35 +113,35 @@ export default function CurriculumListPage() {
 
       if (
         filters.stage !== "all" &&
-        subject.educationStageName.toLowerCase() !== filters.stage.toLowerCase()
+        stageName.toLowerCase() !== filters.stage.toLowerCase()
       ) {
         return false
       }
 
       if (
         filters.year !== "all" &&
-        subject.gradeName.toLowerCase() !== filters.year.toLowerCase()
+        gradeName.toLowerCase() !== filters.year.toLowerCase()
       ) {
         return false
       }
 
       if (
         filters.system !== "all" &&
-        subject.educationSystemName.toLowerCase() !== filters.system.toLowerCase()
+        systemName.toLowerCase() !== filters.system.toLowerCase()
       ) {
         return false
       }
 
       if (
         filters.term !== "all" &&
-        subject.term.toLowerCase() !== filters.term.toLowerCase()
+        termName.toLowerCase() !== filters.term.toLowerCase()
       ) {
         return false
       }
 
       if (
         filters.subject !== "all" &&
-        subject.name.toLowerCase() !== filters.subject.toLowerCase()
+        subjectName.toLowerCase() !== filters.subject.toLowerCase()
       ) {
         return false
       }

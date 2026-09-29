@@ -6,18 +6,26 @@ export type ContentStatus = "Published" | "Draft" | "Archived"
 export interface CurriculumSubject {
   id: string
   name: string
-  code: string
-  avatarLetter: string
-  avatarColorClass: string
-  educationStageName: EducationStage | string
-  gradeName: string
-  educationSystemName: EducationSystem | string
+  code?: string
+  avatarLetter?: string
+  avatarColorClass?: string
+  educationStageId?: string
+  educationStageName?: EducationStage | string
+  gradeId?: string
+  gradeName?: string
+  educationSystemId?: string
+  educationSystemName?: EducationSystem | string
   term: string
-  chaptersCount: number
-  unitsCount: number
-  lessonsCount: number
-  status: SubjectStatus
+  chaptersCount?: number
+  unitsCount?: number
+  lessonsCount?: number
+  status?: SubjectStatus | string
   chapters?: Chapter[]
+  createdAt?: string
+  // Backward compatibility aliases
+  stage?: string
+  year?: string
+  system?: string
 }
 
 export interface Chapter {
@@ -120,9 +128,13 @@ export interface SubjectFilterState {
 
 export interface CreateSubjectPayload {
   name: string
-  stage: string
-  year: string
-  system: string
+  educationStageId: string
+  gradeId: string
+  educationSystemId: string
   term: string
-  status: SubjectStatus
+  status?: SubjectStatus | string
+  // Optional / backward compatibility
+  stage?: string
+  year?: string
+  system?: string
 }

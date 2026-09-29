@@ -33,10 +33,10 @@ export function CurriculumTable({
             <div
               className={cn(
                 "size-8 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 select-none transition-transform group-hover/item:scale-105",
-                subject.avatarColorClass
+                subject.avatarColorClass || "bg-sky-100 text-sky-700"
               )}
             >
-              {subject.avatarLetter}
+              {subject.avatarLetter || subject.name?.charAt(0)?.toUpperCase() || "S"}
             </div>
             <span className="font-semibold text-sm text-zinc-900 group-hover/item:text-brand-orange transition-colors">
               {subject.name}
@@ -50,7 +50,9 @@ export function CurriculumTable({
         headerClassName:
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
-          <span className="text-sm text-zinc-600">{subject.educationStageName}</span>
+          <span className="text-sm text-zinc-600">
+            {subject.educationStageName || subject.stage || "-"}
+          </span>
         ),
       },
       {
@@ -59,7 +61,9 @@ export function CurriculumTable({
         headerClassName:
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
-          <span className="text-sm text-zinc-600">{subject.gradeName}</span>
+          <span className="text-sm text-zinc-600">
+            {subject.gradeName || subject.year || "-"}
+          </span>
         ),
       },
       {
@@ -68,7 +72,9 @@ export function CurriculumTable({
         headerClassName:
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
-          <span className="text-sm text-zinc-600">{subject.educationSystemName}</span>
+          <span className="text-sm text-zinc-600">
+            {subject.educationSystemName || subject.system || "-"}
+          </span>
         ),
       },
       {
@@ -77,7 +83,7 @@ export function CurriculumTable({
         headerClassName:
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
-          <span className="text-sm text-zinc-600">{subject.term}</span>
+          <span className="text-sm text-zinc-600">{subject.term || "-"}</span>
         ),
       },
       {
@@ -87,7 +93,7 @@ export function CurriculumTable({
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
           <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md bg-zinc-100 text-xs font-semibold text-zinc-700">
-            {subject.chaptersCount}
+            {subject.chaptersCount ?? 0}
           </span>
         ),
       },
@@ -98,7 +104,7 @@ export function CurriculumTable({
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
           <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md bg-zinc-100 text-xs font-semibold text-zinc-700">
-            {subject.unitsCount}
+            {subject.unitsCount ?? 0}
           </span>
         ),
       },
@@ -109,7 +115,7 @@ export function CurriculumTable({
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
           <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md bg-zinc-100 text-xs font-semibold text-zinc-700">
-            {subject.lessonsCount}
+            {subject.lessonsCount ?? 0}
           </span>
         ),
       },
@@ -135,7 +141,7 @@ export function CurriculumTable({
                   isActive ? "bg-brand-green" : "bg-zinc-400"
                 )}
               />
-              {subject.status}
+              {subject.status || "Active"}
             </span>
           )
         },
