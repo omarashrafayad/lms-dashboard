@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation"
 import {
   GraduationCap,
   LayoutGrid,
-  BookOpen,
   Calendar,
   CreditCard,
   FileText,
@@ -16,24 +15,17 @@ import {
   ChevronRight,
   ChevronDown,
   LogOut,
+  Database,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-// interface SubItem {
-//   label: string
-//   href: string
-// }
-
-// interface NavItem {
-//   label: string
-//   href: string
-//   icon: React.ComponentType<{ className?: string }>
-//   hasChevron?: boolean
-//   subItems?: SubItem[]
-// }
+import { useAuthStore } from "@/stores/useAuthStore"
+import { logoutAction } from "@/features/auth/api/auth"
+import { useRouter } from "next/navigation"
 
 export function Sidebar() {
+    const user = useAuthStore().user;
   const pathname = usePathname()
+  const router = useRouter();
   const isOverviewActive = pathname === "/" || pathname === "/overview"
   const isStudentRoute = pathname.startsWith("/student")
   const isTeacherRoute = pathname.startsWith("/teacher")
@@ -44,15 +36,24 @@ export function Sidebar() {
   const isCoursesRoute = pathname.startsWith("/courses") || pathname.startsWith("/academic/courses")
   const isSessionsRoute = pathname.startsWith("/sessions")
   const isAcademicActive = isCurriculumRoute || pathname.startsWith("/academic") || isLessonsRoute || isCoursesRoute
+  const isRefAcademicStagesRoute = pathname.startsWith("/reference-data/academic-stages")
+  const isRefEducationSystemsRoute = pathname.startsWith("/reference-data/education-systems")
+  const isRefGradesRoute = pathname.startsWith("/reference-data/grades")
+  const isRefGendersRoute = pathname.startsWith("/reference-data/genders")
+  const isReferenceDataActive = pathname.startsWith("/reference-data")
 
   const [usersExpanded, setUsersExpanded] = React.useState<boolean>(isUsersActive)
   const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || false)
   const [teachersExpanded, setTeachersExpanded] = React.useState<boolean>(isTeacherRoute || false)
   const [parentsExpanded, setParentsExpanded] = React.useState<boolean>(isParentRoute || false)
   const [academicExpanded, setAcademicExpanded] = React.useState<boolean>(isAcademicActive || false)
+  const [referenceDataExpanded, setReferenceDataExpanded] = React.useState<boolean>(isReferenceDataActive || false)
   const [sessionsExpanded, setSessionsExpanded] = React.useState<boolean>(isSessionsRoute || false)
 
-
+  const handleLogout = async () => {
+    await logoutAction();
+    router.push("/login");
+  };
   return (
     <aside className="w-64 min-w-[16rem] h-screen sticky top-0 flex flex-col justify-between bg-white border-r border-zinc-200/80 px-4 py-6 select-none z-30 overflow-y-auto">
       {/* Top: Brand Logo */}
@@ -362,6 +363,86 @@ export function Sidebar() {
               )}
             </div>
 
+            {/* Reference Data */}
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setReferenceDataExpanded(!referenceDataExpanded)}
+                className={cn(
+                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
+                  isReferenceDataActive
+                    ? "text-zinc-900 font-semibold"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <Database
+                    className={cn(
+                      "size-[18px] transition-colors",
+                      isReferenceDataActive
+                        ? "text-zinc-900"
+                        : "text-zinc-400 group-hover:text-zinc-600"
+                    )}
+                  />
+                  <span>Reference Data</span>
+                </div>
+                {referenceDataExpanded ? (
+                  <ChevronDown className="size-4 text-zinc-600" />
+                ) : (
+                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
+                )}
+              </button>
+
+              {referenceDataExpanded && (
+                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
+                  <Link
+                    href="/reference-data/academic-stages"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isRefAcademicStagesRoute || pathname === "/reference-data"
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Academic Stages
+                  </Link>
+                  <Link
+                    href="/reference-data/education-systems"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isRefEducationSystemsRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Education Systems
+                  </Link>
+                  <Link
+                    href="/reference-data/grades"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isRefGradesRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Grades
+                  </Link>
+                  <Link
+                    href="/reference-data/genders"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isRefGendersRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Genders
+                  </Link>
+                </div>
+              )}
+            </div>
+
             {/* Sessions & Bookings matching Screenshots */}
             <div className="flex flex-col gap-1">
               <button
@@ -493,20 +574,17 @@ export function Sidebar() {
 
         {/* User Card */}
         <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <div className="relative size-8 rounded-full overflow-hidden shrink-0 border border-zinc-200">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80"
-              alt="Nadia Farouk"
-              className="size-full object-cover"
-            />
+          <div className="relative size-8 rounded-full overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center bg-amber-100">
+            <span className="text-xs font-semibold text-amber-900">
+              {user?.fullName?.slice(0, 2).toUpperCase()}
+            </span>
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-semibold text-zinc-900 truncate">
-              Nadia Farouk
+            {user?.fullName}
             </span>
             <span className="text-[11px] text-zinc-400 truncate">
-              Administrator
+             {user?.email}
             </span>
           </div>
         </div>
@@ -514,7 +592,7 @@ export function Sidebar() {
         {/* Logout */}
         <button
           type="button"
-          onClick={() => alert("Logout")}
+          onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors cursor-pointer text-left"
         >
           <LogOut className="size-[18px] text-zinc-400" />
