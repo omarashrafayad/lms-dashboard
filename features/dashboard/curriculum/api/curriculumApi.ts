@@ -23,7 +23,6 @@ export const getCurriculumSubjects = async (
     if (Array.isArray(res.data)) return res.data
     if (res.data?.data && Array.isArray(res.data.data)) return res.data.data
   } catch (err) {
-    // Graceful fallback to mock data
   }
   return localSubjects
 }
