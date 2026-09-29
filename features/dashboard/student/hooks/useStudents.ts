@@ -17,7 +17,6 @@ export const useStudents = (
   return useQuery({
     queryKey: ["students", params],
     queryFn: () => getStudents(params),
-    staleTime: 60 * 1000,
     ...options,
   });
 };
