@@ -3,7 +3,6 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { getParentProfile } from "../data/mockParentProfile"
 import { ParentProfileHeader } from "../components/profile/ParentProfileHeader"
 import { ParentKpiCards } from "../components/profile/ParentKpiCards"
 import { ParentTabs, ParentTabKey } from "../components/profile/ParentTabs"
@@ -31,14 +30,13 @@ export default function ParentDetailPage({ parentId }: ParentDetailPageProps) {
   const { data: apiParent, isLoading, isError, error } = useParent(parentId)
   const updateMutation = useUpdateParent()
 
-  const profile = React.useMemo<ParentProfile>(() => {
-    const defaultProfile = getParentProfile(parentId)
-    if (!apiParent) return defaultProfile
+  const profile = React.useMemo<ParentProfile | null>(() => {
+    if (!apiParent) return null
 
     const fullName =
       apiParent.fullName ||
       `${apiParent.firstName || ""} ${apiParent.lastName || ""}`.trim() ||
-      defaultProfile.name
+      "Parent"
 
     const initials =
       fullName
@@ -50,7 +48,7 @@ export default function ParentDetailPage({ parentId }: ParentDetailPageProps) {
         .join("") || "P"
 
     // Format createdAt date
-    let regDate = defaultProfile.registeredDate
+    let regDate = "—"
     if (apiParent.createdAt) {
       try {
         const d = new Date(apiParent.createdAt)
@@ -62,7 +60,7 @@ export default function ParentDetailPage({ parentId }: ParentDetailPageProps) {
           })
         }
       } catch (e) {
-        // fallback to default
+        // fallback
       }
     }
 
@@ -96,32 +94,50 @@ export default function ParentDetailPage({ parentId }: ParentDetailPageProps) {
     })
 
     return {
-      ...defaultProfile,
       id: apiParent.id,
       code: `PAR-${(apiParent.id || "").slice(0, 6).toUpperCase()}`,
       name: fullName,
       avatarInitials: initials,
       avatarColorClass: "bg-amber-100 text-amber-800",
       status: apiParent.isActive ? "Active" : "Inactive",
-      email: apiParent.email,
-      phone: apiParent.phoneNumber,
+      email: apiParent.email || "—",
+      phone: apiParent.phoneNumber || "—",
       registeredDate: regDate,
       kpis: {
         linkedChildren: mappedChildren.length,
         activeSubscriptions: mappedChildren.length,
-        pointsBalance: defaultProfile.kpis?.pointsBalance ?? 0,
-        pendingRequests: defaultProfile.kpis?.pendingRequests ?? 0,
+        pointsBalance: 0,
+        pendingRequests: 0,
       },
       linkedChildren: mappedChildren,
+      recentActivity: [],
       personalInfo: {
-        ...defaultProfile.personalInfo,
         fullName,
-        email: apiParent.email,
-        phone: apiParent.phoneNumber,
-        relationshipToStudents: "Parent",
+        nationalId: "—",
+        email: apiParent.email || "—",
+        phone: apiParent.phoneNumber || "—",
+        secondaryPhone: "—",
+        address: "—",
+        city: "—",
+        country: "—",
+        relationshipToStudents: apiParent.role || "Parent",
+        preferredLanguage: "Arabic",
+        emergencyContactName: "—",
+        emergencyContactPhone: "—",
       },
+      subscriptions: [],
+      pointsDetails: {
+        currentBalance: 0,
+        totalEarned: 0,
+        totalRedeemed: 0,
+        privateSessionsRemaining: 0,
+        privateSessionsUsed: 0,
+      },
+      paymentRequests: [],
+      transactions: [],
+      activityHistory: [],
     }
-  }, [parentId, apiParent])
+  }, [apiParent])
 
   const handleToggleStatus = async () => {
     if (!apiParent) return
@@ -168,8 +184,8 @@ export default function ParentDetailPage({ parentId }: ParentDetailPageProps) {
     )
   }
 
-  // Error State (when API fails and no fallback data)
-  if (isError && !apiParent) {
+  // Error State (when API fails or parent not found)
+  if (!profile) {
     return (
       <main className="flex-1 p-6 md:p-8 flex flex-col items-center justify-center min-h-[400px]">
         <div className="text-center max-w-md flex flex-col items-center">

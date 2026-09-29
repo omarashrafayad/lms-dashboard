@@ -62,17 +62,92 @@ export const getCurriculumSubjects = async (
 export const getCurriculumSubjectById = async (
   subjectId: string
 ): Promise<{ subject: CurriculumSubject; chapters: Chapter[] }> => {
+  let subject: CurriculumSubject | null = null
+  let chapters: Chapter[] = []
+
+  // 1. Try to fetch structure endpoint
   try {
-    const res = await clientAxios.get(`/curriculum/subjects/${subjectId}`)
-    if (res.data?.data) return res.data.data
-    if (res.data) return res.data
+    const structRes = await clientAxios.get(`/curriculum/subjects/${subjectId}/structure`)
+    const structData = structRes.data?.data || structRes.data
+    if (structData && (structData.subject || structData.id)) {
+      const raw = structData.subject || structData
+      subject = {
+        ...raw,
+        educationStageName: raw.educationStageName || raw.stage || "",
+        gradeName: raw.gradeName || raw.year || "",
+        educationSystemName: raw.educationSystemName || raw.system || "",
+        avatarLetter: raw.avatarLetter || raw.name?.charAt(0)?.toUpperCase() || "S",
+        avatarColorClass:
+          raw.avatarColorClass ||
+          (raw.name?.toLowerCase().includes("math")
+            ? "bg-sky-100 text-sky-700"
+            : raw.name?.toLowerCase().includes("arab")
+            ? "bg-purple-100 text-purple-700"
+            : raw.name?.toLowerCase().includes("scie")
+            ? "bg-lime-100 text-lime-800"
+            : raw.name?.toLowerCase().includes("eng")
+            ? "bg-amber-100 text-amber-800"
+            : "bg-orange-100 text-orange-800"),
+        chaptersCount: structData.chapterCount ?? raw.chaptersCount ?? 0,
+        unitsCount: structData.unitCount ?? raw.unitsCount ?? 0,
+        lessonsCount: structData.lessonCount ?? raw.lessonsCount ?? 0,
+        status: raw.status || "Active",
+      }
+
+      if (Array.isArray(structData.courses) && structData.courses.length > 0) {
+        chapters = structData.courses.flatMap((c: any) => c.chapters || [])
+      } else if (Array.isArray(structData.chapters) && structData.chapters.length > 0) {
+        chapters = structData.chapters
+      }
+    }
   } catch (err) {
-    // Graceful fallback to mock data
+    // Graceful fallback to single subject endpoint
   }
 
-  const subject =
-    localSubjects.find((s) => s.id === subjectId) || localSubjects[0]
-  const chapters = mockSubjectChapters[subjectId] || mockSubjectChapters["1"] || []
+  // 2. If subject not found from structure, fetch from single subject endpoint
+  if (!subject) {
+    try {
+      const res = await clientAxios.get(`/curriculum/subjects/${subjectId}`)
+      const raw = res.data?.data || res.data
+      if (raw) {
+        const rawSubject = raw.subject || raw
+        subject = {
+          ...rawSubject,
+          educationStageName: rawSubject.educationStageName || rawSubject.stage || "",
+          gradeName: rawSubject.gradeName || rawSubject.year || "",
+          educationSystemName: rawSubject.educationSystemName || rawSubject.system || "",
+          avatarLetter: rawSubject.avatarLetter || rawSubject.name?.charAt(0)?.toUpperCase() || "S",
+          avatarColorClass:
+            rawSubject.avatarColorClass ||
+            (rawSubject.name?.toLowerCase().includes("math")
+              ? "bg-sky-100 text-sky-700"
+              : rawSubject.name?.toLowerCase().includes("arab")
+              ? "bg-purple-100 text-purple-700"
+              : rawSubject.name?.toLowerCase().includes("scie")
+              ? "bg-lime-100 text-lime-800"
+              : rawSubject.name?.toLowerCase().includes("eng")
+              ? "bg-amber-100 text-amber-800"
+              : "bg-orange-100 text-orange-800"),
+          chaptersCount: rawSubject.chaptersCount ?? 0,
+          unitsCount: rawSubject.unitsCount ?? 0,
+          lessonsCount: rawSubject.lessonsCount ?? 0,
+          status: rawSubject.status || "Active",
+        }
+      }
+    } catch (err) {
+      // Graceful fallback to mock data
+    }
+  }
+
+  // 3. Fallback to mock data if neither succeeded
+  if (!subject) {
+    subject =
+      localSubjects.find((s) => s.id === subjectId) || localSubjects[0]
+  }
+
+  if (chapters.length === 0 && mockSubjectChapters[subjectId]) {
+    chapters = mockSubjectChapters[subjectId]
+  }
 
   return {
     subject,
@@ -83,12 +158,13 @@ export const getCurriculumSubjectById = async (
 export const createCurriculumSubject = async (
   data: CreateSubjectPayload
 ): Promise<CurriculumSubject> => {
-  const payload = {
+  const payload: Record<string, any> = {
     name: data.name,
     educationStageId: data.educationStageId,
     gradeId: data.gradeId,
     educationSystemId: data.educationSystemId,
     term: data.term,
+    status: data.status || "Active",
   }
   const res = await clientAxios.post("/curriculum/subjects", payload)
   return res.data?.data || res.data
@@ -104,7 +180,7 @@ export const updateCurriculumSubject = async (
   if (data.gradeId !== undefined) payload.gradeId = data.gradeId
   if (data.educationSystemId !== undefined) payload.educationSystemId = data.educationSystemId
   if (data.term !== undefined) payload.term = data.term
-  if (data.status !== undefined) payload.status = data.status === "Active" ? "Inactive" : "Active"
+  if (data.status !== undefined) payload.status = data.status
 
   const res = await clientAxios.put(`/curriculum/subjects/${id}`, payload)
   return res.data?.data || res.data

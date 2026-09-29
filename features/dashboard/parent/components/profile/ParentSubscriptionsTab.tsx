@@ -37,7 +37,14 @@ export function ParentSubscriptionsTab({
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
-            {subscriptions.map((sub) => {
+            {subscriptions.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-12 text-center text-xs text-zinc-400">
+                  No subscriptions found.
+                </td>
+              </tr>
+            ) : (
+              subscriptions.map((sub) => {
               const isPaid = sub.paymentStatus === "Paid"
               const isPending = sub.paymentStatus === "Pending"
               const isSubActive = sub.subscriptionStatus === "Active"
@@ -110,7 +117,7 @@ export function ParentSubscriptionsTab({
                   </td>
                 </tr>
               )
-            })}
+            }))}
           </tbody>
         </table>
       </div>
