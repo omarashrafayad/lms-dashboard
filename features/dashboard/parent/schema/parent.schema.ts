@@ -7,6 +7,7 @@ export const createParentSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   phoneNumber: z.string().trim().min(3, "Phone number is required"),
   isActive: z.boolean().default(true),
+  childIds: z.array(z.string()).default([]),
 })
 
 export const updateParentSchema = z.object({
@@ -15,6 +16,7 @@ export const updateParentSchema = z.object({
   email: z.string().trim().email("Invalid email address"),
   phoneNumber: z.string().trim().min(3, "Phone number is required"),
   isActive: z.boolean().default(true),
+  childIds: z.array(z.string()).default([]),
 })
 
 export type CreateParentFormData = z.infer<typeof createParentSchema>

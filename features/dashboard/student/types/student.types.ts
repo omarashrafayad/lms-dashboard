@@ -43,4 +43,5 @@ export interface CreateStudentPayload {
   dateOfBirth: string
   educationSystemId: string
   genderId: string
+  
 }

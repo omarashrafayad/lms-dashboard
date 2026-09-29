@@ -15,6 +15,7 @@ export interface Parent {
   lastPaymentAmount?: string
   status: ParentStatus
   registeredDate: string
+  childIds?: string[]
 }
 
 export interface ParentFilterState {
@@ -44,6 +45,7 @@ export interface ApiParent {
   isActive: boolean
   createdAt: string
   role: string
+  childIds?: ApiParentLinkedStudent[]
   linkedStudents?: ApiParentLinkedStudent[]
 }
 
@@ -54,6 +56,7 @@ export interface CreateParentPayload {
   password: string
   phoneNumber: string
   isActive: boolean
+  childIds?: string[]
 }
 
 export interface UpdateParentPayload {
@@ -62,5 +65,6 @@ export interface UpdateParentPayload {
   email: string
   phoneNumber: string
   isActive: boolean
+  childIds?: string[]
 }
 

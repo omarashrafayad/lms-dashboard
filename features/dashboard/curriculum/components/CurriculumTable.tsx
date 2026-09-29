@@ -50,7 +50,7 @@ export function CurriculumTable({
         headerClassName:
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
-          <span className="text-sm text-zinc-600">{subject.stage}</span>
+          <span className="text-sm text-zinc-600">{subject.educationStageName}</span>
         ),
       },
       {
@@ -59,7 +59,7 @@ export function CurriculumTable({
         headerClassName:
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
-          <span className="text-sm text-zinc-600">{subject.year}</span>
+          <span className="text-sm text-zinc-600">{subject.gradeName}</span>
         ),
       },
       {
@@ -68,7 +68,7 @@ export function CurriculumTable({
         headerClassName:
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
-          <span className="text-sm text-zinc-600">{subject.system}</span>
+          <span className="text-sm text-zinc-600">{subject.educationSystemName}</span>
         ),
       },
       {

@@ -74,9 +74,9 @@ export default function CurriculumListPage() {
       if (filters.search.trim()) {
         const query = filters.search.toLowerCase()
         const matchName = subject.name.toLowerCase().includes(query)
-        const matchStage = subject.stage.toLowerCase().includes(query)
-        const matchYear = subject.year.toLowerCase().includes(query)
-        const matchSystem = subject.system.toLowerCase().includes(query)
+        const matchStage = subject.educationStageName.toLowerCase().includes(query)
+        const matchYear = subject.gradeName.toLowerCase().includes(query)
+        const matchSystem = subject.educationSystemName.toLowerCase().includes(query)
         if (!matchName && !matchStage && !matchYear && !matchSystem) {
           return false
         }
@@ -84,21 +84,21 @@ export default function CurriculumListPage() {
 
       if (
         filters.stage !== "all" &&
-        subject.stage.toLowerCase() !== filters.stage.toLowerCase()
+        subject.educationStageName.toLowerCase() !== filters.stage.toLowerCase()
       ) {
         return false
       }
 
       if (
         filters.year !== "all" &&
-        subject.year.toLowerCase() !== filters.year.toLowerCase()
+        subject.gradeName.toLowerCase() !== filters.year.toLowerCase()
       ) {
         return false
       }
 
       if (
         filters.system !== "all" &&
-        subject.system.toLowerCase() !== filters.system.toLowerCase()
+        subject.educationSystemName.toLowerCase() !== filters.system.toLowerCase()
       ) {
         return false
       }

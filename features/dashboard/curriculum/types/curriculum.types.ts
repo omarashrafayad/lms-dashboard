@@ -9,9 +9,9 @@ export interface CurriculumSubject {
   code: string
   avatarLetter: string
   avatarColorClass: string
-  stage: EducationStage | string
-  year: string
-  system: EducationSystem | string
+  educationStageName: EducationStage | string
+  gradeName: string
+  educationSystemName: EducationSystem | string
   term: string
   chaptersCount: number
   unitsCount: number

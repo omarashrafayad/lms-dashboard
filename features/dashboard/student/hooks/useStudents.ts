@@ -5,11 +5,13 @@ import { getStudents, getStudentById, createStudent } from "../api/studentApi";
 import { CreateStudentPayload } from "../types/student.types";
 
 export const useStudents = (
-  params: { page?: number; limit?: number; search?: string } = {}
+  params: { page?: number; limit?: number; search?: string } = {},
+  options?: { enabled?: boolean }
 ) => {
   return useQuery({
     queryKey: ["students", params],
     queryFn: () => getStudents(params),
+    ...options,
   });
 };
 

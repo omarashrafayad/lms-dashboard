@@ -5,7 +5,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, Plus, X, Search, Check, Eye, EyeOff, Loader2 } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
-import { mockStudents } from "@/features/dashboard/student/data/mockStudents"
+import { useStudents } from "@/features/dashboard/student/hooks/useStudents"
+import { ApiStudent } from "@/features/dashboard/student/types/student.types"
 import { useCreateParent } from "../hooks/useParents"
 import { createParentSchema } from "../schema/parent.schema"
 import { toast } from "sonner"
@@ -16,6 +17,7 @@ interface LinkedChildItem {
   avatarUrl?: string
   grade: string
   stage: string
+  email?: string
 }
 
 export default function ParentAddPage() {
@@ -36,32 +38,62 @@ export default function ParentAddPage() {
   // Linked Children State
   const [linkedChildren, setLinkedChildren] = React.useState<LinkedChildItem[]>([])
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [debouncedSearch, setDebouncedSearch] = React.useState("")
   const [isSearching, setIsSearching] = React.useState(false)
+  const searchContainerRef = React.useRef<HTMLDivElement>(null)
+
+  // Debounce search input
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Close dropdown on click outside
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsSearching(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   // Derived Full Name
   const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
 
-  // Search Results for Children
-  const searchResults = React.useMemo(() => {
-    if (!searchQuery.trim()) return []
-    const q = searchQuery.toLowerCase()
-    return mockStudents
-      .filter(
-        (s) =>
-          !linkedChildren.some((c) => c.id === s.id) &&
-          (s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q))
-      )
-      .slice(0, 5)
-  }, [searchQuery, linkedChildren])
+  // Fetch students via /api/v1/students?search=...
+  const {
+    data: apiStudents,
+    isLoading: isLoadingStudents,
+    isFetching: isFetchingStudents,
+  } = useStudents(
+    debouncedSearch ? { search: debouncedSearch } : {},
+    { enabled: isSearching }
+  )
 
-  const handleAddChild = (student: (typeof mockStudents)[0]) => {
+  // Filter out already linked children
+  const searchResults = React.useMemo(() => {
+    if (!apiStudents || !Array.isArray(apiStudents)) return []
+    return apiStudents.filter(
+      (s) => !linkedChildren.some((c) => c.id === s.id)
+    )
+  }, [apiStudents, linkedChildren])
+
+  const handleAddChild = (student: ApiStudent) => {
     setLinkedChildren((prev) => [
       ...prev,
       {
         id: student.id,
-        name: student.name,
-        grade: student.grade,
-        stage: student.stage,
+        name: student.fullName || "Unnamed Student",
+        grade: student.grade || "—",
+        stage: student.educationStage || "—",
+        email: student.email || "",
       },
     ])
     setSearchQuery("")
@@ -75,6 +107,8 @@ export default function ParentAddPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    const childIds = linkedChildren.map((c) => c.id)
+
     const parseResult = createParentSchema.safeParse({
       firstName,
       lastName,
@@ -82,6 +116,7 @@ export default function ParentAddPage() {
       password,
       phoneNumber: phone,
       isActive: status === "Active",
+      childIds,
     })
 
     if (!parseResult.success) {
@@ -98,6 +133,7 @@ export default function ParentAddPage() {
         password: parseResult.data.password,
         phoneNumber: parseResult.data.phoneNumber,
         isActive: parseResult.data.isActive,
+        childIds: parseResult.data.childIds,
       })
       toast.success("Parent created successfully")
       router.push("/parent/parent_list")
@@ -177,7 +213,7 @@ export default function ParentAddPage() {
                 {/* Email */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-medium text-zinc-700">
-                    Email
+                    Email <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -314,7 +350,7 @@ export default function ParentAddPage() {
               </div>
 
               {/* Search Bar with dropdown */}
-              <div className="relative w-full">
+              <div ref={searchContainerRef} className="relative w-full">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
                 <input
                   type="text"
@@ -324,40 +360,96 @@ export default function ParentAddPage() {
                     setIsSearching(true)
                   }}
                   onFocus={() => setIsSearching(true)}
-                  placeholder="Search students by name or ID..."
-                  className="w-full h-10 pl-10 pr-4 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
+                  placeholder="Search students by name, email, or stage..."
+                  className="w-full h-10 pl-10 pr-10 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
                 />
 
+                {/* Right search indicator: spinner or clear button */}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  {isFetchingStudents ? (
+                    <Loader2 className="size-4 text-amber-500 animate-spin" />
+                  ) : searchQuery ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("")
+                        setDebouncedSearch("")
+                      }}
+                      className="text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  ) : null}
+                </div>
+
                 {/* Autocomplete Dropdown */}
-                {isSearching && searchResults.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-zinc-200 rounded-xl shadow-lg z-20 py-1.5 divide-y divide-zinc-50">
-                    {searchResults.map((student) => (
-                      <button
-                        key={student.id}
-                        type="button"
-                        onClick={() => handleAddChild(student)}
-                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-zinc-50 transition-colors text-left cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`size-7 rounded-full text-xs font-semibold flex items-center justify-center ${student.avatarColorClass}`}
+                {isSearching && (
+                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-zinc-200 rounded-xl shadow-lg z-30 py-1.5 max-h-72 overflow-y-auto divide-y divide-zinc-50">
+                    {isLoadingStudents || (isFetchingStudents && searchResults.length === 0) ? (
+                      <div className="flex items-center justify-center gap-2 py-6 text-zinc-400 text-xs">
+                        <Loader2 className="size-4 animate-spin text-amber-500" />
+                        <span>Searching students...</span>
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="py-6 px-4 text-center text-xs text-zinc-400">
+                        {searchQuery.trim()
+                          ? `No students found matching "${searchQuery}"`
+                          : "No available students found."}
+                      </div>
+                    ) : (
+                      searchResults.map((student, idx) => {
+                        const initials = (student.fullName || "S")
+                          .trim()
+                          .split(/\s+/)
+                          .slice(0, 2)
+                          .map((n) => n[0]?.toUpperCase())
+                          .join("") || "ST"
+
+                        const colorVariants = [
+                          "bg-sky-100 text-sky-700",
+                          "bg-amber-100 text-amber-700",
+                          "bg-emerald-100 text-emerald-700",
+                          "bg-purple-100 text-purple-700",
+                          "bg-rose-100 text-rose-700",
+                        ]
+                        const colorClass = colorVariants[idx % colorVariants.length]
+
+                        return (
+                          <button
+                            key={student.id}
+                            type="button"
+                            onClick={() => handleAddChild(student)}
+                            className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-amber-50/40 transition-colors text-left cursor-pointer group"
                           >
-                            {student.avatarInitials}
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-semibold text-zinc-900">
-                              {student.name}
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className={`size-8 rounded-full text-xs font-semibold flex items-center justify-center shrink-0 ${colorClass}`}
+                              >
+                                {initials}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-semibold text-zinc-900 group-hover:text-amber-700 transition-colors truncate">
+                                  {student.fullName || "Unnamed Student"}
+                                </span>
+                                <span className="text-[11px] text-zinc-400 truncate">
+                                  {[
+                                    student.grade && `Grade: ${student.grade}`,
+                                    student.educationStage && `Stage: ${student.educationStage}`,
+                                    student.email,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-xs font-semibold text-[#D97706] bg-amber-50 group-hover:bg-[#FEF3C7] px-2.5 py-1 rounded-lg transition-colors shrink-0 ml-3">
+                              + Link
                             </span>
-                            <span className="text-[11px] text-zinc-400">
-                              {student.code} · {student.grade}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-xs font-medium text-[#D97706]">
-                          + Link
-                        </span>
-                      </button>
-                    ))}
+                          </button>
+                        )
+                      })
+                    )}
                   </div>
                 )}
               </div>
@@ -502,15 +594,15 @@ export default function ParentAddPage() {
                         key={child.id}
                         className="flex items-center gap-2.5 text-xs"
                       >
-                        <div className="size-7 rounded-full bg-blue-100 text-blue-700 font-semibold text-[10px] flex items-center justify-center shrink-0">
+                        <div className="size-7 rounded-full bg-amber-100 text-amber-800 font-semibold text-[10px] flex items-center justify-center shrink-0">
                           {child.name.slice(0, 2).toUpperCase()}
                         </div>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-zinc-900 leading-tight">
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-semibold text-zinc-900 leading-tight truncate">
                             {child.name}
                           </span>
-                          <span className="text-[11px] text-zinc-400">
-                            {child.grade}
+                          <span className="text-[11px] text-zinc-400 truncate">
+                            {[child.grade, child.stage].filter((v) => v && v !== "—").join(" · ") || child.grade}
                           </span>
                         </div>
                       </div>

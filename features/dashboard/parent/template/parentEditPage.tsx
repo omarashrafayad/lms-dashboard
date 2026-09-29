@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation"
 import { ChevronLeft, Check, X, Search, Loader2 } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { getParentProfile } from "../data/mockParentProfile"
-import { mockStudents } from "@/features/dashboard/student/data/mockStudents"
+import { useStudents } from "@/features/dashboard/student/hooks/useStudents"
+import { ApiStudent } from "@/features/dashboard/student/types/student.types"
 import { useParent, useUpdateParent } from "../hooks/useParents"
 import { updateParentSchema } from "../schema/parent.schema"
 import { toast } from "sonner"
@@ -21,6 +22,7 @@ interface LinkedChildItem {
   avatarUrl?: string
   grade: string
   stage: string
+  email?: string
 }
 
 export default function ParentEditPage({ parentId }: ParentEditPageProps) {
@@ -41,6 +43,35 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
   const [status, setStatus] = React.useState<"Active" | "Inactive">("Active")
   const [sendWelcomeEmail, setSendWelcomeEmail] = React.useState(false)
 
+  // Linked Children State
+  const [linkedChildren, setLinkedChildren] = React.useState<LinkedChildItem[]>([])
+  const [searchQuery, setSearchQuery] = React.useState("")
+  const [debouncedSearch, setDebouncedSearch] = React.useState("")
+  const [isSearching, setIsSearching] = React.useState(false)
+  const searchContainerRef = React.useRef<HTMLDivElement>(null)
+
+  // Debounce search input
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Close dropdown on click outside
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsSearching(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
   // Sync state when apiParent or profile is ready
   React.useEffect(() => {
     if (apiParent) {
@@ -49,6 +80,29 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
       setEmail(apiParent.email || "")
       setPhone(apiParent.phoneNumber || "")
       setStatus(apiParent.isActive ? "Active" : "Inactive")
+
+      const students = apiParent.childIds || apiParent.linkedStudents || []
+      if (Array.isArray(students) && students.length > 0) {
+        setLinkedChildren(
+          students.map((c: any) => ({
+            id: c.id,
+            name: c.fullName || c.name || "Student",
+            grade: c.grade || "—",
+            stage: c.educationStage || "—",
+            email: c.email || "",
+          }))
+        )
+      } else if (profile?.linkedChildren?.length) {
+        setLinkedChildren(
+          profile.linkedChildren.map((c) => ({
+            id: c.id,
+            name: c.name,
+            avatarUrl: c.avatarUrl,
+            grade: c.grade,
+            stage: c.stage,
+          }))
+        )
+      }
     } else if (profile) {
       const parts = (profile.name || "").split(" ")
       setFirstName(parts[0] || "")
@@ -56,46 +110,50 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
       setEmail(profile.email || "")
       setPhone(profile.phone || "")
       setStatus(profile.status || "Active")
+      if (profile.linkedChildren?.length) {
+        setLinkedChildren(
+          profile.linkedChildren.map((c) => ({
+            id: c.id,
+            name: c.name,
+            avatarUrl: c.avatarUrl,
+            grade: c.grade,
+            stage: c.stage,
+          }))
+        )
+      }
     }
   }, [apiParent, profile])
-
-  // Linked Children
-  const [linkedChildren, setLinkedChildren] = React.useState<LinkedChildItem[]>(() =>
-    profile.linkedChildren.map((c) => ({
-      id: c.id,
-      name: c.name,
-      avatarUrl: c.avatarUrl,
-      grade: c.grade,
-      stage: c.stage,
-    }))
-  )
-  const [searchQuery, setSearchQuery] = React.useState("")
-  const [isSearching, setIsSearching] = React.useState(false)
 
   // Derived Full Name
   const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
 
-  // Search Results
-  const searchResults = React.useMemo(() => {
-    if (!searchQuery.trim()) return []
-    const q = searchQuery.toLowerCase()
-    return mockStudents
-      .filter(
-        (s) =>
-          !linkedChildren.some((c) => c.name === s.name) &&
-          (s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q))
-      )
-      .slice(0, 5)
-  }, [searchQuery, linkedChildren])
+  // Fetch students via /api/v1/students?search=...
+  const {
+    data: apiStudents,
+    isLoading: isLoadingStudents,
+    isFetching: isFetchingStudents,
+  } = useStudents(
+    debouncedSearch ? { search: debouncedSearch } : {},
+    { enabled: isSearching }
+  )
 
-  const handleAddChild = (student: (typeof mockStudents)[0]) => {
+  // Filter out already linked children
+  const searchResults = React.useMemo(() => {
+    if (!apiStudents || !Array.isArray(apiStudents)) return []
+    return apiStudents.filter(
+      (s) => !linkedChildren.some((c) => c.id === s.id)
+    )
+  }, [apiStudents, linkedChildren])
+
+  const handleAddChild = (student: ApiStudent) => {
     setLinkedChildren((prev) => [
       ...prev,
       {
         id: student.id,
-        name: student.name,
-        grade: student.grade,
-        stage: student.stage,
+        name: student.fullName || "Unnamed Student",
+        grade: student.grade || "—",
+        stage: student.educationStage || "—",
+        email: student.email || "",
       },
     ])
     setSearchQuery("")
@@ -109,12 +167,15 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
   const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    const childIds = linkedChildren.map((c) => c.id)
+
     const parseResult = updateParentSchema.safeParse({
       firstName,
       lastName,
       email,
       phoneNumber: phone,
       isActive: status === "Active",
+      childIds,
     })
 
     if (!parseResult.success) {
@@ -132,6 +193,7 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
           email: parseResult.data.email,
           phoneNumber: parseResult.data.phoneNumber,
           isActive: parseResult.data.isActive,
+          childIds: parseResult.data.childIds,
         },
       })
       toast.success("Parent updated successfully")
@@ -332,7 +394,7 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
               </div>
 
               {/* Search Bar for adding children */}
-              <div className="relative w-full">
+              <div ref={searchContainerRef} className="relative w-full">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
                 <input
                   type="text"
@@ -342,35 +404,96 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
                     setIsSearching(true)
                   }}
                   onFocus={() => setIsSearching(true)}
-                  placeholder="Search students by name or code to link..."
-                  className="w-full h-10 pl-10 pr-4 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
+                  placeholder="Search students by name, email, or stage..."
+                  className="w-full h-10 pl-10 pr-10 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
                 />
 
+                {/* Right search indicator: spinner or clear button */}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  {isFetchingStudents ? (
+                    <Loader2 className="size-4 text-amber-500 animate-spin" />
+                  ) : searchQuery ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("")
+                        setDebouncedSearch("")
+                      }}
+                      className="text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  ) : null}
+                </div>
+
                 {/* Autocomplete Dropdown */}
-                {isSearching && searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200/90 rounded-xl shadow-lg z-20 overflow-hidden divide-y divide-zinc-100">
-                    {searchResults.map((student) => (
-                      <div
-                        key={student.id}
-                        onClick={() => handleAddChild(student)}
-                        className="px-4 py-2.5 flex items-center justify-between hover:bg-zinc-50 cursor-pointer transition-colors"
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-xs font-semibold text-zinc-900">
-                            {student.name}
-                          </span>
-                          <span className="text-[11px] text-zinc-400">
-                            {student.grade} • {student.code}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          className="text-xs font-medium text-[#D97706] hover:underline"
-                        >
-                          + Link
-                        </button>
+                {isSearching && (
+                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-zinc-200 rounded-xl shadow-lg z-30 py-1.5 max-h-72 overflow-y-auto divide-y divide-zinc-50">
+                    {isLoadingStudents || (isFetchingStudents && searchResults.length === 0) ? (
+                      <div className="flex items-center justify-center gap-2 py-6 text-zinc-400 text-xs">
+                        <Loader2 className="size-4 animate-spin text-amber-500" />
+                        <span>Searching students...</span>
                       </div>
-                    ))}
+                    ) : searchResults.length === 0 ? (
+                      <div className="py-6 px-4 text-center text-xs text-zinc-400">
+                        {searchQuery.trim()
+                          ? `No students found matching "${searchQuery}"`
+                          : "No available students found."}
+                      </div>
+                    ) : (
+                      searchResults.map((student, idx) => {
+                        const initials = (student.fullName || "S")
+                          .trim()
+                          .split(/\s+/)
+                          .slice(0, 2)
+                          .map((n) => n[0]?.toUpperCase())
+                          .join("") || "ST"
+
+                        const colorVariants = [
+                          "bg-sky-100 text-sky-700",
+                          "bg-amber-100 text-amber-700",
+                          "bg-emerald-100 text-emerald-700",
+                          "bg-purple-100 text-purple-700",
+                          "bg-rose-100 text-rose-700",
+                        ]
+                        const colorClass = colorVariants[idx % colorVariants.length]
+
+                        return (
+                          <button
+                            key={student.id}
+                            type="button"
+                            onClick={() => handleAddChild(student)}
+                            className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-amber-50/40 transition-colors text-left cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className={`size-8 rounded-full text-xs font-semibold flex items-center justify-center shrink-0 ${colorClass}`}
+                              >
+                                {initials}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-semibold text-zinc-900 group-hover:text-amber-700 transition-colors truncate">
+                                  {student.fullName || "Unnamed Student"}
+                                </span>
+                                <span className="text-[11px] text-zinc-400 truncate">
+                                  {[
+                                    student.grade && `Grade: ${student.grade}`,
+                                    student.educationStage && `Stage: ${student.educationStage}`,
+                                    student.email,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-xs font-semibold text-[#D97706] bg-amber-50 group-hover:bg-[#FEF3C7] px-2.5 py-1 rounded-lg transition-colors shrink-0 ml-3">
+                              + Link
+                            </span>
+                          </button>
+                        )
+                      })
+                    )}
                   </div>
                 )}
               </div>
@@ -400,7 +523,7 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
                             {child.name}
                           </td>
                           <td className="py-3 px-4 text-zinc-600">
-                            {child.grade} ({child.stage})
+                            {[child.grade, child.stage].filter((v) => v && v !== "—").join(" · ") || child.grade}
                           </td>
                           <td className="py-3 px-4">
                             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium text-[#4D7C0F] bg-[#ECFCCB]">
@@ -517,12 +640,12 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
                             </span>
                           )}
                         </div>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-zinc-900 leading-tight">
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-semibold text-zinc-900 leading-tight truncate">
                             {child.name}
                           </span>
-                          <span className="text-[11px] text-zinc-400">
-                            {child.grade}
+                          <span className="text-[11px] text-zinc-400 truncate">
+                            {[child.grade, child.stage].filter((v) => v && v !== "—").join(" · ") || child.grade}
                           </span>
                         </div>
                       </div>
