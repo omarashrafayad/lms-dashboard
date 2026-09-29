@@ -1,6 +1,9 @@
 import clientAxios from "@/lib/axios/clientAxios";
-import { ApiStudent, CreateStudentPayload } from "../types/student.types";
-
+import {
+  ApiStudent,
+  CreateStudentPayload,
+  UpdateStudentPayload,
+} from "../types/student.types";
 
 export const getStudents = async (
   params: { page?: number; limit?: number; search?: string } = {}
@@ -30,4 +33,16 @@ export const createStudent = async (data: CreateStudentPayload) => {
 export const getStudentById = async (studentId: string): Promise<ApiStudent> => {
   const res = await clientAxios.get(`/students/${studentId}`);
   return res.data?.data || res.data;
+};
+
+export const updateStudent = async (
+  studentId: string,
+  data: UpdateStudentPayload | FormData
+): Promise<ApiStudent> => {
+  const res = await clientAxios.put(`/students/${studentId}`, data);
+  return res.data?.data || res.data;
+};
+
+export const deleteStudent = async (studentId: string): Promise<void> => {
+  await clientAxios.delete(`/students/${studentId}`);
 };

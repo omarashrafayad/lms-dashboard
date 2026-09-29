@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import UniTable, { type UniTableColumn } from "@/components/shared/uniTable"
-import { Teacher, TeacherAvailabilityStatus } from "../types/teacher.types"
+import { Teacher } from "../types/teacher.types"
 import { cn } from "@/lib/utils"
 import { TeacherRowActions } from "./TeacherRowActions"
 

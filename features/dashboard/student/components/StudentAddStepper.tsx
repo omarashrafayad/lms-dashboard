@@ -12,11 +12,13 @@ export const ADD_STUDENT_STEPS = [
 export interface StudentAddStepperProps {
   currentStep: number
   completedSteps: number[]
+  onStepClick?: (step: number) => void
 }
 
 export function StudentAddStepper({
   currentStep,
   completedSteps,
+  onStepClick,
 }: StudentAddStepperProps) {
   return (
     <div className="w-full flex items-center justify-center px-6 py-5">
@@ -29,7 +31,15 @@ export function StudentAddStepper({
           return (
             <React.Fragment key={step.number}>
               {/* Step Circle + Label */}
-              <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => onStepClick?.(step.number)}
+                disabled={!onStepClick}
+                className={cn(
+                  "flex items-center gap-2.5 shrink-0 text-left transition-all",
+                  onStepClick ? "cursor-pointer group" : "cursor-default"
+                )}
+              >
                 <div
                   className={cn(
                     "size-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold transition-all",
@@ -37,7 +47,8 @@ export function StudentAddStepper({
                       ? "bg-brand-orange text-white"
                       : isCurrent
                       ? "bg-brand-orange text-white"
-                      : "bg-zinc-100 text-zinc-400 border border-zinc-200/80"
+                      : "bg-zinc-100 text-zinc-400 border border-zinc-200/80",
+                    onStepClick && !isCurrent && "group-hover:border-amber-400"
                   )}
                 >
                   {isCompleted ? (
@@ -63,7 +74,8 @@ export function StudentAddStepper({
                       "text-xs font-semibold mt-0.5",
                       isCurrent || isCompleted
                         ? "text-zinc-900"
-                        : "text-zinc-400"
+                        : "text-zinc-400",
+                      onStepClick && !isCurrent && "group-hover:text-zinc-700"
                     )}
                   >
                     {step.label}
@@ -75,7 +87,7 @@ export function StudentAddStepper({
                     )}
                   </span>
                 </div>
-              </div>
+              </button>
 
               {/* Connector Line */}
               {!isLast && (
