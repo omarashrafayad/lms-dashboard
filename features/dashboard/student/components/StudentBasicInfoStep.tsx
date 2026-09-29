@@ -91,6 +91,19 @@ export function StudentBasicInfoStep<
           inputClassName="h-10 text-xs rounded-xl"
           labelClassName="text-xs font-medium text-zinc-700"
         />
+        {
+          !isEdit && (
+            <UniInput
+              control={control}
+              name={"password" as FieldPath<TFieldValues>}
+              label="Password"
+              placeholder="password"
+              required={!isEdit}
+              inputClassName="h-10 text-xs rounded-xl"
+              labelClassName="text-xs font-medium text-zinc-700"
+            />
+          )
+        }
       </div>
     </div>
   )
