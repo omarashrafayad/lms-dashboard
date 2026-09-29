@@ -35,17 +35,8 @@ async function postAuth(
   }
 }
 
-export const signupAction = async (data: {
-  name: string;
-  email: string;
-  password: string;
-  passwordConfirm: string;
-}) => postAuth("auth/signup", data);
-
-
 export const loginAction = async (data: { email: string; password: string }) =>
   postAuth("auth/login", data);
-
 
 export async function getProfile() {
   try {
@@ -60,7 +51,6 @@ export async function getProfile() {
     }
 
     const response = await serverAxios.get("users/me");
-    console.log(response)
     return {
       user: response.data || null,
       token,

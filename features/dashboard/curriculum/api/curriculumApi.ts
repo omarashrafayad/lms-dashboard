@@ -54,7 +54,6 @@ export const getCurriculumSubjects = async (
       return []
     }
   } catch (err) {
-    // Graceful fallback to mock data
   }
   return localSubjects
 }
