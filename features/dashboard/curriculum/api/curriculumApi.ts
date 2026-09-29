@@ -20,8 +20,39 @@ export const getCurriculumSubjects = async (
 ): Promise<CurriculumSubject[]> => {
   try {
     const res = await clientAxios.get("/curriculum/subjects", { params })
-    if (Array.isArray(res.data)) return res.data
-    if (res.data?.data && Array.isArray(res.data.data)) return res.data.data
+    const data = Array.isArray(res.data)
+      ? res.data
+      : res.data?.data && Array.isArray(res.data.data)
+      ? res.data.data
+      : null
+
+    if (data && data.length > 0) {
+      return data.map((item: any) => ({
+        ...item,
+        educationStageName: item.educationStageName || item.stage || "",
+        gradeName: item.gradeName || item.year || "",
+        educationSystemName: item.educationSystemName || item.system || "",
+        avatarLetter: item.avatarLetter || item.name?.charAt(0)?.toUpperCase() || "S",
+        avatarColorClass:
+          item.avatarColorClass ||
+          (item.name?.toLowerCase().includes("math")
+            ? "bg-sky-100 text-sky-700"
+            : item.name?.toLowerCase().includes("arab")
+            ? "bg-purple-100 text-purple-700"
+            : item.name?.toLowerCase().includes("scie")
+            ? "bg-lime-100 text-lime-800"
+            : item.name?.toLowerCase().includes("eng")
+            ? "bg-amber-100 text-amber-800"
+            : "bg-orange-100 text-orange-800"),
+        chaptersCount: item.chaptersCount ?? 0,
+        unitsCount: item.unitsCount ?? 0,
+        lessonsCount: item.lessonsCount ?? 0,
+        status: item.status || "Active",
+      }))
+    }
+    if (data && data.length === 0) {
+      return []
+    }
   } catch (err) {
     // Graceful fallback to mock data
   }
@@ -52,73 +83,35 @@ export const getCurriculumSubjectById = async (
 export const createCurriculumSubject = async (
   data: CreateSubjectPayload
 ): Promise<CurriculumSubject> => {
-  try {
-    const res = await clientAxios.post("/curriculum/subjects", data)
-    if (res.data?.data) return res.data.data
-  } catch (err) {
-    // Fallback mutation
-  }
-
-  const avatarColorClass =
-    data.name.toLowerCase().includes("math")
-      ? "bg-sky-100 text-sky-700"
-      : data.name.toLowerCase().includes("arab")
-      ? "bg-purple-100 text-purple-700"
-      : data.name.toLowerCase().includes("scien")
-      ? "bg-lime-100 text-lime-800"
-      : "bg-amber-100 text-amber-800"
-
-  const newSubject: CurriculumSubject = {
-    id: String(Date.now()),
+  const payload = {
     name: data.name,
-    code: `SUB-${data.name.slice(0, 3).toUpperCase()}-${data.year.replace(/\s+/g, "")}`,
-    avatarLetter: data.name.charAt(0).toUpperCase(),
-    avatarColorClass,
-    stage: data.stage,
-    year: data.year,
-    system: data.system,
+    educationStageId: data.educationStageId,
+    gradeId: data.gradeId,
+    educationSystemId: data.educationSystemId,
     term: data.term,
-    chaptersCount: 0,
-    unitsCount: 0,
-    lessonsCount: 0,
-    status: data.status,
   }
-
-  localSubjects = [newSubject, ...localSubjects]
-  return newSubject
+  const res = await clientAxios.post("/curriculum/subjects", payload)
+  return res.data?.data || res.data
 }
 
 export const updateCurriculumSubject = async (
   id: string,
   data: Partial<CreateSubjectPayload>
 ): Promise<CurriculumSubject> => {
-  try {
-    const res = await clientAxios.put(`/curriculum/subjects/${id}`, data)
-    if (res.data?.data) return res.data.data
-  } catch (err) {
-    // Fallback mutation
-  }
+  const payload: Record<string, any> = {}
+  if (data.name !== undefined) payload.name = data.name
+  if (data.educationStageId !== undefined) payload.educationStageId = data.educationStageId
+  if (data.gradeId !== undefined) payload.gradeId = data.gradeId
+  if (data.educationSystemId !== undefined) payload.educationSystemId = data.educationSystemId
+  if (data.term !== undefined) payload.term = data.term
+  if (data.status !== undefined) payload.status = data.status === "Active" ? "Inactive" : "Active"
 
-  localSubjects = localSubjects.map((s) => {
-    if (s.id === id) {
-      return {
-        ...s,
-        ...data,
-        avatarLetter: data.name ? data.name.charAt(0).toUpperCase() : s.avatarLetter,
-      }
-    }
-    return s
-  })
-
-  return localSubjects.find((s) => s.id === id)!
+  const res = await clientAxios.put(`/curriculum/subjects/${id}`, payload)
+  return res.data?.data || res.data
 }
 
 export const deleteCurriculumSubject = async (id: string): Promise<boolean> => {
-  try {
-    await clientAxios.delete(`/curriculum/subjects/${id}`)
-  } catch (err) {
-    // Fallback mutation
-  }
+  await clientAxios.delete(`/curriculum/subjects/${id}`)
   localSubjects = localSubjects.filter((s) => s.id !== id)
   return true
 }

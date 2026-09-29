@@ -2,19 +2,21 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ChevronLeft, Pencil } from "lucide-react"
+import { ChevronLeft, Pencil, Loader2 } from "lucide-react"
 import { ParentProfile } from "../../types/parentProfile.types"
 
 export interface ParentProfileHeaderProps {
   profile: ParentProfile
   onDeactivate?: () => void
   onEdit?: () => void
+  isUpdating?: boolean
 }
 
 export function ParentProfileHeader({
   profile,
   onDeactivate,
   onEdit,
+  isUpdating = false,
 }: ParentProfileHeaderProps) {
   const isActive = profile.status === "Active"
 
@@ -82,9 +84,15 @@ export function ParentProfileHeader({
           <button
             type="button"
             onClick={onDeactivate}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-rose-600 bg-white border border-rose-200 hover:bg-rose-50/70 transition-all cursor-pointer shadow-2xs"
+            disabled={isUpdating}
+            className={`px-4 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 ${
+              isActive
+                ? "text-rose-600 bg-white border-rose-200 hover:bg-rose-50/70"
+                : "text-emerald-700 bg-white border-emerald-200 hover:bg-emerald-50/70"
+            }`}
           >
-            Deactivate
+            {isUpdating && <Loader2 className="size-3 animate-spin" />}
+            <span>{isActive ? "Deactivate" : "Activate"}</span>
           </button>
 
           <Link

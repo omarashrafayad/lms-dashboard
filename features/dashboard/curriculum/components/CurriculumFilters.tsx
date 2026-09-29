@@ -12,6 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { SubjectFilterState } from "../types/curriculum.types"
+import {
+  useAcademicStages,
+  useEducationSystems,
+  useGrades,
+} from "@/features/dashboard/reference-data/hooks/useReferenceData"
 
 export interface CurriculumFiltersProps {
   filters: SubjectFilterState
@@ -24,6 +29,40 @@ export function CurriculumFilters({
   onFilterChange,
   onReset,
 }: CurriculumFiltersProps) {
+  const { data: stages = [] } = useAcademicStages()
+  const { data: systems = [] } = useEducationSystems()
+  const { data: grades = [] } = useGrades()
+
+  const stageOptions = React.useMemo(() => {
+    const set = new Set<string>()
+    stages.forEach((s) => s.name && set.add(s.name))
+    ;["Primary", "Preparatory", "Secondary"].forEach((s) => set.add(s))
+    return Array.from(set)
+  }, [stages])
+
+  const gradeOptions = React.useMemo(() => {
+    const set = new Set<string>()
+    grades.forEach((g) => g.name && set.add(g.name))
+    ;[
+      "Grade 4",
+      "Grade 5",
+      "Grade 6",
+      "Grade 7",
+      "Grade 8",
+      "Grade 9",
+      "Grade 10",
+      "Grade 11",
+      "Grade 12",
+    ].forEach((g) => set.add(g))
+    return Array.from(set)
+  }, [grades])
+
+  const systemOptions = React.useMemo(() => {
+    const set = new Set<string>()
+    systems.forEach((s) => s.name && set.add(s.name))
+    ;["National", "American", "IGCSE", "International"].forEach((s) => set.add(s))
+    return Array.from(set)
+  }, [systems])
   return (
     <div className="p-4 rounded-2xl bg-white border border-zinc-200/80 shadow-2xs flex flex-col gap-4">
       {/* Top: Search Input with Icon */}
@@ -55,9 +94,11 @@ export function CurriculumFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Education Stage</SelectItem>
-                <SelectItem value="Primary">Primary</SelectItem>
-                <SelectItem value="Preparatory">Preparatory</SelectItem>
-                <SelectItem value="Secondary">Secondary</SelectItem>
+                {stageOptions.map((st) => (
+                  <SelectItem key={st} value={st}>
+                    {st}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -76,15 +117,11 @@ export function CurriculumFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Academic Year</SelectItem>
-                <SelectItem value="Grade 4">Grade 4</SelectItem>
-                <SelectItem value="Grade 5">Grade 5</SelectItem>
-                <SelectItem value="Grade 6">Grade 6</SelectItem>
-                <SelectItem value="Grade 7">Grade 7</SelectItem>
-                <SelectItem value="Grade 8">Grade 8</SelectItem>
-                <SelectItem value="Grade 9">Grade 9</SelectItem>
-                <SelectItem value="Grade 10">Grade 10</SelectItem>
-                <SelectItem value="Grade 11">Grade 11</SelectItem>
-                <SelectItem value="Grade 12">Grade 12</SelectItem>
+                {gradeOptions.map((gr) => (
+                  <SelectItem key={gr} value={gr}>
+                    {gr}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -103,9 +140,11 @@ export function CurriculumFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Education System</SelectItem>
-                <SelectItem value="National">National</SelectItem>
-                <SelectItem value="American">American</SelectItem>
-                <SelectItem value="IGCSE">IGCSE</SelectItem>
+                {systemOptions.map((sys) => (
+                  <SelectItem key={sys} value={sys}>
+                    {sys}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

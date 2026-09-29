@@ -11,6 +11,7 @@ import {
 } from "../hooks/useCurriculum"
 import { CreateSubjectPayload } from "../types/curriculum.types"
 import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 export interface CurriculumStructurePageProps {
   subjectId: string
@@ -45,8 +46,19 @@ export default function CurriculumStructurePage({
 
   const { subject } = data
 
-  const handleEditSubmit = (payload: CreateSubjectPayload) => {
-    updateMutation.mutate({ id: subject.id, data: payload })
+  const handleEditSubmit = async (payload: CreateSubjectPayload) => {
+    try {
+      await updateMutation.mutateAsync({ id: subject.id, data: payload })
+      toast.success("Subject updated successfully!")
+      setIsEditModalOpen(false)
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.title ||
+        err?.message ||
+        "Failed to update subject"
+      toast.error(msg)
+    }
   }
 
   const handleAddChapter = (title: string) => {
@@ -63,12 +75,21 @@ export default function CurriculumStructurePage({
     setLocalChapters((prev) => [...prev, newChapter])
   }
 
+  const subjectSubtitle = [
+    subject.educationStageName || subject.stage,
+    subject.gradeName || subject.year,
+    subject.educationSystemName || subject.system,
+    subject.term,
+  ]
+    .filter(Boolean)
+    .join(" • ")
+
   return (
     <div className="flex flex-col min-h-full">
       {/* Header matching Screenshot 2 */}
       <PageHeader
         title={subject.name}
-        description={`${subject.stage} • ${subject.year} • ${subject.system} • ${subject.term}`}
+        description={subjectSubtitle}
       />
 
       <main className="flex-1 p-8 flex flex-col gap-6 max-w-[1400px] w-full">

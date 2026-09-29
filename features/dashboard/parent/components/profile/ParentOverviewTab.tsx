@@ -36,60 +36,77 @@ export function ParentOverviewTab({
           </div>
 
           <div className="divide-y divide-zinc-100">
-            {profile.linkedChildren.map((child) => {
-              const isSubscribed = child.hasSubscription || child.activeSubscriptionStatus === "Subscribed" || child.activeSubscriptionStatus === "Active"
+            {profile.linkedChildren.length === 0 ? (
+              <div className="p-8 text-center text-xs text-zinc-400">
+                No linked students found for this parent.
+              </div>
+            ) : (
+              profile.linkedChildren.map((child) => {
+                const isSubscribed =
+                  child.hasSubscription ||
+                  child.activeSubscriptionStatus === "Subscribed" ||
+                  child.activeSubscriptionStatus === "Active"
 
-              return (
-                <Link
-                  key={child.id}
-                  href={`/student/${child.studentId}`}
-                  className="flex items-center justify-between px-6 py-4 hover:bg-zinc-50/70 transition-colors group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative size-10 rounded-full overflow-hidden shrink-0 border border-zinc-200/60 bg-zinc-100 flex items-center justify-center">
-                      {child.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={child.avatarUrl}
-                          alt={child.name}
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        <span className={`font-semibold text-xs ${child.avatarColorClass || "bg-sky-100 text-sky-700"}`}>
-                          {child.avatarInitials}
+                return (
+                  <Link
+                    key={child.id}
+                    href={child.studentId ? `/student/${child.studentId}` : "#"}
+                    className="flex items-center justify-between px-6 py-4 hover:bg-zinc-50/70 transition-colors group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative size-10 rounded-full overflow-hidden shrink-0 border border-zinc-200/60 bg-zinc-100 flex items-center justify-center">
+                        {child.avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={child.avatarUrl}
+                            alt={child.name}
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          <span
+                            className={`font-semibold text-xs ${
+                              child.avatarColorClass || "bg-sky-100 text-sky-700"
+                            }`}
+                          >
+                            {child.avatarInitials}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm text-zinc-900 group-hover:text-[#D97706] transition-colors leading-tight">
+                          {child.name}
                         </span>
-                      )}
+                        <span className="text-xs text-zinc-400 font-normal mt-0.5">
+                          {child.email ||
+                            [child.grade, child.stage]
+                              .filter((v) => v && v !== "—")
+                              .join(" · ") ||
+                            "Linked Student"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-sm text-zinc-900 group-hover:text-[#D97706] transition-colors leading-tight">
-                        {child.name}
-                      </span>
-                      <span className="text-xs text-zinc-400 font-normal mt-0.5">
-                        {child.grade} · {child.stage}
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                        isSubscribed
-                          ? "text-emerald-700 bg-emerald-50 border-emerald-200/60"
-                          : "text-zinc-500 bg-zinc-50 border-zinc-200"
-                      }`}
-                    >
+                    <div className="flex items-center gap-3">
                       <span
-                        className={`size-1.5 rounded-full ${
-                          isSubscribed ? "bg-emerald-500" : "bg-zinc-400"
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                          isSubscribed
+                            ? "text-emerald-700 bg-emerald-50 border-emerald-200/60"
+                            : "text-zinc-500 bg-zinc-50 border-zinc-200"
                         }`}
-                      />
-                      {isSubscribed ? "Subscribed" : "No subscription"}
-                    </span>
-                    <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-600 transition-colors" />
-                  </div>
-                </Link>
-              )
-            })}
+                      >
+                        <span
+                          className={`size-1.5 rounded-full ${
+                            isSubscribed ? "bg-emerald-500" : "bg-zinc-400"
+                          }`}
+                        />
+                        {isSubscribed ? "Subscribed" : "No subscription"}
+                      </span>
+                      <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                    </div>
+                  </Link>
+                )
+              })
+            )}
           </div>
         </div>
 
