@@ -3,9 +3,8 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, Check, X, Search, Loader2 } from "lucide-react"
+import { ChevronLeft, Check, X, Search, Loader2, AlertCircle } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
-import { getParentProfile } from "../data/mockParentProfile"
 import { useStudents } from "@/features/dashboard/student/hooks/useStudents"
 import { ApiStudent } from "@/features/dashboard/student/types/student.types"
 import { useParent, useUpdateParent } from "../hooks/useParents"
@@ -28,12 +27,8 @@ interface LinkedChildItem {
 export default function ParentEditPage({ parentId }: ParentEditPageProps) {
   const router = useRouter()
 
-  const { data: apiParent, isLoading: isFetchingParent } = useParent(parentId)
+  const { data: apiParent, isLoading: isFetchingParent, isError } = useParent(parentId)
   const updateParentMutation = useUpdateParent()
-
-  const profile = React.useMemo(() => {
-    return getParentProfile(parentId)
-  }, [parentId])
 
   // Form State initialized
   const [firstName, setFirstName] = React.useState("")
@@ -72,7 +67,7 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  // Sync state when apiParent or profile is ready
+  // Sync state when apiParent is ready
   React.useEffect(() => {
     if (apiParent) {
       setFirstName(apiParent.firstName || "")
@@ -81,7 +76,7 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
       setPhone(apiParent.phoneNumber || "")
       setStatus(apiParent.isActive ? "Active" : "Inactive")
 
-      const students = apiParent.childIds || apiParent.linkedStudents || []
+      const students = apiParent.linkedStudents || apiParent.childIds || []
       if (Array.isArray(students) && students.length > 0) {
         setLinkedChildren(
           students.map((c: any) => ({
@@ -92,37 +87,11 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
             email: c.email || "",
           }))
         )
-      } else if (profile?.linkedChildren?.length) {
-        setLinkedChildren(
-          profile.linkedChildren.map((c) => ({
-            id: c.id,
-            name: c.name,
-            avatarUrl: c.avatarUrl,
-            grade: c.grade,
-            stage: c.stage,
-          }))
-        )
-      }
-    } else if (profile) {
-      const parts = (profile.name || "").split(" ")
-      setFirstName(parts[0] || "")
-      setLastName(parts.slice(1).join(" ") || "")
-      setEmail(profile.email || "")
-      setPhone(profile.phone || "")
-      setStatus(profile.status || "Active")
-      if (profile.linkedChildren?.length) {
-        setLinkedChildren(
-          profile.linkedChildren.map((c) => ({
-            id: c.id,
-            name: c.name,
-            avatarUrl: c.avatarUrl,
-            grade: c.grade,
-            stage: c.stage,
-          }))
-        )
+      } else {
+        setLinkedChildren([])
       }
     }
-  }, [apiParent, profile])
+  }, [apiParent])
 
   // Derived Full Name
   const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
@@ -209,9 +178,34 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
 
   if (isFetchingParent) {
     return (
-      <div className="flex flex-col min-h-full items-center justify-center p-12">
+      <div className="flex flex-col min-h-full items-center justify-center p-12 min-h-[400px]">
         <Loader2 className="size-8 text-brand-orange animate-spin mb-3" />
         <span className="text-sm text-zinc-500">Loading parent details...</span>
+      </div>
+    )
+  }
+
+  if (!apiParent) {
+    return (
+      <div className="flex flex-col min-h-full items-center justify-center p-12 min-h-[400px]">
+        <div className="text-center max-w-md flex flex-col items-center">
+          <div className="size-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mb-3">
+            <AlertCircle className="size-6" />
+          </div>
+          <h2 className="text-lg font-bold text-zinc-900 mb-1">
+            Parent Not Found
+          </h2>
+          <p className="text-xs text-zinc-500 mb-5">
+            The parent could not be loaded or does not exist.
+          </p>
+          <Link
+            href="/parent/parent_list"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-brand-orange hover:bg-brand-orange/90 shadow-2xs transition-all"
+          >
+            <ChevronLeft className="size-4" />
+            <span>Back to All Parents</span>
+          </Link>
+        </div>
       </div>
     )
   }
@@ -571,7 +565,7 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-zinc-400 font-normal">Full Name</span>
                     <span className="font-semibold text-zinc-900">
-                      {fullName || profile.name}
+                      {fullName || "—"}
                     </span>
                   </div>
 

@@ -119,29 +119,35 @@ export function ParentOverviewTab({
           </div>
 
           <div className="divide-y divide-zinc-100 px-6">
-            {profile.recentActivity.map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-center justify-between py-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="size-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 shrink-0">
-                    {activity.iconType === "clock" ? (
-                      <Clock className="size-3.5 text-zinc-500" />
-                    ) : (
-                      <Check className="size-3.5 text-zinc-600 stroke-[2.5]" />
-                    )}
+            {profile.recentActivity.length === 0 ? (
+              <div className="py-6 text-center text-xs text-zinc-400">
+                No recent activity recorded.
+              </div>
+            ) : (
+              profile.recentActivity.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-center justify-between py-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="size-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 shrink-0">
+                      {activity.iconType === "clock" ? (
+                        <Clock className="size-3.5 text-zinc-500" />
+                      ) : (
+                        <Check className="size-3.5 text-zinc-600 stroke-[2.5]" />
+                      )}
+                    </div>
+                    <span className="text-xs text-zinc-700 font-medium leading-relaxed">
+                      {activity.title}
+                    </span>
                   </div>
-                  <span className="text-xs text-zinc-700 font-medium leading-relaxed">
-                    {activity.title}
+
+                  <span className="text-xs text-zinc-400 font-normal shrink-0 ml-4">
+                    {activity.date}
                   </span>
                 </div>
-
-                <span className="text-xs text-zinc-400 font-normal shrink-0 ml-4">
-                  {activity.date}
-                </span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -174,24 +180,23 @@ export function ParentOverviewTab({
             </div>
 
             <div className="flex items-center justify-between py-3">
-              <span className="text-zinc-500">Points Balance</span>
-              <span className="font-bold text-zinc-900">
-                {profile.kpis.pointsBalance.toLocaleString()}
+              <span className="text-zinc-500">Role</span>
+              <span className="font-semibold text-zinc-800">
+                {profile.personalInfo.relationshipToStudents || "Parent"}
               </span>
             </div>
 
             <div className="flex items-center justify-between py-3">
-              <span className="text-zinc-500">Active Subscriptions</span>
+              <span className="text-zinc-500">Linked Students</span>
               <span className="font-bold text-zinc-900">
-                {profile.kpis.activeSubscriptions}
+                {profile.kpis.linkedChildren}
               </span>
             </div>
 
             <div className="flex items-center justify-between py-3">
-              <span className="text-zinc-500">Pending Requests</span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200/60">
-                <span className="size-1.5 rounded-full bg-amber-500" />
-                {profile.kpis.pendingRequests} pending
+              <span className="text-zinc-500">Registered</span>
+              <span className="font-semibold text-zinc-800">
+                {profile.registeredDate}
               </span>
             </div>
           </div>

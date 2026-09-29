@@ -20,33 +20,39 @@ export function ParentActivityHistoryTab({
       </div>
 
       <div className="divide-y divide-zinc-100 px-6 py-2">
-        {activityHistory.map((act) => (
-          <div
-            key={act.id}
-            className="flex items-center justify-between py-4"
-          >
-            <div className="flex items-center gap-3">
-              <div className="size-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 shrink-0">
-                {act.iconType === "clock" ? (
-                  <Clock className="size-4 text-zinc-500" />
-                ) : act.iconType === "user" ? (
-                  <User className="size-4 text-zinc-500" />
-                ) : act.iconType === "card" ? (
-                  <CreditCard className="size-4 text-zinc-500" />
-                ) : (
-                  <Check className="size-4 text-zinc-600 stroke-[2.5]" />
-                )}
+        {activityHistory.length === 0 ? (
+          <div className="py-8 text-center text-xs text-zinc-400">
+            No activity history recorded.
+          </div>
+        ) : (
+          activityHistory.map((act) => (
+            <div
+              key={act.id}
+              className="flex items-center justify-between py-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="size-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 shrink-0">
+                  {act.iconType === "clock" ? (
+                    <Clock className="size-4 text-zinc-500" />
+                  ) : act.iconType === "user" ? (
+                    <User className="size-4 text-zinc-500" />
+                  ) : act.iconType === "card" ? (
+                    <CreditCard className="size-4 text-zinc-500" />
+                  ) : (
+                    <Check className="size-4 text-zinc-600 stroke-[2.5]" />
+                  )}
+                </div>
+                <span className="text-xs text-zinc-800 font-medium">
+                  {act.title}
+                </span>
               </div>
-              <span className="text-xs text-zinc-800 font-medium">
-                {act.title}
+
+              <span className="text-xs text-zinc-400 font-normal">
+                {act.date}
               </span>
             </div>
-
-            <span className="text-xs text-zinc-400 font-normal">
-              {act.date}
-            </span>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   )
