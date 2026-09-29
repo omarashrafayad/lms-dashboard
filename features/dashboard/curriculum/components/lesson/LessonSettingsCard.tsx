@@ -5,16 +5,31 @@ import { Lock } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { LessonAccessSettings } from "../../types/curriculum.types"
 
+const defaultSettings: LessonAccessSettings = {
+  freePlanFirstVideoOnly: false,
+  premiumContent: true,
+  videoOfflineDownload: false,
+  pdfOfflineDownload: false,
+}
+
 export interface LessonSettingsCardProps {
-  settings: LessonAccessSettings
+  settings?: LessonAccessSettings
   onSettingsChange?: (settings: LessonAccessSettings) => void
 }
 
 export function LessonSettingsCard({
-  settings: initialSettings,
+  settings: initialSettings = defaultSettings,
   onSettingsChange,
 }: LessonSettingsCardProps) {
-  const [settings, setSettings] = React.useState<LessonAccessSettings>(initialSettings)
+  const [settings, setSettings] = React.useState<LessonAccessSettings>(
+    initialSettings || defaultSettings
+  )
+
+  React.useEffect(() => {
+    if (initialSettings) {
+      setSettings(initialSettings)
+    }
+  }, [initialSettings])
 
   const handleToggle = (key: keyof LessonAccessSettings) => {
     const updated = { ...settings, [key]: !settings[key] }

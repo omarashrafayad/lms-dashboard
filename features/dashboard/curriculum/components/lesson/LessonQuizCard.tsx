@@ -8,21 +8,99 @@ import {
   Pencil,
   Trash2,
   Eye,
+  Plus,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LessonQuiz } from "../../types/curriculum.types"
 
+import { AddQuizModal } from "./AddQuizModal"
+import { useDeleteQuiz } from "../../hooks/useCurriculum"
+import { toast } from "sonner"
+
 export interface LessonQuizCardProps {
-  quiz: LessonQuiz
+  lessonId?: string
+  quiz?: LessonQuiz | null
   onEditQuiz?: () => void
   onRemoveQuiz?: () => void
 }
 
 export function LessonQuizCard({
+  lessonId,
   quiz,
   onEditQuiz,
   onRemoveQuiz,
 }: LessonQuizCardProps) {
+  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false)
+  const deleteQuizMutation = useDeleteQuiz()
+
+  const handleRemove = async () => {
+    if (quiz?.id && lessonId) {
+      try {
+        await deleteQuizMutation.mutateAsync({ quizId: quiz.id, lessonId })
+        toast.success("Quiz removed successfully!")
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || "Failed to remove quiz")
+      }
+    }
+    onRemoveQuiz?.()
+  }
+
+  if (!quiz) {
+    return (
+      <>
+        <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-2xs flex flex-col gap-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-lg bg-zinc-100 text-zinc-600 flex items-center justify-center shrink-0">
+                <HelpCircle className="size-4" />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="font-bold text-sm text-zinc-900">Lesson Quiz</h3>
+                <span className="text-xs text-zinc-400">
+                  Every lesson can have its own assessment quiz.
+                </span>
+              </div>
+            </div>
+
+            {lessonId && (
+              <Button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="h-9 px-4 rounded-xl bg-brand-orange hover:bg-brand-orange/90 text-white text-xs font-semibold shadow-2xs gap-1.5 cursor-pointer"
+              >
+                <Plus className="size-3.5 stroke-[2.5]" />
+                <span>Add Quiz</span>
+              </Button>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/40 p-8 flex flex-col items-center justify-center gap-2 text-center">
+            <span className="text-xs text-zinc-400">
+              No quiz created for this lesson yet.
+            </span>
+            {lessonId && (
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="text-xs font-semibold text-brand-orange hover:underline cursor-pointer"
+              >
+                Create a Quiz
+              </button>
+            )}
+          </div>
+        </div>
+
+        {lessonId && (
+          <AddQuizModal
+            open={isAddModalOpen}
+            onOpenChange={setIsAddModalOpen}
+            lessonId={lessonId}
+          />
+        )}
+      </>
+    )
+  }
+
   return (
     <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-2xs flex flex-col gap-5">
       {/* Header */}
@@ -105,13 +183,21 @@ export function LessonQuizCard({
         <Button
           type="button"
           variant="outline"
-          onClick={onRemoveQuiz}
+          onClick={handleRemove}
           className="h-9 px-3.5 rounded-xl border-zinc-200/80 bg-white text-red-600 hover:text-red-700 text-xs font-medium hover:bg-red-50 shadow-2xs gap-1.5 cursor-pointer"
         >
           <Trash2 className="size-3.5 text-red-500" />
           <span>Remove Quiz</span>
         </Button>
       </div>
+
+      {lessonId && (
+        <AddQuizModal
+          open={isAddModalOpen}
+          onOpenChange={setIsAddModalOpen}
+          lessonId={lessonId}
+        />
+      )}
     </div>
   )
 }

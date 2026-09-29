@@ -6,6 +6,7 @@ import UniTable, { type UniTableColumn } from "@/components/shared/uniTable"
 import { CurriculumSubject } from "../types/curriculum.types"
 import { cn } from "@/lib/utils"
 import { CurriculumRowActions } from "./CurriculumRowActions"
+import EmptyState from "@/components/shared/EmptyState"
 
 export interface CurriculumTableProps {
   data: CurriculumSubject[]
@@ -168,7 +169,12 @@ export function CurriculumTable({
         data={data}
         columns={columns}
         enablePagination={false}
-        emptyMessage="No subjects found matching your filters"
+        emptyMessage={
+          <EmptyState 
+            title="No subjects found"
+            description="No subjects found matching your filters"
+          />
+        }
         className="rounded-2xl border-zinc-200/80 shadow-2xs"
       />
     </div>

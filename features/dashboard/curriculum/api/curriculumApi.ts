@@ -2,170 +2,49 @@ import clientAxios from "@/lib/axios/clientAxios"
 import {
   CurriculumSubject,
   Chapter,
+  Unit,
+  LessonSummary,
   LessonDetail,
   CreateSubjectPayload,
+  CreateChapterPayload,
+  CreateUnitPayload,
+  CreateLessonPayload,
+  CreatePdfPayload,
+  ContentPdfResponse,
+  CreateVideoPayload,
+  ContentVideoResponse,
+  CreateQuizPayload,
+  ContentQuizResponse,
 } from "../types/curriculum.types"
-import {
-  mockCurriculumSubjects,
-  mockSubjectChapters,
-  mockLessonDetail,
-  mockNumbersLessonDetail,
-} from "../data/mockCurriculum"
-
-// In-memory store for active session mutations
-let localSubjects = [...mockCurriculumSubjects]
 
 export const getCurriculumSubjects = async (
   params: { search?: string; stage?: string; year?: string; system?: string; term?: string } = {}
 ): Promise<CurriculumSubject[]> => {
-  try {
-    const res = await clientAxios.get("/curriculum/subjects", { params })
-    const data = Array.isArray(res.data)
-      ? res.data
-      : res.data?.data && Array.isArray(res.data.data)
-      ? res.data.data
-      : null
-
-    if (data && data.length > 0) {
-      return data.map((item: any) => ({
-        ...item,
-        educationStageName: item.educationStageName || item.stage || "",
-        gradeName: item.gradeName || item.year || "",
-        educationSystemName: item.educationSystemName || item.system || "",
-        avatarLetter: item.avatarLetter || item.name?.charAt(0)?.toUpperCase() || "S",
-        avatarColorClass:
-          item.avatarColorClass ||
-          (item.name?.toLowerCase().includes("math")
-            ? "bg-sky-100 text-sky-700"
-            : item.name?.toLowerCase().includes("arab")
-            ? "bg-purple-100 text-purple-700"
-            : item.name?.toLowerCase().includes("scie")
-            ? "bg-lime-100 text-lime-800"
-            : item.name?.toLowerCase().includes("eng")
-            ? "bg-amber-100 text-amber-800"
-            : "bg-orange-100 text-orange-800"),
-        chaptersCount: item.chaptersCount ?? 0,
-        unitsCount: item.unitsCount ?? 0,
-        lessonsCount: item.lessonsCount ?? 0,
-        status: item.status || "Active",
-      }))
-    }
-    if (data && data.length === 0) {
-      return []
-    }
-  } catch (err) {
+  const res = await clientAxios.get("/curriculum/subjects", { params })
+  if (Array.isArray(res.data)) {
+    return res.data
   }
-  return localSubjects
+  if (res.data && Array.isArray(res.data.data)) {
+    return res.data.data
+  }
+  return []
 }
 
 export const getCurriculumSubjectById = async (
   subjectId: string
 ): Promise<{ subject: CurriculumSubject; chapters: Chapter[] }> => {
-  let subject: CurriculumSubject | null = null
-  let chapters: Chapter[] = []
-
-  // 1. Try to fetch structure endpoint
-  try {
-    const structRes = await clientAxios.get(`/curriculum/subjects/${subjectId}/structure`)
-    const structData = structRes.data?.data || structRes.data
-    if (structData && (structData.subject || structData.id)) {
-      const raw = structData.subject || structData
-      subject = {
-        ...raw,
-        educationStageName: raw.educationStageName || raw.stage || "",
-        gradeName: raw.gradeName || raw.year || "",
-        educationSystemName: raw.educationSystemName || raw.system || "",
-        avatarLetter: raw.avatarLetter || raw.name?.charAt(0)?.toUpperCase() || "S",
-        avatarColorClass:
-          raw.avatarColorClass ||
-          (raw.name?.toLowerCase().includes("math")
-            ? "bg-sky-100 text-sky-700"
-            : raw.name?.toLowerCase().includes("arab")
-            ? "bg-purple-100 text-purple-700"
-            : raw.name?.toLowerCase().includes("scie")
-            ? "bg-lime-100 text-lime-800"
-            : raw.name?.toLowerCase().includes("eng")
-            ? "bg-amber-100 text-amber-800"
-            : "bg-orange-100 text-orange-800"),
-        chaptersCount: structData.chapterCount ?? raw.chaptersCount ?? 0,
-        unitsCount: structData.unitCount ?? raw.unitsCount ?? 0,
-        lessonsCount: structData.lessonCount ?? raw.lessonsCount ?? 0,
-        status: raw.status || "Active",
-      }
-
-      if (Array.isArray(structData.courses) && structData.courses.length > 0) {
-        chapters = structData.courses.flatMap((c: any) => c.chapters || [])
-      } else if (Array.isArray(structData.chapters) && structData.chapters.length > 0) {
-        chapters = structData.chapters
-      }
-    }
-  } catch (err) {
-    // Graceful fallback to single subject endpoint
-  }
-
-  // 2. If subject not found from structure, fetch from single subject endpoint
-  if (!subject) {
-    try {
-      const res = await clientAxios.get(`/curriculum/subjects/${subjectId}`)
-      const raw = res.data?.data || res.data
-      if (raw) {
-        const rawSubject = raw.subject || raw
-        subject = {
-          ...rawSubject,
-          educationStageName: rawSubject.educationStageName || rawSubject.stage || "",
-          gradeName: rawSubject.gradeName || rawSubject.year || "",
-          educationSystemName: rawSubject.educationSystemName || rawSubject.system || "",
-          avatarLetter: rawSubject.avatarLetter || rawSubject.name?.charAt(0)?.toUpperCase() || "S",
-          avatarColorClass:
-            rawSubject.avatarColorClass ||
-            (rawSubject.name?.toLowerCase().includes("math")
-              ? "bg-sky-100 text-sky-700"
-              : rawSubject.name?.toLowerCase().includes("arab")
-              ? "bg-purple-100 text-purple-700"
-              : rawSubject.name?.toLowerCase().includes("scie")
-              ? "bg-lime-100 text-lime-800"
-              : rawSubject.name?.toLowerCase().includes("eng")
-              ? "bg-amber-100 text-amber-800"
-              : "bg-orange-100 text-orange-800"),
-          chaptersCount: rawSubject.chaptersCount ?? 0,
-          unitsCount: rawSubject.unitsCount ?? 0,
-          lessonsCount: rawSubject.lessonsCount ?? 0,
-          status: rawSubject.status || "Active",
-        }
-      }
-    } catch (err) {
-      // Graceful fallback to mock data
-    }
-  }
-
-  // 3. Fallback to mock data if neither succeeded
-  if (!subject) {
-    subject =
-      localSubjects.find((s) => s.id === subjectId) || localSubjects[0]
-  }
-
-  if (chapters.length === 0 && mockSubjectChapters[subjectId]) {
-    chapters = mockSubjectChapters[subjectId]
-  }
-
+  const res = await clientAxios.get(`/curriculum/subjects/${subjectId}`)
+  const data = res.data?.data || res.data
   return {
-    subject,
-    chapters,
+    subject: data?.subject || data,
+    chapters: data?.chapters || [],
   }
 }
 
 export const createCurriculumSubject = async (
   data: CreateSubjectPayload
 ): Promise<CurriculumSubject> => {
-  const payload: Record<string, any> = {
-    name: data.name,
-    educationStageId: data.educationStageId,
-    gradeId: data.gradeId,
-    educationSystemId: data.educationSystemId,
-    term: data.term,
-    status: data.status || "Active",
-  }
-  const res = await clientAxios.post("/curriculum/subjects", payload)
+  const res = await clientAxios.post("/curriculum/subjects", data)
   return res.data?.data || res.data
 }
 
@@ -173,36 +52,145 @@ export const updateCurriculumSubject = async (
   id: string,
   data: Partial<CreateSubjectPayload>
 ): Promise<CurriculumSubject> => {
-  const payload: Record<string, any> = {}
-  if (data.name !== undefined) payload.name = data.name
-  if (data.educationStageId !== undefined) payload.educationStageId = data.educationStageId
-  if (data.gradeId !== undefined) payload.gradeId = data.gradeId
-  if (data.educationSystemId !== undefined) payload.educationSystemId = data.educationSystemId
-  if (data.term !== undefined) payload.term = data.term
-  if (data.status !== undefined) payload.status = data.status
-
-  const res = await clientAxios.put(`/curriculum/subjects/${id}`, payload)
+  const res = await clientAxios.put(`/curriculum/subjects/${id}`, data)
   return res.data?.data || res.data
 }
 
-export const deleteCurriculumSubject = async (id: string): Promise<boolean> => {
+export const deleteCurriculumSubject = async (id: string): Promise<void> => {
   await clientAxios.delete(`/curriculum/subjects/${id}`)
-  localSubjects = localSubjects.filter((s) => s.id !== id)
-  return true
 }
+
+import {
+  mockLessonDetail,
+  mockNumbersLessonDetail,
+} from "../data/mockCurriculum"
 
 export const getLessonDetail = async (
   subjectId: string,
   lessonId: string
 ): Promise<LessonDetail> => {
   try {
-    const res = await clientAxios.get(
-      `/curriculum/subjects/${subjectId}/lessons/${lessonId}`
-    )
-    if (res.data?.data) return res.data.data
-    if (res.data) return res.data
+    const res = await clientAxios.get(`/curriculum/lessons/${lessonId}`)
+    const raw = res.data?.data || res.data
+
+    if (raw && (raw.id || raw.name || raw.title)) {
+      let videos = raw.videos || []
+      let pdf = raw.pdf || null
+      let quiz = raw.quiz || null
+
+      try {
+        const [videosRes, pdfsRes, quizzesRes] = await Promise.allSettled([
+          clientAxios.get(`/content/videos/lesson/${lessonId}`),
+          clientAxios.get(`/content/pdfs/lesson/${lessonId}`),
+          clientAxios.get(`/content/quizzes/lesson/${lessonId}`),
+        ])
+
+        if (videosRes.status === "fulfilled") {
+          const vList = Array.isArray(videosRes.value.data)
+            ? videosRes.value.data
+            : Array.isArray(videosRes.value.data?.data)
+            ? videosRes.value.data.data
+            : []
+          if (vList.length > 0) {
+            videos = vList.map((v: any, idx: number) => ({
+              id: v.id || `v-${idx + 1}`,
+              order: v.order ?? idx + 1,
+              title: v.title || `Video ${idx + 1}`,
+              duration: v.duration
+                ? `${Math.floor(v.duration / 60)}:${String(v.duration % 60).padStart(2, "0")}`
+                : "00:00",
+              access: v.isFree ? "Free" : "Premium",
+              offlineAvailable: !!v.isOfflineAvailable,
+            }))
+          }
+        }
+
+        if (pdfsRes.status === "fulfilled") {
+          const pList = Array.isArray(pdfsRes.value.data)
+            ? pdfsRes.value.data
+            : Array.isArray(pdfsRes.value.data?.data)
+            ? pdfsRes.value.data.data
+            : []
+          if (pList[0]) {
+            const p = pList[0]
+            pdf = {
+              id: p.id,
+              title: p.title || "Lesson Resource.pdf",
+              size: formatBytes(p.fileSize),
+              offlineAvailable: !!p.isOfflineAvailable,
+              pdfUrl: p.filePath || p.url || p.fileUrl || "",
+            }
+          }
+        }
+
+        if (quizzesRes.status === "fulfilled") {
+          const qList = Array.isArray(quizzesRes.value.data)
+            ? quizzesRes.value.data
+            : Array.isArray(quizzesRes.value.data?.data)
+            ? quizzesRes.value.data.data
+            : []
+          if (qList[0]) {
+            const q = qList[0]
+            quiz = {
+              id: q.id,
+              title: q.title || "Lesson Quiz",
+              status: q.isPublished ? "Published" : "Draft",
+              questionsCount: q.questionsCount ?? q.questions?.length ?? 0,
+              passingScore: `${q.passingScore}%`,
+              timeLimit: `${q.timeLimit} min`,
+            }
+          }
+        }
+      } catch {
+        // Ignore sub-resource errors
+      }
+
+      return {
+        id: raw.id || lessonId,
+        subjectId: raw.subjectId || subjectId,
+        chapterId: raw.chapterId || "",
+        unitId: raw.unitId || "",
+        name: raw.name || raw.title || "Lesson",
+        title: raw.title || raw.name || "Lesson",
+        description: raw.description || "",
+        order: raw.lessonOrder ?? raw.order ?? 1,
+        lessonOrder: raw.lessonOrder ?? raw.order ?? 1,
+        duration: raw.duration ? `${raw.duration} min` : "30 min",
+        access: raw.access || raw.accessType || "Premium",
+        accessType: raw.accessType || raw.access || "Premium",
+        status:
+          raw.status === "true" ||
+          raw.status === "Active" ||
+          raw.status === "Published"
+            ? "Published"
+            : raw.status || "Draft",
+        stage: raw.stage || raw.educationStageName || "",
+        year: raw.year || raw.gradeName || "",
+        system: raw.system || raw.educationSystemName || "",
+        term: raw.term || "",
+        subjectName: raw.subjectName || "Curriculum",
+        chapterTitle: raw.chapterTitle || "Chapter",
+        unitTitle: raw.unitTitle || "Unit",
+        overview: {
+          description: raw.description || "",
+          order: raw.lessonOrder ?? raw.order ?? 1,
+          duration: raw.duration ? `${raw.duration} min` : "30 min",
+          access: raw.accessType || raw.access || "Premium",
+        },
+        videos: videos,
+        pdf: pdf,
+        pdfOfflineAvailability: pdf?.offlineAvailable ?? false,
+        quiz: quiz,
+        settings: raw.settings || {
+          freePlanFirstVideoOnly: raw.accessType === "Free",
+          premiumContent: raw.accessType === "Premium",
+          videoOfflineDownload: true,
+          pdfOfflineDownload: true,
+        },
+      }
+    }
   } catch (err) {
-    // Graceful fallback to mock data
+    // Graceful fallback to mock data if API 404s
   }
 
   if (lessonId === "les-1" || lessonId.toLowerCase().includes("number")) {
@@ -211,3 +199,179 @@ export const getLessonDetail = async (
 
   return mockLessonDetail
 }
+
+// ======================== Chapters API ========================
+export const getChapters = async (subjectId: string): Promise<Chapter[]> => {
+  const res = await clientAxios.get("/curriculum/chapters", {
+    params: { subjectId },
+  })
+  if (Array.isArray(res.data)) {
+    return res.data
+  }
+  if (res.data && Array.isArray(res.data.data)) {
+    return res.data.data
+  }
+  return []
+}
+
+export const createChapter = async (
+  data: CreateChapterPayload
+): Promise<Chapter> => {
+  const res = await clientAxios.post("/curriculum/chapters", data)
+  return res.data?.data || res.data
+}
+
+// ======================== Units API ========================
+export const getUnits = async (chapterId: string): Promise<Unit[]> => {
+  const res = await clientAxios.get("/curriculum/units", {
+    params: { chapterId },
+  })
+  if (Array.isArray(res.data)) {
+    return res.data
+  }
+  if (res.data && Array.isArray(res.data.data)) {
+    return res.data.data
+  }
+  return []
+}
+
+export const createUnit = async (
+  data: CreateUnitPayload
+): Promise<Unit> => {
+  const res = await clientAxios.post("/curriculum/units", data)
+  return res.data?.data || res.data
+}
+
+// ======================== Lessons API ========================
+export const getLessons = async (unitId: string): Promise<LessonSummary[]> => {
+  const res = await clientAxios.get("/curriculum/lessons", {
+    params: { unitId },
+  })
+  if (Array.isArray(res.data)) {
+    return res.data
+  }
+  if (res.data && Array.isArray(res.data.data)) {
+    return res.data.data
+  }
+  return []
+}
+
+export const createLesson = async (
+  data: CreateLessonPayload
+): Promise<LessonSummary> => {
+  const res = await clientAxios.post("/curriculum/lessons", data)
+  return res.data?.data || res.data
+}
+
+// ======================== Helper ========================
+export function formatBytes(bytes?: number, decimals = 1): string {
+  if (!bytes || bytes === 0) return "0 MB"
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ["B", "KB", "MB", "GB", "TB"]
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+}
+
+// ======================== Content: PDF API ========================
+export const uploadPdf = async (
+  payload: CreatePdfPayload
+): Promise<ContentPdfResponse> => {
+  const formData = new FormData()
+  formData.append("LessonId", payload.lessonId)
+  formData.append("Title", payload.title)
+  formData.append("FileSize", payload.fileSize.toString())
+  formData.append("IsOfflineAvailable", payload.isOfflineAvailable.toString())
+  formData.append("file", payload.file)
+
+  const res = await clientAxios.post("/content/pdfs", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  })
+  return res.data?.data || res.data
+}
+
+export const getPdfs = async (
+  lessonId: string
+): Promise<ContentPdfResponse[]> => {
+  const res = await clientAxios.get(`/content/pdfs/lesson/${lessonId}`)
+  if (Array.isArray(res.data)) {
+    return res.data
+  }
+  if (res.data && Array.isArray(res.data.data)) {
+    return res.data.data
+  }
+  return []
+}
+
+export const deletePdf = async (pdfId: string): Promise<void> => {
+  await clientAxios.delete(`/content/pdfs/${pdfId}`)
+}
+
+// ======================== Content: Video API ========================
+export const uploadVideo = async (
+  payload: CreateVideoPayload
+): Promise<ContentVideoResponse> => {
+  const formData = new FormData()
+  formData.append("LessonId", payload.lessonId)
+  formData.append("Title", payload.title)
+  formData.append("FileSize", payload.fileSize.toString())
+  formData.append("Duration", payload.duration.toString())
+  formData.append("Order", payload.order.toString())
+  formData.append("IsFree", payload.isFree.toString())
+  formData.append("IsPremium", payload.isPremium.toString())
+  formData.append("IsOfflineAvailable", payload.isOfflineAvailable.toString())
+  formData.append("file", payload.file)
+
+  const res = await clientAxios.post("/content/videos", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  })
+  return res.data?.data || res.data
+}
+
+export const getVideos = async (
+  lessonId: string
+): Promise<ContentVideoResponse[]> => {
+  const res = await clientAxios.get(`/content/videos/lesson/${lessonId}`)
+  if (Array.isArray(res.data)) {
+    return res.data
+  }
+  if (res.data && Array.isArray(res.data.data)) {
+    return res.data.data
+  }
+  return []
+}
+
+export const deleteVideo = async (videoId: string): Promise<void> => {
+  await clientAxios.delete(`/content/videos/${videoId}`)
+}
+
+// ======================== Content: Quiz API ========================
+export const createQuiz = async (
+  payload: CreateQuizPayload
+): Promise<ContentQuizResponse> => {
+  const res = await clientAxios.post("/content/quizzes", payload)
+  return res.data?.data || res.data
+}
+
+export const getQuizzes = async (
+  lessonId: string
+): Promise<ContentQuizResponse[]> => {
+  const res = await clientAxios.get(`/content/quizzes/lesson/${lessonId}`)
+  if (Array.isArray(res.data)) {
+    return res.data
+  }
+  if (res.data && Array.isArray(res.data.data)) {
+    return res.data.data
+  }
+  return []
+}
+
+export const deleteQuiz = async (quizId: string): Promise<void> => {
+  await clientAxios.delete(`/content/quizzes/${quizId}`)
+}
+
+

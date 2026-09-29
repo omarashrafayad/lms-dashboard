@@ -19,6 +19,7 @@ import {
   CreateSubjectPayload,
 } from "../types/curriculum.types"
 import { toast } from "sonner"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
 
 const initialFilters: SubjectFilterState = {
   search: "",
@@ -189,11 +190,8 @@ export default function CurriculumListPage() {
 
         {/* Table / Loading */}
         {isLoading ? (
-          <div className="flex items-center justify-center p-12 bg-white rounded-2xl border border-zinc-200/80 shadow-2xs">
-            <Loader2 className="size-6 text-brand-orange animate-spin mr-2" />
-            <span className="text-sm text-zinc-500">Loading subjects...</span>
-          </div>
-        ) : (
+          <LoadingSpinner title="Loading Subjects" />
+        ) :  (
           <CurriculumTable
             data={filteredSubjects}
             onEditSubject={handleOpenEditModal}

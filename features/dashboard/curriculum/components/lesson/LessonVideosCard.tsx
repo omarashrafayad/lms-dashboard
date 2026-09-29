@@ -7,6 +7,7 @@ import {
   GripVertical,
   Eye,
   Pencil,
+  Trash2,
   MoreHorizontal,
   Download,
   DownloadCloud,
@@ -17,22 +18,28 @@ import { cn } from "@/lib/utils"
 import { LessonVideo } from "../../types/curriculum.types"
 import { AddVideoModal } from "./AddVideoModal"
 import { EditVideoModal } from "./EditVideoModal"
+import { useDeleteVideo } from "../../hooks/useCurriculum"
+import { toast } from "sonner"
 
 export interface LessonVideosProps {
-  videos: LessonVideo[]
+  lessonId?: string
+  videos?: LessonVideo[]
   onVideosChange?: (videos: LessonVideo[]) => void
 }
 
 export function LessonVideosCard({
-  videos: initialVideos,
+  lessonId,
+  videos: initialVideos = [],
   onVideosChange,
 }: LessonVideosProps) {
-  const [videos, setVideos] = React.useState<LessonVideo[]>(initialVideos)
+  const [videos, setVideos] = React.useState<LessonVideo[]>(initialVideos || [])
   const [isAddOpen, setIsAddOpen] = React.useState(false)
   const [videoToEdit, setVideoToEdit] = React.useState<LessonVideo | null>(null)
 
+  const deleteVideoMutation = useDeleteVideo()
+
   React.useEffect(() => {
-    setVideos(initialVideos)
+    setVideos(initialVideos || [])
   }, [initialVideos])
 
   const handleAddVideo = (newVideoData: {
@@ -58,6 +65,20 @@ export function LessonVideosCard({
     const updated = videos.map((v) =>
       v.id === videoId ? { ...v, title: newTitle } : v
     )
+    setVideos(updated)
+    onVideosChange?.(updated)
+  }
+
+  const handleDeleteVideo = async (videoId: string) => {
+    if (lessonId) {
+      try {
+        await deleteVideoMutation.mutateAsync({ videoId, lessonId })
+        toast.success("Video deleted successfully!")
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || "Failed to delete video")
+      }
+    }
+    const updated = videos.filter((v) => v.id !== videoId)
     setVideos(updated)
     onVideosChange?.(updated)
   }
@@ -98,7 +119,8 @@ export function LessonVideosCard({
 
       {/* Videos List */}
       <div className="flex flex-col gap-3">
-        {videos.map((video) => (
+        {(videos || []).length > 0 ? (
+          videos.map((video) => (
           <div
             key={video.id}
             className="flex flex-wrap items-center justify-between gap-3 p-3.5 px-4 rounded-xl border border-zinc-200/80 bg-white hover:bg-zinc-50/50 transition-all shadow-2xs"
@@ -200,19 +222,37 @@ export function LessonVideosCard({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-8 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100"
+                onClick={() => handleDeleteVideo(video.id)}
+                className="size-8 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                aria-label="Delete video"
               >
-                <MoreHorizontal className="size-4" />
+                <Trash2 className="size-4" />
               </Button>
             </div>
           </div>
-        ))}
+        ))
+        ) : (
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/40 p-8 flex flex-col items-center justify-center gap-2 text-center">
+            <span className="text-xs text-zinc-400">
+              No videos added to this lesson yet.
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsAddOpen(true)}
+              className="text-xs font-semibold text-brand-orange hover:underline cursor-pointer"
+            >
+              Add a Video
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Add Video Modal */}
       <AddVideoModal
         open={isAddOpen}
         onOpenChange={setIsAddOpen}
+        lessonId={lessonId}
+        defaultOrder={videos.length + 1}
         onAddVideo={handleAddVideo}
       />
 

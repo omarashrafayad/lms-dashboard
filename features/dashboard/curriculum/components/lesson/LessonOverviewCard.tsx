@@ -4,17 +4,17 @@ import * as React from "react"
 import { Info } from "lucide-react"
 
 export interface LessonOverviewProps {
-  description: string
-  order: number
-  duration: string
-  access: string
+  description?: string
+  order?: number
+  duration?: string | number
+  access?: string
 }
 
 export function LessonOverviewCard({
-  description,
-  order,
-  duration,
-  access,
+  description = "No description provided.",
+  order = 1,
+  duration = "30 min",
+  access = "Premium",
 }: LessonOverviewProps) {
   return (
     <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-2xs flex flex-col gap-5">

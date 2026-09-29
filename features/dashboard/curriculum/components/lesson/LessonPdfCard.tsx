@@ -8,7 +8,10 @@ import { LessonPdf } from "../../types/curriculum.types"
 import { AddPdfModal } from "./AddPdfModal"
 import { toast } from "sonner"
 
+import { useDeletePdf } from "../../hooks/useCurriculum"
+
 export interface LessonPdfCardProps {
+  lessonId?: string
   pdf: LessonPdf | null
   initialOfflineAvailability?: boolean
   onPdfChange?: (pdf: LessonPdf) => void
@@ -16,6 +19,7 @@ export interface LessonPdfCardProps {
 }
 
 export function LessonPdfCard({
+  lessonId,
   pdf: initialPdf,
   initialOfflineAvailability = true,
   onPdfChange,
@@ -27,12 +31,31 @@ export function LessonPdfCard({
   )
   const [isModalOpen, setIsModalOpen] = React.useState(false)
 
+  const deletePdfMutation = useDeletePdf()
+
   React.useEffect(() => {
     setPdf(initialPdf)
   }, [initialPdf])
 
   const handleDownload = () => {
-    toast.success("PDF download started.")
+    if (pdf?.pdfUrl) {
+      window.open(pdf.pdfUrl, "_blank")
+    } else {
+      toast.success("PDF download started.")
+    }
+  }
+
+  const handleRemove = async () => {
+    if (pdf?.id && lessonId) {
+      try {
+        await deletePdfMutation.mutateAsync({ pdfId: pdf.id, lessonId })
+        toast.success("PDF deleted successfully")
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || "Failed to delete PDF")
+      }
+    }
+    setPdf(null)
+    onRemovePdf?.()
   }
 
   const handleSavePdf = (newPdf: LessonPdf) => {
@@ -124,10 +147,7 @@ export function LessonPdfCard({
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => {
-                setPdf(null)
-                onRemovePdf?.()
-              }}
+              onClick={handleRemove}
               className="size-8 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
               aria-label="Remove PDF"
             >
@@ -165,6 +185,7 @@ export function LessonPdfCard({
       <AddPdfModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
+        lessonId={lessonId}
         onSavePdf={handleSavePdf}
       />
     </div>
