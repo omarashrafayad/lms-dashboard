@@ -1,23 +1,6 @@
 export type EducationStage = "Primary" | "Preparatory" | "Secondary"
 export type StudentStatus = "Active" | "Inactive"
 
-export interface Student {
-  id: string
-  name: string
-  code: string
-  email: string
-  phone: string
-  stage: EducationStage | string
-  grade: string
-  system: string
-  progress: number
-  averageScore: number
-  status: StudentStatus
-  lastActivity: string
-  avatarInitials: string
-  avatarColorClass: string
-}
-
 export interface ApiStudent {
   id: string
   email: string
@@ -31,7 +14,11 @@ export interface ApiStudent {
   dateOfBirth: string
   educationSystem: string
   gender: string
+  averageScore?: number
+  progress?: number
 }
+
+export type Student = ApiStudent
 
 export interface CreateStudentPayload {
   email: string
@@ -57,5 +44,4 @@ export interface UpdateStudentPayload {
   educationSystemId?: string
   genderId?: string
   isActive?: boolean
-  [key: string]: any
 }

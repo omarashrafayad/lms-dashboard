@@ -1,20 +1,7 @@
 export type TeacherAvailabilityStatus = "Available" | "Busy" | "Offline" | "Unavailable"
 export type TeacherStatus = "Active" | "Inactive"
 
-export interface Teacher {
-  id: string
-  name: string
-  code: string
-  avatarInitials: string
-  avatarColorClass: string
-  email: string
-  phone: string
-  subjects: string[]
-  availability: TeacherAvailabilityStatus
-  upcomingSessions: number
-  status: TeacherStatus
-  lastActive: string
-}
+export type Teacher = ApiTeacher
 
 export interface TeacherFilterState {
   search: string

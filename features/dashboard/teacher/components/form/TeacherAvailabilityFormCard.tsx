@@ -3,22 +3,15 @@
 import * as React from "react"
 import { X, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { DayAvailability, SlotItem } from "../../schema/teacher.schema"
 
-export interface SlotItem {
-  id: string
-  start: string
-  end: string
-}
-
-export interface DayAvailability {
-  dayName: string
-  dayOfWeek: number
-  slots: SlotItem[]
-}
+export type { DayAvailability, SlotItem }
 
 export interface TeacherAvailabilityFormCardProps {
-  setAvailabilityNow: "Yes" | "Skip"
-  onSetAvailabilityNowChange: (val: "Yes" | "Skip") => void
+  availabilityMode?: "Yes" | "Skip"
+  onAvailabilityModeChange?: (val: "Yes" | "Skip") => void
+  setAvailabilityNow?: "Yes" | "Skip"
+  onSetAvailabilityNowChange?: (val: "Yes" | "Skip") => void
   availability: DayAvailability[]
   onAddSlot: (dayOfWeek: number) => void
   onRemoveSlot: (dayOfWeek: number, slotId: string) => void
@@ -31,6 +24,8 @@ export interface TeacherAvailabilityFormCardProps {
 }
 
 export function TeacherAvailabilityFormCard({
+  availabilityMode: propAvailabilityMode,
+  onAvailabilityModeChange,
   setAvailabilityNow,
   onSetAvailabilityNowChange,
   availability,
@@ -38,6 +33,9 @@ export function TeacherAvailabilityFormCard({
   onRemoveSlot,
   onUpdateSlot,
 }: TeacherAvailabilityFormCardProps) {
+  const mode = propAvailabilityMode ?? setAvailabilityNow ?? "Yes"
+  const handleModeChange = onAvailabilityModeChange ?? onSetAvailabilityNowChange ?? (() => {})
+
   return (
     <div className="bg-white rounded-2xl p-6 border border-zinc-200/80 shadow-2xs">
       <h2 className="text-sm font-bold text-zinc-900 mb-4">
@@ -51,10 +49,10 @@ export function TeacherAvailabilityFormCard({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <button
             type="button"
-            onClick={() => onSetAvailabilityNowChange("Yes")}
+            onClick={() => handleModeChange("Yes")}
             className={cn(
               "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer",
-              setAvailabilityNow === "Yes"
+              mode === "Yes"
                 ? "border-amber-400 bg-[#FFFBEB] ring-1 ring-amber-400/60"
                 : "border-zinc-200 bg-white hover:border-zinc-300"
             )}
@@ -62,12 +60,12 @@ export function TeacherAvailabilityFormCard({
             <div
               className={cn(
                 "size-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-                setAvailabilityNow === "Yes"
+                mode === "Yes"
                   ? "border-amber-500 bg-white"
                   : "border-zinc-300 bg-white"
               )}
             >
-              {setAvailabilityNow === "Yes" && (
+              {mode === "Yes" && (
                 <div className="size-2 rounded-full bg-amber-500" />
               )}
             </div>
@@ -83,10 +81,10 @@ export function TeacherAvailabilityFormCard({
 
           <button
             type="button"
-            onClick={() => onSetAvailabilityNowChange("Skip")}
+            onClick={() => handleModeChange("Skip")}
             className={cn(
               "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer",
-              setAvailabilityNow === "Skip"
+              mode === "Skip"
                 ? "border-amber-400 bg-[#FFFBEB] ring-1 ring-amber-400/60"
                 : "border-zinc-200 bg-white hover:border-zinc-300"
             )}
@@ -94,12 +92,12 @@ export function TeacherAvailabilityFormCard({
             <div
               className={cn(
                 "size-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-                setAvailabilityNow === "Skip"
+                mode === "Skip"
                   ? "border-amber-500 bg-white"
                   : "border-zinc-300 bg-white"
               )}
             >
-              {setAvailabilityNow === "Skip" && (
+              {mode === "Skip" && (
                 <div className="size-2 rounded-full bg-amber-500" />
               )}
             </div>
@@ -116,7 +114,7 @@ export function TeacherAvailabilityFormCard({
       </div>
 
       {/* Days Schedule List */}
-      {setAvailabilityNow === "Yes" && (
+      {mode === "Yes" && (
         <div className="flex flex-col divide-y divide-zinc-100">
           {availability.map((dayItem) => (
             <div

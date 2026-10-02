@@ -11,7 +11,7 @@ interface StudentProfileHeaderProps {
   onEdit?: () => void
 }
 
-export function StudentProfileHeader({ profile, onEdit }: StudentProfileHeaderProps) {
+export function StudentProfileHeader({ profile }: StudentProfileHeaderProps) {
   const isActive = profile.status === "Active"
 
   return (

@@ -13,6 +13,7 @@ import { StudentAddStepper } from "../components/StudentAddStepper"
 import { StudentBasicInfoStep } from "../components/StudentBasicInfoStep"
 import { StudentAcademicInfoStep } from "../components/StudentAcademicInfoStep"
 import { StudentAddActions } from "../components/StudentAddActions"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 export default function StudentAddPage() {
   const router = useRouter()
@@ -97,13 +98,9 @@ export default function StudentAddPage() {
       await createStudentMutation.mutateAsync(payload)
       toast.success("Student created successfully")
       router.push("/student/student_list")
-    } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to create student. Please check input data."
-      toast.error(errorMsg)
-    }
+    } catch (err: unknown) {
+  toast.error(getErrorMessage(err))
+}
   }
 
   const isFormLoading = isSubmitting || createStudentMutation.isPending

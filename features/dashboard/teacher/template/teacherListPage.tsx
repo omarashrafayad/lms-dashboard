@@ -5,10 +5,8 @@ import { PageHeader } from "@/components/layout/PageHeader"
 import { TeacherStats } from "../components/TeacherStats"
 import { TeacherFilters } from "../components/TeacherFilters"
 import { TeacherTable } from "../components/TeacherTable"
-import { mockTeachers } from "../data/mockTeachers"
 import { TeacherFilterState } from "../types/teacher.types"
 import { useTeachers } from "../hooks/useTeachers"
-import { mapApiTeacherToTeacher } from "../utils/teacher.mapper"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 
@@ -23,7 +21,7 @@ const initialFilters: TeacherFilterState = {
 export default function TeacherListPage() {
   const [filters, setFilters] = React.useState<TeacherFilterState>(initialFilters)
 
-  const { data: apiTeachers, isLoading,error:isError } = useTeachers()
+  const { data: apiTeachers, isLoading, error: isError } = useTeachers()
 
   const handleFilterChange = (updated: Partial<TeacherFilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))
@@ -33,63 +31,65 @@ export default function TeacherListPage() {
     setFilters(initialFilters)
   }
 
-  const baseTeachers = React.useMemo(() => {
-    if (apiTeachers && Array.isArray(apiTeachers)) {
-      if (apiTeachers.length > 0) {
-        return apiTeachers.map((t, idx) => mapApiTeacherToTeacher(t, idx))
-      }
-      return []
-    }
-    return mockTeachers
-  }, [apiTeachers])
-
-  const statsCounts = React.useMemo(() => {
-    const active = baseTeachers.filter((t) => t.status === "Active").length
-    const available = baseTeachers.filter((t) => t.availability === "Available").length
-    const upcoming = baseTeachers.reduce((acc, t) => acc + (t.upcomingSessions || 0), 0)
-    return { active, available, upcoming }
-  }, [baseTeachers])
-
   const filteredTeachers = React.useMemo(() => {
-    return baseTeachers.filter((teacher) => {
+    if (!apiTeachers || !Array.isArray(apiTeachers)) return []
+    return apiTeachers.filter((teacher) => {
       // Search term filter
       if (filters.search.trim()) {
         const query = filters.search.toLowerCase()
-        const matchesName = teacher.name.toLowerCase().includes(query)
-        const matchesEmail = teacher.email.toLowerCase().includes(query)
-        const matchesPhone = teacher.phone.toLowerCase().includes(query)
-        const matchesSubject = teacher.subjects.some((s) =>
-          s.toLowerCase().includes(query)
-        )
+        const matchesName = teacher.fullName?.toLowerCase().includes(query)
+        const matchesEmail = teacher.email?.toLowerCase().includes(query)
+        const matchesPhone = teacher.phoneNumber?.toLowerCase().includes(query)
+        const subjects = teacher.specializations
+          ? (teacher.specializations.map((s) => s.subjectName).filter(Boolean) as string[])
+          : []
+        const matchesSubject = subjects.some((s) => s.toLowerCase().includes(query))
         if (!matchesName && !matchesEmail && !matchesPhone && !matchesSubject) {
           return false
         }
       }
 
       // Subject filter
-      if (
-        filters.subject !== "all" &&
-        !teacher.subjects.some((s) => s.toLowerCase() === filters.subject.toLowerCase())
-      ) {
-        return false
+      if (filters.subject !== "all") {
+        const subjects = teacher.specializations
+          ? (teacher.specializations.map((s) => s.subjectName).filter(Boolean) as string[])
+          : []
+        if (!subjects.some((s) => s.toLowerCase() === filters.subject.toLowerCase())) {
+          return false
+        }
       }
 
       // Status filter
-      if (filters.status !== "all" && teacher.status !== filters.status) {
-        return false
+      if (filters.status !== "all") {
+        const status = teacher.isActive ? "Active" : "Inactive"
+        if (status !== filters.status) {
+          return false
+        }
       }
 
       // Availability filter
-      if (
-        filters.availability !== "all" &&
-        teacher.availability !== filters.availability
-      ) {
-        return false
+      if (filters.availability !== "all") {
+        let availability = "Available"
+        if (teacher.isAvailable === false) {
+          availability = "Unavailable"
+        } else if (!teacher.isActive) {
+          availability = "Offline"
+        }
+        if (availability !== filters.availability) {
+          return false
+        }
       }
 
       return true
     })
-  }, [baseTeachers, filters])
+  }, [apiTeachers, filters])
+
+  const statsCounts = React.useMemo(() => {
+    const active = filteredTeachers.filter((t) => t.isActive).length
+    const available = filteredTeachers.filter((t) => t.isAvailable !== false && t.isActive).length
+    const upcoming = filteredTeachers.reduce((acc, t) => acc + (t.availabilitySlots?.length || 0), 0)
+    return { active, available, upcoming }
+  }, [filteredTeachers])
 
   return (
     <div className="flex flex-col min-h-full">
@@ -117,9 +117,9 @@ export default function TeacherListPage() {
         {/* Teacher Table or Loading State */}
         {isLoading ? (
           <LoadingSpinner title="Loading Teachers" />
-        ) :isError? (
-          <GlobalError/>
-        ): (
+        ) : isError ? (
+          <GlobalError />
+        ) : (
           <TeacherTable data={filteredTeachers} />
         )}
       </main>

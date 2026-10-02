@@ -59,13 +59,14 @@ export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
 
   const handleDelete = async () => {
     setIsOpen(false)
-    if (!confirm(`Are you sure you want to delete teacher ${teacher.name}?`)) {
+    const displayName = teacher.fullName || "Teacher"
+    if (!confirm(`Are you sure you want to delete teacher ${displayName}?`)) {
       return
     }
 
     try {
       await deleteTeacherMutation.mutateAsync(teacher.id)
-      toast.success(`Teacher ${teacher.name} deleted successfully`)
+      toast.success(`Teacher ${displayName} deleted successfully`)
     } catch (err: any) {
       const errorMsg =
         err?.response?.data?.message ||

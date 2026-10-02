@@ -7,8 +7,6 @@ import { StudentStats } from "../components/StudentStats"
 import { StudentFilters, FilterState } from "../components/StudentFilters"
 import { StudentTable } from "../components/StudentTable"
 import { useStudents } from "../hooks/useStudents"
-import { mapApiStudentToStudent } from "../utils/student.mapper"
-import { Loader2 } from "lucide-react"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 
@@ -24,8 +22,7 @@ export default function StudentListPage() {
   const router = useRouter()
   const [filters, setFilters] = React.useState<FilterState>(initialFilters)
 
-  const { data: apiStudents, isLoading , error,isError} = useStudents()
-  console.log(error)
+  const { data: apiStudents, isLoading, isError } = useStudents()
 
   const handleFilterChange = (updated: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))
@@ -35,46 +32,43 @@ export default function StudentListPage() {
     setFilters(initialFilters)
   }
 
-  const baseStudents = React.useMemo(() => {
-    if (apiStudents && Array.isArray(apiStudents)) {
-      return apiStudents.map(mapApiStudentToStudent)
-    }
-    return null
-  }, [apiStudents])
-
   const filteredStudents = React.useMemo(() => {
-    if (!baseStudents) return []
-    return baseStudents.filter((student) => {
+    if (!apiStudents || !Array.isArray(apiStudents)) return []
+    return apiStudents.filter((student) => {
       if (filters.search.trim()) {
         const query = filters.search.toLowerCase()
-        const matchesName = student.name.toLowerCase().includes(query)
-        const matchesEmail = student.email.toLowerCase().includes(query)
-        const matchesPhone = student.phone.toLowerCase().includes(query)
-        const matchesCode = student.code.toLowerCase().includes(query)
+        const matchesName = student.fullName?.toLowerCase().includes(query)
+        const matchesEmail = student.email?.toLowerCase().includes(query)
+        const matchesPhone = student.phoneNumber?.toLowerCase().includes(query)
+        const code = `std-${(student.id || "").slice(0, 5)}`
+        const matchesCode = code.includes(query) || student.id.toLowerCase().includes(query)
         if (!matchesName && !matchesEmail && !matchesPhone && !matchesCode) {
           return false
         }
       }
 
-      if (filters.stage !== "all" && student.stage.toLowerCase() !== filters.stage.toLowerCase()) {
+      if (filters.stage !== "all" && student.educationStage?.toLowerCase() !== filters.stage.toLowerCase()) {
         return false
       }
 
-      if (filters.grade !== "all" && student.grade.toLowerCase() !== filters.grade.toLowerCase()) {
+      if (filters.grade !== "all" && student.grade?.toLowerCase() !== filters.grade.toLowerCase()) {
         return false
       }
 
-      if (filters.system !== "all" && student.system.toLowerCase() !== filters.system.toLowerCase()) {
+      if (filters.system !== "all" && student.educationSystem?.toLowerCase() !== filters.system.toLowerCase()) {
         return false
       }
 
-      if (filters.status !== "all" && student.status.toLowerCase() !== filters.status.toLowerCase()) {
-        return false
+      if (filters.status !== "all") {
+        const status = student.isActive ? "active" : "inactive"
+        if (status !== filters.status.toLowerCase()) {
+          return false
+        }
       }
 
       return true
     })
-  }, [baseStudents, filters])
+  }, [apiStudents, filters])
 
   return (
     <div className="flex flex-col min-h-full">
@@ -97,13 +91,12 @@ export default function StudentListPage() {
         />
 
         {isLoading ? (
-            <LoadingSpinner title="loading students"/>
+          <LoadingSpinner title="loading students" />
         ) : isError ? (
           <GlobalError />
         ) : (
           <StudentTable data={filteredStudents} />
         )}
-      
       </main>
     </div>
   )

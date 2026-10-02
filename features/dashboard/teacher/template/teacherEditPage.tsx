@@ -25,6 +25,7 @@ import {
   DayAvailability,
   SlotItem,
 } from "../components/form"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 const WEEK_DAYS: { name: string; dayOfWeek: number }[] = [
   { name: "Sunday", dayOfWeek: 0 },
@@ -296,10 +297,6 @@ export default function TeacherEditPage({ teacherId }: TeacherEditPageProps) {
       }
 
       const formData = buildUpdateTeacherFormData(data, {
-        isActive,
-        selectedSubjectIds,
-        selectedTeachingLevelIds,
-        selectedEducationStageIds,
         degreeFile,
         nationalIdFile,
         availabilitySlotsJson: JSON.stringify(slotsPayload),
@@ -308,12 +305,8 @@ export default function TeacherEditPage({ teacherId }: TeacherEditPageProps) {
       await updateTeacherMutation.mutateAsync({ teacherId, data: formData })
       toast.success("Teacher updated successfully!")
       router.push(`/teacher/teacher_list`)
-    } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to update teacher. Please check input data."
-      toast.error(errorMsg)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
     }
   }
 

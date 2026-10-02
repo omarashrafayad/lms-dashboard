@@ -1,32 +1,51 @@
 "use client"
 
 import * as React from "react"
-import { getTeacherProfile } from "../data/mockTeacherProfile"
 import { TeacherProfileHeader } from "../components/profile/TeacherProfileHeader"
 import { TeacherKpiCards } from "../components/profile/TeacherKpiCards"
 import { TeacherInfoCards } from "../components/profile/TeacherInfoCards"
 import { TeacherAvailabilityCard } from "../components/profile/TeacherAvailabilityCard"
 import { TeacherSessionsCard } from "../components/profile/TeacherSessionsCard"
 import { useTeacher } from "../hooks/useTeachers"
+import { TeacherProfile } from "../types/teacherProfile.types"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
 
 interface TeacherDetailPageProps {
   teacherId: string
 }
 
+const AVATAR_COLORS = [
+  "bg-amber-100 text-amber-700",
+  "bg-sky-100 text-sky-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-purple-100 text-purple-700",
+  "bg-rose-100 text-rose-700",
+  "bg-indigo-100 text-indigo-700",
+]
+
+function getAvatarColor(key: string): string {
+  let hash = 0
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash << 5) - hash + key.charCodeAt(i)
+    hash |= 0
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
 export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps) {
-  const { data: apiTeacher } = useTeacher(teacherId)
+  const { data: apiTeacher, isLoading, isError } = useTeacher(teacherId)
 
-  const profile = React.useMemo(() => {
-    const defaultProfile = getTeacherProfile(teacherId)
-    if (!apiTeacher) return defaultProfile
+  const profile: TeacherProfile | null = React.useMemo(() => {
+    if (!apiTeacher) return null
 
-    const initials = (apiTeacher.fullName || defaultProfile.name || "T")
+    const initials = (apiTeacher.fullName || "Teacher")
       .trim()
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2)
       .map((n) => n[0].toUpperCase())
-      .join("")
+      .join("") || "TC"
 
     const subjects = apiTeacher.specializations
       ? Array.from(
@@ -36,7 +55,7 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
               .filter(Boolean) as string[]
           )
         )
-      : defaultProfile.professionalInfo.subjects
+      : ["General"]
 
     const educationStages = apiTeacher.specializations
       ? Array.from(
@@ -46,7 +65,7 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
               .filter(Boolean) as string[]
           )
         )
-      : defaultProfile.teachingSetup.educationStages
+      : []
 
     const teachingLevels = apiTeacher.specializations
       ? Array.from(
@@ -56,7 +75,7 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
               .filter(Boolean) as string[]
           )
         )
-      : defaultProfile.teachingSetup.teachingLevels
+      : []
 
     // Map weekly availability
     const dayNames = [
@@ -68,77 +87,111 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
       "Friday",
       "Saturday",
     ]
-    let weeklyAvailability = defaultProfile.weeklyAvailability
-    if (apiTeacher.availabilitySlots && Array.isArray(apiTeacher.availabilitySlots)) {
-      weeklyAvailability = dayNames.map((dayName, dayIndex) => {
-        const slotsForDay = (apiTeacher.availabilitySlots || []).filter(
-          (s) => s.dayOfWeek === dayIndex
-        )
-        return {
-          day: dayName,
-          slots: slotsForDay.map((s, idx) => ({
-            id: s.id || `slot-${dayIndex}-${idx}`,
-            start: s.startTime || "09:00 AM",
-            end: s.endTime || "12:00 PM",
-            status: "Available" as const,
-          })),
-        }
-      })
-    }
+    const weeklyAvailability = dayNames.map((dayName, dayIndex) => {
+      const slotsForDay = (apiTeacher.availabilitySlots || []).filter(
+        (s) => s.dayOfWeek === dayIndex
+      )
+      return {
+        day: dayName,
+        slots: slotsForDay.map((s, idx) => ({
+          id: s.id || `slot-${dayIndex}-${idx}`,
+          start: s.startTime || "09:00 AM",
+          end: s.endTime || "12:00 PM",
+          status: "Available" as const,
+        })),
+      }
+    })
+
+    const code = `TCH-${(apiTeacher.id || "").slice(0, 5).toUpperCase()}`
 
     return {
-      ...defaultProfile,
-      id: apiTeacher.id || defaultProfile.id,
-      name: apiTeacher.fullName || defaultProfile.name,
-      code: `TCH-${(apiTeacher.id || "").slice(0, 5).toUpperCase()}`,
-      avatarInitials: initials || defaultProfile.avatarInitials,
-      status: (apiTeacher.isActive ? "Active" : "Inactive") as "Active" | "Inactive",
+      id: apiTeacher.id,
+      name: apiTeacher.fullName || "Teacher",
+      code,
+      avatarInitials: initials,
+      avatarColorClass: getAvatarColor(apiTeacher.id || apiTeacher.fullName || ""),
+      status: apiTeacher.isActive ? "Active" : "Inactive",
       availabilityStatus: (apiTeacher.isAvailable === false
         ? "Unavailable"
         : !apiTeacher.isActive
         ? "Offline"
         : "Available") as any,
+      kpis: {
+        totalStudents: 0,
+        upcomingSessions: apiTeacher.availabilitySlots?.length ?? 0,
+        completedSessions: 0,
+        averageRating: 5.0,
+        teachingHours: 0,
+      },
       personalInfo: {
-        fullName: apiTeacher.fullName || defaultProfile.personalInfo.fullName,
-        nationalId: apiTeacher.nationalId || defaultProfile.personalInfo.nationalId,
+        fullName: apiTeacher.fullName || "—",
+        nationalId: apiTeacher.nationalId || "—",
         dateOfBirth: apiTeacher.dateOfBirth
           ? new Date(apiTeacher.dateOfBirth).toLocaleDateString(undefined, {
               month: "short",
               day: "numeric",
               year: "numeric",
             })
-          : defaultProfile.personalInfo.dateOfBirth,
-        gender: (apiTeacher.gender || defaultProfile.personalInfo.gender) as any,
-        email: apiTeacher.email || defaultProfile.personalInfo.email,
-        phone: apiTeacher.phoneNumber || defaultProfile.personalInfo.phone,
+          : "—",
+        gender: (apiTeacher.gender === "Female" ? "Female" : "Male") as any,
+        email: apiTeacher.email || "—",
+        phone: apiTeacher.phoneNumber || "—",
       },
       professionalInfo: {
         subjects: subjects.length > 0 ? subjects : ["General"],
-        qualifications:
-          apiTeacher.qualifications || defaultProfile.professionalInfo.qualifications,
+        qualifications: apiTeacher.qualifications || "—",
         yearsOfExperience: apiTeacher.yearsOfExperience
           ? `${apiTeacher.yearsOfExperience} years`
-          : defaultProfile.professionalInfo.yearsOfExperience,
-        teachingLevels:
-          teachingLevels.length > 0
-            ? teachingLevels
-            : defaultProfile.professionalInfo.teachingLevels,
-        bio: apiTeacher.bio || defaultProfile.professionalInfo.bio,
+          : "—",
+        teachingLevels: teachingLevels.length > 0 ? teachingLevels : [],
+        bio: apiTeacher.bio || "—",
       },
       teachingSetup: {
         subjects: subjects.length > 0 ? subjects : ["General"],
-        educationStages:
-          educationStages.length > 0
-            ? educationStages
-            : defaultProfile.teachingSetup.educationStages,
-        teachingLevels:
-          teachingLevels.length > 0
-            ? teachingLevels
-            : defaultProfile.teachingSetup.teachingLevels,
+        educationStages: educationStages.length > 0 ? educationStages : [],
+        teachingLevels: teachingLevels.length > 0 ? teachingLevels : [],
+      },
+      accountInfo: {
+        loginMethod: "Email" as const,
+        email: apiTeacher.email || "—",
+        phone: apiTeacher.phoneNumber || undefined,
+        accountStatus: apiTeacher.isActive ? "Active" : "Inactive",
+      },
+      verificationDocuments: {
+        degreeCertificate: {
+          fileName: apiTeacher.universityDegreeCertificateUrl || "degree_certificate.pdf",
+          fileSize: "—",
+          status: "Approved" as const,
+        },
+        nationalIdImage: apiTeacher.nationalIdDocumentUrl
+          ? {
+              fileName: apiTeacher.nationalIdDocumentUrl,
+              fileSize: "—",
+              uploaded: true,
+            }
+          : undefined,
       },
       weeklyAvailability,
+      upcomingSessions: [],
+      previousSessions: [],
     }
-  }, [teacherId, apiTeacher])
+  }, [apiTeacher])
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-8 flex items-center justify-center">
+        <LoadingSpinner title="Loading teacher profile" />
+      </div>
+    )
+  }
+
+  if (isError || !profile) {
+    return (
+      <div className="flex-1 p-8">
+        <GlobalError />
+      </div>
+    )
+  }
 
   return (
     <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto pb-16">

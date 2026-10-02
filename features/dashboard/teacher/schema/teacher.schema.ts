@@ -1,5 +1,20 @@
 import { z } from "zod"
 
+export const slotItemSchema = z.object({
+  id: z.string(),
+  start: z.string(),
+  end: z.string(),
+})
+
+export const dayAvailabilitySchema = z.object({
+  dayName: z.string(),
+  dayOfWeek: z.number(),
+  slots: z.array(slotItemSchema),
+})
+
+export type SlotItem = z.infer<typeof slotItemSchema>
+export type DayAvailability = z.infer<typeof dayAvailabilitySchema>
+
 export const createTeacherSchema = z
   .object({
     fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -16,9 +31,10 @@ export const createTeacherSchema = z
     history: z.string().optional(),
     isActive: z.boolean(),
     isAvailable: z.boolean(),
-    subjectIds: z.array(z.string()),
-    teachingLevelIds: z.array(z.string()),
-    educationStageIds: z.array(z.string()),
+    subjectIds: z.array(z.string()).min(1, "Subjects are required"),
+    teachingLevelIds: z.array(z.string()).min(1, "Teaching levels are required"),
+    educationStageIds: z.array(z.string()).min(1, "Education stages are required"),
+    availability: z.array(dayAvailabilitySchema).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -43,6 +59,7 @@ export const updateTeacherSchema = z.object({
   subjectIds: z.array(z.string()),
   teachingLevelIds: z.array(z.string()),
   educationStageIds: z.array(z.string()),
+  availability: z.array(dayAvailabilitySchema).optional(),
 })
 
 export type UpdateTeacherFormData = z.infer<typeof updateTeacherSchema>

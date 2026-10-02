@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/layout/PageHeader"
@@ -10,6 +10,8 @@ import { Form } from "@/components/ui/form"
 import {
   createTeacherSchema,
   CreateTeacherFormData,
+  DayAvailability,
+  SlotItem,
 } from "../schema/teacher.schema"
 import { useCreateTeacher } from "../hooks/useTeachers"
 import { buildCreateTeacherFormData } from "../utils/teacherFormData"
@@ -20,9 +22,8 @@ import {
   TeacherDocumentsCard,
   TeacherAvailabilityFormCard,
   TeacherFormActions,
-  DayAvailability,
-  SlotItem,
 } from "../components/form"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 const WEEK_DAYS: { name: string; dayOfWeek: number }[] = [
   { name: "Sunday", dayOfWeek: 0 },
@@ -34,6 +35,88 @@ const WEEK_DAYS: { name: string; dayOfWeek: number }[] = [
   { name: "Saturday", dayOfWeek: 6 },
 ]
 
+type MultiSelectField = "subjectIds" | "educationStageIds" | "teachingLevelIds"
+
+const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/
+
+interface TimeSlotPayload {
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+}
+
+function validateAndBuildAvailabilityPayload(
+  availability: DayAvailability[]
+): TimeSlotPayload[] | null {
+  const slotsPayload: TimeSlotPayload[] = []
+
+  const timeToMinutes = (t: string): number => {
+    const [h, m] = t.split(":").map(Number)
+    return h * 60 + m
+  }
+
+  for (const day of availability) {
+    if (!day.slots || day.slots.length === 0) continue
+
+    // Validate format and start < end for each slot
+    for (const slot of day.slots) {
+      if (!TIME_REGEX.test(slot.start)) {
+        toast.error(
+          `Invalid start time format in ${day.dayName}: "${slot.start}". Expected format is HH:mm (e.g. 09:00)`
+        )
+        return null
+      }
+      if (!TIME_REGEX.test(slot.end)) {
+        toast.error(
+          `Invalid end time format in ${day.dayName}: "${slot.end}". Expected format is HH:mm (e.g. 12:00)`
+        )
+        return null
+      }
+
+      const startMin = timeToMinutes(slot.start)
+      const endMin = timeToMinutes(slot.end)
+
+      if (startMin >= endMin) {
+        toast.error(
+          `Start time (${slot.start}) must be before end time (${slot.end}) in ${day.dayName}`
+        )
+        return null
+      }
+    }
+
+    // Check for overlapping slots within the same day
+    const sortedSlots = [...day.slots].sort(
+      (a, b) => timeToMinutes(a.start) - timeToMinutes(b.start)
+    )
+
+    for (let i = 0; i < sortedSlots.length - 1; i++) {
+      const current = sortedSlots[i]
+      const next = sortedSlots[i + 1]
+
+      const currentEnd = timeToMinutes(current.end)
+      const nextStart = timeToMinutes(next.start)
+
+      if (currentEnd > nextStart) {
+        toast.error(
+          `Overlapping time slots in ${day.dayName}: (${current.start} - ${current.end}) overlaps with (${next.start} - ${next.end})`
+        )
+        return null
+      }
+    }
+
+    // Build payload for this day
+    for (const slot of day.slots) {
+      slotsPayload.push({
+        dayOfWeek: day.dayOfWeek,
+        startTime: `${slot.start}:00`,
+        endTime: `${slot.end}:00`,
+      })
+    }
+  }
+
+  return slotsPayload
+}
+
 export default function TeacherAddPage() {
   const router = useRouter()
   const createTeacherMutation = useCreateTeacher()
@@ -41,14 +124,7 @@ export default function TeacherAddPage() {
   const [degreeFile, setDegreeFile] = React.useState<File | null>(null)
   const [nationalIdFile, setNationalIdFile] = React.useState<File | null>(null)
 
-  const [setAvailabilityNow, setSetAvailabilityNow] = React.useState<"Yes" | "Skip">("Yes")
-  const [availability, setAvailability] = React.useState<DayAvailability[]>(
-    WEEK_DAYS.map((d) => ({
-      dayName: d.name,
-      dayOfWeek: d.dayOfWeek,
-      slots: [],
-    }))
-  )
+  const [availabilityMode, setAvailabilityMode] = React.useState<"Yes" | "Skip">("Yes")
 
   const form = useForm<CreateTeacherFormData>({
     resolver: zodResolver(createTeacherSchema),
@@ -71,6 +147,11 @@ export default function TeacherAddPage() {
       subjectIds: [],
       teachingLevelIds: [],
       educationStageIds: [],
+      availability: WEEK_DAYS.map((d) => ({
+        dayName: d.name,
+        dayOfWeek: d.dayOfWeek,
+        slots: [],
+      })),
     },
   })
 
@@ -78,61 +159,55 @@ export default function TeacherAddPage() {
     control,
     handleSubmit,
     setValue,
-    watch,
+    getValues,
     formState: { isSubmitting },
   } = form
 
-  const isActive = watch("isActive")
-  const selectedSubjectIds = watch("subjectIds")
-  const selectedEducationStageIds = watch("educationStageIds")
-  const selectedTeachingLevelIds = watch("teachingLevelIds")
+  const isActive = useWatch({ control, name: "isActive" }) ?? true
+  const selectedSubjectIds = useWatch({ control, name: "subjectIds" }) ?? []
+  const selectedEducationStageIds = useWatch({ control, name: "educationStageIds" }) ?? []
+  const selectedTeachingLevelIds = useWatch({ control, name: "teachingLevelIds" }) ?? []
+  const availability = useWatch({ control, name: "availability" }) ?? []
 
-  const toggleSubject = (id: string) => {
-    const next = selectedSubjectIds.includes(id)
-      ? selectedSubjectIds.filter((s) => s !== id)
-      : [...selectedSubjectIds, id]
-    setValue("subjectIds", next)
+  const toggleId = (field: MultiSelectField, id: string) => {
+    const current = getValues(field) ?? []
+
+    const next = current.includes(id)
+      ? current.filter((item) => item !== id)
+      : [...current, id]
+
+    setValue(field, next, { shouldValidate: true, shouldDirty: true })
   }
 
-  const toggleEducationStage = (id: string) => {
-    const next = selectedEducationStageIds.includes(id)
-      ? selectedEducationStageIds.filter((s) => s !== id)
-      : [...selectedEducationStageIds, id]
-    setValue("educationStageIds", next)
-  }
-
-  const toggleTeachingLevel = (id: string) => {
-    const next = selectedTeachingLevelIds.includes(id)
-      ? selectedTeachingLevelIds.filter((l) => l !== id)
-      : [...selectedTeachingLevelIds, id]
-    setValue("teachingLevelIds", next)
-  }
+  const toggleSubject = (id: string) => toggleId("subjectIds", id)
+  const toggleEducationStage = (id: string) => toggleId("educationStageIds", id)
+  const toggleTeachingLevel = (id: string) => toggleId("teachingLevelIds", id)
 
   const addTimeSlot = (dayOfWeek: number) => {
-    setAvailability((prev) =>
-      prev.map((d) => {
-        if (d.dayOfWeek === dayOfWeek) {
-          const newSlot: SlotItem = {
-            id: `slot-${dayOfWeek}-${Date.now()}`,
-            start: "09:00",
-            end: "12:00",
-          }
-          return { ...d, slots: [...d.slots, newSlot] }
+    const current = getValues("availability") ?? []
+    const next = current.map((d) => {
+      if (d.dayOfWeek === dayOfWeek) {
+        const newSlot: SlotItem = {
+          id: crypto.randomUUID(),
+          start: "09:00",
+          end: "12:00",
         }
-        return d
-      })
-    )
+        return { ...d, slots: [...d.slots, newSlot] }
+      }
+      return d
+    })
+    setValue("availability", next, { shouldDirty: true })
   }
 
   const removeTimeSlot = (dayOfWeek: number, slotId: string) => {
-    setAvailability((prev) =>
-      prev.map((d) => {
-        if (d.dayOfWeek === dayOfWeek) {
-          return { ...d, slots: d.slots.filter((s) => s.id !== slotId) }
-        }
-        return d
-      })
-    )
+    const current = getValues("availability") ?? []
+    const next = current.map((d) => {
+      if (d.dayOfWeek === dayOfWeek) {
+        return { ...d, slots: d.slots.filter((s) => s.id !== slotId) }
+      }
+      return d
+    })
+    setValue("availability", next, { shouldDirty: true })
   }
 
   const updateTimeSlot = (
@@ -141,61 +216,31 @@ export default function TeacherAddPage() {
     field: "start" | "end",
     val: string
   ) => {
-    setAvailability((prev) =>
-      prev.map((d) => {
-        if (d.dayOfWeek === dayOfWeek) {
-          return {
-            ...d,
-            slots: d.slots.map((s) => (s.id === slotId ? { ...s, [field]: val } : s)),
-          }
+    const current = getValues("availability") ?? []
+    const next = current.map((d) => {
+      if (d.dayOfWeek === dayOfWeek) {
+        return {
+          ...d,
+          slots: d.slots.map((s) => (s.id === slotId ? { ...s, [field]: val } : s)),
         }
-        return d
-      })
-    )
-  }
-
-  const formatTimeForApi = (t: string): string => {
-    if (!t) return "00:00:00"
-    if (t.length === 5) return `${t}:00`
-    return t
+      }
+      return d
+    })
+    setValue("availability", next, { shouldDirty: true })
   }
 
   const onSubmit = async (data: CreateTeacherFormData) => {
-    if (selectedSubjectIds.length === 0) {
-      toast.error("Please select at least one subject")
-      return
-    }
-
     try {
-      let formattedDob = data.dateOfBirth
-      if (formattedDob) {
-        const parsed = new Date(formattedDob)
-        if (!isNaN(parsed.getTime())) {
-          formattedDob = parsed.toISOString()
+      let slotsPayload: TimeSlotPayload[] = []
+      if (availabilityMode === "Yes") {
+        const validated = validateAndBuildAvailabilityPayload(availability)
+        if (validated === null) {
+          return
         }
-      }
-
-      // Build availability slots
-      const slotsPayload: { dayOfWeek: number; startTime: string; endTime: string }[] = []
-      if (setAvailabilityNow === "Yes") {
-        availability.forEach((day) => {
-          day.slots.forEach((slot) => {
-            if (slot.start && slot.end) {
-              slotsPayload.push({
-                dayOfWeek: day.dayOfWeek,
-                startTime: formatTimeForApi(slot.start),
-                endTime: formatTimeForApi(slot.end),
-              })
-            }
-          })
-        })
+        slotsPayload = validated
       }
 
       const formData = buildCreateTeacherFormData(data, {
-        isActive,
-        selectedSubjectIds,
-        selectedTeachingLevelIds,
-        selectedEducationStageIds,
         degreeFile,
         nationalIdFile,
         availabilitySlotsJson: JSON.stringify(slotsPayload),
@@ -204,12 +249,8 @@ export default function TeacherAddPage() {
       await createTeacherMutation.mutateAsync(formData)
       toast.success("Teacher account created successfully!")
       router.push("/teacher/teacher_list")
-    } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to create teacher. Please check input data."
-      toast.error(errorMsg)
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error))
     }
   }
 
@@ -225,19 +266,16 @@ export default function TeacherAddPage() {
       <main className="flex-1 p-6 md:p-8 max-w-[1100px] w-full mx-auto flex flex-col gap-6">
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-            {/* Card 1: Basic Information */}
             <TeacherBasicInfoCard
               control={control}
               isActive={isActive}
               onIsActiveChange={(val) => {
-                setValue("isActive", val)
+                setValue("isActive", val, { shouldDirty: true, shouldValidate: true })
               }}
             />
 
-            {/* Card 2: Professional Information */}
             <TeacherProfessionalInfoCard control={control} />
 
-            {/* Card 3: Teaching Setup */}
             <TeacherTeachingSetupCard
               selectedSubjectIds={selectedSubjectIds}
               onToggleSubject={toggleSubject}
@@ -247,7 +285,6 @@ export default function TeacherAddPage() {
               onToggleTeachingLevel={toggleTeachingLevel}
             />
 
-            {/* Card 4: Verification Documents */}
             <TeacherDocumentsCard
               degreeFile={degreeFile}
               onDegreeFileChange={setDegreeFile}
@@ -255,17 +292,15 @@ export default function TeacherAddPage() {
               onNationalIdFileChange={setNationalIdFile}
             />
 
-            {/* Card 5: Availability Setup */}
             <TeacherAvailabilityFormCard
-              setAvailabilityNow={setAvailabilityNow}
-              onSetAvailabilityNowChange={setSetAvailabilityNow}
+              availabilityMode={availabilityMode}
+              onAvailabilityModeChange={setAvailabilityMode}
               availability={availability}
               onAddSlot={addTimeSlot}
               onRemoveSlot={removeTimeSlot}
               onUpdateSlot={updateTimeSlot}
             />
 
-            {/* Form Actions */}
             <TeacherFormActions
               isSubmitting={isFormLoading}
               submitLabel="Create Teacher"
