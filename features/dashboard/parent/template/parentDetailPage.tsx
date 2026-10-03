@@ -18,6 +18,8 @@ import { useParent, useUpdateParent } from "../hooks/useParents"
 import { ParentProfile, ParentLinkedChild } from "../types/parentProfile.types"
 import { Loader2, AlertCircle, ChevronLeft } from "lucide-react"
 import { toast } from "sonner"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
 
 export interface ParentDetailPageProps {
   parentId: string
@@ -161,12 +163,8 @@ export default function ParentDetailPage({ parentId }: ParentDetailPageProps) {
           ? "Parent account activated successfully"
           : "Parent account deactivated successfully"
       )
-    } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to update parent status"
-      )
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
     }
   }
 
@@ -178,8 +176,7 @@ export default function ParentDetailPage({ parentId }: ParentDetailPageProps) {
   if (isLoading) {
     return (
       <main className="flex-1 p-6 md:p-8 flex flex-col items-center justify-center min-h-[400px]">
-        <Loader2 className="size-8 text-brand-orange animate-spin mb-3" />
-        <p className="text-sm text-zinc-500 font-medium">Loading parent details...</p>
+        <LoadingSpinner title="Loading parent details..." />
       </main>
     )
   }

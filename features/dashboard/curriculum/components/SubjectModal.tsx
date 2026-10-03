@@ -87,10 +87,10 @@ export function SubjectModal({
     control: form.control,
     name: "name",
   })
-
   const { data: grades = [], isLoading: gradesLoading } = useGrades(
     selectedStageId || undefined
   )
+
 
   const stageOptions = React.useMemo(() => {
     return stages.map((st) => ({
@@ -364,4 +364,3 @@ export function SubjectModal({
     </Dialog>
   )
 }
-

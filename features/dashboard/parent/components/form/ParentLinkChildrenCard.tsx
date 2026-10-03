@@ -193,7 +193,6 @@ export function ParentLinkChildrenCard({
         )}
       </div>
 
-      {/* Linked Children List / Table or Empty Container */}
       {linkedChildren.length === 0 ? (
         <div className="p-8 border border-dashed border-zinc-200 rounded-xl text-center flex items-center justify-center">
           <span className="text-xs text-zinc-400 font-normal">

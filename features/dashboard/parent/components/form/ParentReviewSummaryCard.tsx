@@ -1,29 +1,56 @@
 "use client"
 
 import * as React from "react"
-import { Control, useWatch } from "react-hook-form"
-import { Plus, Loader2 } from "lucide-react"
-import { CreateParentFormData } from "../../schema/parent.schema"
+import { Control, FieldPath, FieldValues, useWatch } from "react-hook-form"
+import { Plus, Check, Loader2 } from "lucide-react"
 import { LinkedChildItem } from "./ParentLinkChildrenCard"
 
-export interface ParentReviewSummaryCardProps {
-  control: Control<CreateParentFormData>
+export interface ParentReviewSummaryCardProps<
+  TFieldValues extends FieldValues = FieldValues
+> {
+  control: Control<TFieldValues>
   linkedChildren: LinkedChildItem[]
   isSubmitting: boolean
   onCancel: () => void
+  submitLabel?: string
+  isEditMode?: boolean
 }
 
-export function ParentReviewSummaryCard({
+export function ParentReviewSummaryCard<
+  TFieldValues extends FieldValues = FieldValues
+>({
   control,
   linkedChildren,
   isSubmitting,
   onCancel,
-}: ParentReviewSummaryCardProps) {
-  const firstName = useWatch({ control, name: "firstName" }) ?? ""
-  const lastName = useWatch({ control, name: "lastName" }) ?? ""
-  const email = useWatch({ control, name: "email" }) ?? ""
-  const phoneNumber = useWatch({ control, name: "phoneNumber" }) ?? ""
-  const isActive = useWatch({ control, name: "isActive" }) ?? true
+  submitLabel = "Create Parent",
+  isEditMode = false,
+}: ParentReviewSummaryCardProps<TFieldValues>) {
+  const firstName =
+    (useWatch({
+      control,
+      name: "firstName" as FieldPath<TFieldValues>,
+    }) as string | undefined) ?? ""
+  const lastName =
+    (useWatch({
+      control,
+      name: "lastName" as FieldPath<TFieldValues>,
+    }) as string | undefined) ?? ""
+  const email =
+    (useWatch({
+      control,
+      name: "email" as FieldPath<TFieldValues>,
+    }) as string | undefined) ?? ""
+  const phoneNumber =
+    (useWatch({
+      control,
+      name: "phoneNumber" as FieldPath<TFieldValues>,
+    }) as string | undefined) ?? ""
+  const isActive =
+    (useWatch({
+      control,
+      name: "isActive" as FieldPath<TFieldValues>,
+    }) as boolean | undefined) ?? true
 
   const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
 
@@ -126,10 +153,18 @@ export function ParentReviewSummaryCard({
           >
             {isSubmitting ? (
               <Loader2 className="size-4 animate-spin" />
+            ) : isEditMode ? (
+              <Check className="size-4 stroke-[2.5]" />
             ) : (
               <Plus className="size-4 stroke-[2.5]" />
             )}
-            <span>{isSubmitting ? "Creating..." : "Create Parent"}</span>
+            <span>
+              {isSubmitting
+                ? isEditMode
+                  ? "Saving..."
+                  : "Creating..."
+                : submitLabel}
+            </span>
           </button>
 
           <button

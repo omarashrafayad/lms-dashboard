@@ -3,209 +3,199 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, Check, X, Search, Loader2, AlertCircle } from "lucide-react"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { ChevronLeft } from "lucide-react"
+import { toast } from "sonner"
 import { PageHeader } from "@/components/layout/PageHeader"
-import { useStudents } from "@/features/dashboard/student/hooks/useStudents"
+import { Form } from "@/components/ui/form"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import { ApiStudent } from "@/features/dashboard/student/types/student.types"
 import { useParent, useUpdateParent } from "../hooks/useParents"
-import { updateParentSchema } from "../schema/parent.schema"
-import { toast } from "sonner"
+import {
+  updateParentSchema,
+  UpdateParentFormData,
+} from "../schema/parent.schema"
+import {
+  ParentBasicInfoCard,
+  ParentAccountInfoCard,
+  ParentLinkChildrenCard,
+  ParentReviewSummaryCard,
+  LinkedChildItem,
+} from "../components/form"
 
 export interface ParentEditPageProps {
   parentId: string
 }
 
-interface LinkedChildItem {
-  id: string
-  name: string
-  avatarUrl?: string
-  grade: string
-  stage: string
-  email?: string
-}
-
 export default function ParentEditPage({ parentId }: ParentEditPageProps) {
   const router = useRouter()
-
-  const { data: apiParent, isLoading: isFetchingParent, isError } = useParent(parentId)
+  const { data: parent, isLoading: isParentLoading, isError } = useParent(parentId)
   const updateParentMutation = useUpdateParent()
 
-  // Form State initialized
-  const [firstName, setFirstName] = React.useState("")
-  const [lastName, setLastName] = React.useState("")
-  const [email, setEmail] = React.useState("")
-  const [phone, setPhone] = React.useState("")
-  const [status, setStatus] = React.useState<"Active" | "Inactive">("Active")
-  const [sendWelcomeEmail, setSendWelcomeEmail] = React.useState(false)
+  const [addedChildren, setAddedChildren] = React.useState<LinkedChildItem[]>([])
+  const [removedChildIds, setRemovedChildIds] = React.useState<string[]>([])
 
-  // Linked Children State
-  const [linkedChildren, setLinkedChildren] = React.useState<LinkedChildItem[]>([])
-  const [searchQuery, setSearchQuery] = React.useState("")
-  const [debouncedSearch, setDebouncedSearch] = React.useState("")
-  const [isSearching, setIsSearching] = React.useState(false)
-  const searchContainerRef = React.useRef<HTMLDivElement>(null)
+  const linkedChildren: LinkedChildItem[] = React.useMemo(() => {
+    const students = parent?.linkedStudents || parent?.childIds || []
+    const initial: LinkedChildItem[] = Array.isArray(students)
+      ? students.map((c) => ({
+          id: c.id || "",
+          name: c.fullName || c.name || "Student",
+          grade: c.grade || "—",
+          stage: c.educationStage || "—",
+          email: c.email || "",
+        }))
+      : []
 
-  // Debounce search input
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchQuery])
+    const remaining = initial.filter((c) => !removedChildIds.includes(c.id))
+    return [...remaining, ...addedChildren]
+  }, [parent, addedChildren, removedChildIds])
 
-  // Close dropdown on click outside
-  React.useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(e.target as Node)
-      ) {
-        setIsSearching(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+  const form = useForm<UpdateParentFormData>({
+    resolver: zodResolver(updateParentSchema),
+    mode: "onTouched",
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phoneNumber: "",
+      isActive: true,
+      sendWelcomeEmail: false,
+      childIds: [],
+    },
+  })
 
-  // Sync state when apiParent is ready
-  React.useEffect(() => {
-    if (apiParent) {
-      setFirstName(apiParent.firstName || "")
-      setLastName(apiParent.lastName || "")
-      setEmail(apiParent.email || "")
-      setPhone(apiParent.phoneNumber || "")
-      setStatus(apiParent.isActive ? "Active" : "Inactive")
-
-      const students = apiParent.linkedStudents || apiParent.childIds || []
-      if (Array.isArray(students) && students.length > 0) {
-        setLinkedChildren(
-          students.map((c: any) => ({
-            id: c.id,
-            name: c.fullName || c.name || "Student",
-            grade: c.grade || "—",
-            stage: c.educationStage || "—",
-            email: c.email || "",
-          }))
-        )
-      } else {
-        setLinkedChildren([])
-      }
-    }
-  }, [apiParent])
-
-  // Derived Full Name
-  const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
-
-  // Fetch students via /api/v1/students?search=...
   const {
-    data: apiStudents,
-    isLoading: isLoadingStudents,
-    isFetching: isFetchingStudents,
-  } = useStudents(
-    debouncedSearch ? { search: debouncedSearch } : {},
-    { enabled: isSearching }
+    control,
+    handleSubmit,
+    setValue,
+    getValues,
+    reset,
+    formState: { isSubmitting },
+  } = form
+
+  const watchedFirstName = useWatch({ control, name: "firstName" })
+  const watchedLastName = useWatch({ control, name: "lastName" })
+  const dynamicFullName = [watchedFirstName, watchedLastName].filter(Boolean).join(" ")
+
+  React.useEffect(() => {
+    if (!parent) return
+
+    const students = parent.linkedStudents || parent.childIds || []
+    const initialChildIds = Array.isArray(students)
+      ? (students.map((c) => c.id).filter(Boolean) as string[])
+      : []
+
+    reset({
+      firstName: parent.firstName || "",
+      lastName: parent.lastName || "",
+      email: parent.email || "",
+      phoneNumber: parent.phoneNumber || "",
+      isActive: parent.isActive ?? true,
+      sendWelcomeEmail: false,
+      childIds: initialChildIds,
+    })
+  }, [parent, reset])
+
+  const handleAddChild = React.useCallback(
+    (student: ApiStudent) => {
+      setRemovedChildIds((prev) => prev.filter((id) => id !== student.id))
+      setAddedChildren((prev) => {
+        if (prev.some((c) => c.id === student.id)) return prev
+        return [
+          ...prev,
+          {
+            id: student.id,
+            name: student.fullName || "Unnamed Student",
+            grade: student.grade || "—",
+            stage: student.educationStage || "—",
+            email: student.email || "",
+          },
+        ]
+      })
+
+      const currentChildIds = getValues("childIds") ?? []
+      if (!currentChildIds.includes(student.id)) {
+        setValue("childIds", [...currentChildIds, student.id], {
+          shouldDirty: true,
+          shouldValidate: true,
+        })
+      }
+    },
+    [getValues, setValue]
   )
 
-  // Filter out already linked children
-  const searchResults = React.useMemo(() => {
-    if (!apiStudents || !Array.isArray(apiStudents)) return []
-    return apiStudents.filter(
-      (s) => !linkedChildren.some((c) => c.id === s.id)
-    )
-  }, [apiStudents, linkedChildren])
+  const handleRemoveChild = React.useCallback(
+    (id: string) => {
+      setAddedChildren((prev) => prev.filter((c) => c.id !== id))
+      setRemovedChildIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
 
-  const handleAddChild = (student: ApiStudent) => {
-    setLinkedChildren((prev) => [
-      ...prev,
-      {
-        id: student.id,
-        name: student.fullName || "Unnamed Student",
-        grade: student.grade || "—",
-        stage: student.educationStage || "—",
-        email: student.email || "",
-      },
-    ])
-    setSearchQuery("")
-    setIsSearching(false)
-  }
+      const currentChildIds = getValues("childIds") ?? []
+      setValue(
+        "childIds",
+        currentChildIds.filter((childId) => childId !== id),
+        { shouldDirty: true, shouldValidate: true }
+      )
+    },
+    [getValues, setValue]
+  )
 
-  const handleRemoveChild = (id: string) => {
-    setLinkedChildren((prev) => prev.filter((c) => c.id !== id))
-  }
+  const handleCancel = React.useCallback(() => {
+    router.push(`/parent/${parentId}`)
+  }, [router, parentId])
 
-  const handleSaveChanges = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    const childIds = linkedChildren.map((c) => c.id)
-
-    const parseResult = updateParentSchema.safeParse({
-      firstName,
-      lastName,
-      email,
-      phoneNumber: phone,
-      isActive: status === "Active",
-      childIds,
-    })
-
-    if (!parseResult.success) {
-      const errorMsg = parseResult.error.issues[0]?.message || "Please check required fields."
-      toast.error(errorMsg)
-      return
-    }
-
+  const onSubmit = async (data: UpdateParentFormData) => {
     try {
       await updateParentMutation.mutateAsync({
         parentId,
         data: {
-          firstName: parseResult.data.firstName,
-          lastName: parseResult.data.lastName,
-          email: parseResult.data.email,
-          phoneNumber: parseResult.data.phoneNumber,
-          isActive: parseResult.data.isActive,
-          childIds: parseResult.data.childIds,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phoneNumber: data.phoneNumber,
+          isActive: data.isActive,
+          childIds: data.childIds,
         },
       })
       toast.success("Parent updated successfully")
-      router.push("/parent/parent_list")
-    } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to update parent. Please check input data."
-      toast.error(errorMsg)
+      router.push(`/parent/${parentId}`)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
     }
   }
 
-  if (isFetchingParent) {
+  const isFormLoading = isSubmitting || updateParentMutation.isPending
+
+  if (isParentLoading) {
     return (
-      <div className="flex flex-col min-h-full items-center justify-center p-12 min-h-[400px]">
-        <Loader2 className="size-8 text-brand-orange animate-spin mb-3" />
-        <span className="text-sm text-zinc-500">Loading parent details...</span>
+      <div className="flex min-h-full items-center justify-center p-12">
+        <LoadingSpinner title="Loading parent details..." />
       </div>
     )
   }
 
-  if (!apiParent) {
+  if (isError || !parent) {
     return (
-      <div className="flex flex-col min-h-full items-center justify-center p-12 min-h-[400px]">
-        <div className="text-center max-w-md flex flex-col items-center">
-          <div className="size-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mb-3">
-            <AlertCircle className="size-6" />
+      <div className="flex flex-col min-h-screen">
+        <PageHeader
+          title="Edit Parent"
+          description="Update parent details and manage linked children accounts."
+        />
+        <main className="flex-1 p-6 md:p-8 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-sm font-semibold text-rose-600 mb-2">
+              Failed to load parent details
+            </p>
+            <Link
+              href="/parent/parent_list"
+              className="text-xs text-zinc-500 hover:text-zinc-900 underline"
+            >
+              Back to All Parents
+            </Link>
           </div>
-          <h2 className="text-lg font-bold text-zinc-900 mb-1">
-            Parent Not Found
-          </h2>
-          <p className="text-xs text-zinc-500 mb-5">
-            The parent could not be loaded or does not exist.
-          </p>
-          <Link
-            href="/parent/parent_list"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-brand-orange hover:bg-brand-orange/90 shadow-2xs transition-all"
-          >
-            <ChevronLeft className="size-4" />
-            <span>Back to All Parents</span>
-          </Link>
-        </div>
+        </main>
       </div>
     )
   }
@@ -214,468 +204,53 @@ export default function ParentEditPage({ parentId }: ParentEditPageProps) {
     <div className="flex flex-col min-h-full">
       {/* Page Header */}
       <PageHeader
-        title="Edit Parent"
-        description="Update this parent's account information and linked children."
+        title={`Edit Parent: ${dynamicFullName || parent.fullName || "Parent"}`}
+        description="Update parent details and manage linked children accounts."
       />
 
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto pb-16">
         {/* Back Link */}
         <div>
           <Link
-            href="/parent/parent_list"
+            href={`/parent/${parentId}`}
             className="inline-flex items-center gap-2 text-xs font-medium text-zinc-600 hover:text-zinc-900 transition-colors cursor-pointer"
           >
             <ChevronLeft className="size-4 text-zinc-500" />
-            <span>Back to All Parents</span>
+            <span>Back to Parent Profile</span>
           </Link>
         </div>
 
-        {/* 2-Column Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Left Column (Forms): Span 2 */}
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            {/* 1. Basic Information */}
-            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-6 flex flex-col gap-5">
-              <div className="flex items-center gap-3">
-                <div className="size-6 rounded-full bg-[#FEF3C7] text-[#D97706] text-xs font-bold flex items-center justify-center shrink-0">
-                  1
-                </div>
-                <h2 className="text-sm font-bold text-zinc-900">
-                  Basic Information
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* First Name */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-zinc-700">
-                    First Name <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="e.g. Hana"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
-                  />
-                </div>
-
-                {/* Last Name */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-zinc-700">
-                    Last Name <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="e.g. Mostafa"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-zinc-700">
-                    Email <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="hana@example.com"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
-                  />
-                </div>
-
-                {/* Phone Number */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-zinc-700">
-                    Phone Number <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+20 100 447 2210"
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
-                  />
-                </div>
-              </div>
-
-              <span className="text-[11px] text-zinc-400 font-normal">
-                Email and phone number are required for parent account notification and access.
-              </span>
-            </div>
-
-            {/* 2. Account Information */}
-            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-6 flex flex-col gap-5">
-              <div className="flex items-center gap-3">
-                <div className="size-6 rounded-full bg-[#FEF3C7] text-[#D97706] text-xs font-bold flex items-center justify-center shrink-0">
-                  2
-                </div>
-                <h2 className="text-sm font-bold text-zinc-900">
-                  Account Information
-                </h2>
-              </div>
-
-              {/* Status Segmented Buttons */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-zinc-700">
-                  Account Status
-                </label>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setStatus("Active")}
-                    className={`flex-1 sm:flex-none sm:w-36 h-10 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${status === "Active"
-                        ? "bg-[#FEF3C7] text-zinc-900 border-[#FDE68A] shadow-2xs"
-                        : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
-                      }`}
-                  >
-                    Active
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setStatus("Inactive")}
-                    className={`flex-1 sm:flex-none sm:w-36 h-10 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${status === "Inactive"
-                        ? "bg-[#FEF3C7] text-zinc-900 border-[#FDE68A] shadow-2xs"
-                        : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
-                      }`}
-                  >
-                    Inactive
-                  </button>
-                </div>
-              </div>
-
-              {/* Send Welcome Email Checkbox */}
-              <label className="flex items-center gap-2.5 cursor-pointer select-none pt-1">
-                <input
-                  type="checkbox"
-                  checked={sendWelcomeEmail}
-                  onChange={(e) => setSendWelcomeEmail(e.target.checked)}
-                  className="sr-only"
+        {/* Form Provider & Layout */}
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              {/* Left Column: Form Cards (Span 2) */}
+              <div className="lg:col-span-2 flex flex-col gap-6">
+                <ParentBasicInfoCard control={control} isEditMode={true} />
+                <ParentAccountInfoCard control={control} setValue={setValue} />
+                <ParentLinkChildrenCard
+                  linkedChildren={linkedChildren}
+                  onAddChild={handleAddChild}
+                  onRemoveChild={handleRemoveChild}
                 />
-                <div
-                  className={`size-4 rounded-sm border flex items-center justify-center transition-colors ${sendWelcomeEmail
-                      ? "bg-[#F59E0B] border-[#F59E0B] text-white"
-                      : "border-zinc-300 bg-white"
-                    }`}
-                >
-                  {sendWelcomeEmail && <Check className="size-3 stroke-[3]" />}
-                </div>
-                <span className="text-xs text-zinc-700 font-normal">
-                  Resend welcome email / notification
-                </span>
-              </label>
-            </div>
-
-            {/* 3. Link Children */}
-            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-6 flex flex-col gap-5">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-3">
-                  <div className="size-6 rounded-full bg-[#FEF3C7] text-[#D97706] text-xs font-bold flex items-center justify-center shrink-0">
-                    3
-                  </div>
-                  <h2 className="text-sm font-bold text-zinc-900">
-                    Link Children
-                  </h2>
-                </div>
-                <p className="text-xs text-zinc-400 font-normal ml-9">
-                  Manage the students connected to this parent account.
-                </p>
               </div>
 
-              {/* Search Bar for adding children */}
-              <div ref={searchContainerRef} className="relative w-full">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value)
-                    setIsSearching(true)
-                  }}
-                  onFocus={() => setIsSearching(true)}
-                  placeholder="Search students by name, email, or stage..."
-                  className="w-full h-10 pl-10 pr-10 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
+              {/* Right Column: Live Summary & Actions */}
+              <div className="lg:col-span-1">
+                <ParentReviewSummaryCard
+                  control={control}
+                  linkedChildren={linkedChildren}
+                  isSubmitting={isFormLoading}
+                  onCancel={handleCancel}
+                  submitLabel="Save Changes"
+                  isEditMode={true}
                 />
-
-                {/* Right search indicator: spinner or clear button */}
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                  {isFetchingStudents ? (
-                    <Loader2 className="size-4 text-amber-500 animate-spin" />
-                  ) : searchQuery ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchQuery("")
-                        setDebouncedSearch("")
-                      }}
-                      className="text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
-                      title="Clear search"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  ) : null}
-                </div>
-
-                {/* Autocomplete Dropdown */}
-                {isSearching && (
-                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-zinc-200 rounded-xl shadow-lg z-30 py-1.5 max-h-72 overflow-y-auto divide-y divide-zinc-50">
-                    {isLoadingStudents || (isFetchingStudents && searchResults.length === 0) ? (
-                      <div className="flex items-center justify-center gap-2 py-6 text-zinc-400 text-xs">
-                        <Loader2 className="size-4 animate-spin text-amber-500" />
-                        <span>Searching students...</span>
-                      </div>
-                    ) : searchResults.length === 0 ? (
-                      <div className="py-6 px-4 text-center text-xs text-zinc-400">
-                        {searchQuery.trim()
-                          ? `No students found matching "${searchQuery}"`
-                          : "No available students found."}
-                      </div>
-                    ) : (
-                      searchResults.map((student, idx) => {
-                        const initials = (student.fullName || "S")
-                          .trim()
-                          .split(/\s+/)
-                          .slice(0, 2)
-                          .map((n) => n[0]?.toUpperCase())
-                          .join("") || "ST"
-
-                        const colorVariants = [
-                          "bg-sky-100 text-sky-700",
-                          "bg-amber-100 text-amber-700",
-                          "bg-emerald-100 text-emerald-700",
-                          "bg-purple-100 text-purple-700",
-                          "bg-rose-100 text-rose-700",
-                        ]
-                        const colorClass = colorVariants[idx % colorVariants.length]
-
-                        return (
-                          <button
-                            key={student.id}
-                            type="button"
-                            onClick={() => handleAddChild(student)}
-                            className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-amber-50/40 transition-colors text-left cursor-pointer group"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div
-                                className={`size-8 rounded-full text-xs font-semibold flex items-center justify-center shrink-0 ${colorClass}`}
-                              >
-                                {initials}
-                              </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-semibold text-zinc-900 group-hover:text-amber-700 transition-colors truncate">
-                                  {student.fullName || "Unnamed Student"}
-                                </span>
-                                <span className="text-[11px] text-zinc-400 truncate">
-                                  {[
-                                    student.grade && `Grade: ${student.grade}`,
-                                    student.educationStage && `Stage: ${student.educationStage}`,
-                                    student.email,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(" · ")}
-                                </span>
-                              </div>
-                            </div>
-                            <span className="text-xs font-semibold text-[#D97706] bg-amber-50 group-hover:bg-[#FEF3C7] px-2.5 py-1 rounded-lg transition-colors shrink-0 ml-3">
-                              + Link
-                            </span>
-                          </button>
-                        )
-                      })
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Linked Children List */}
-              {linkedChildren.length === 0 ? (
-                <div className="p-6 rounded-xl border border-dashed border-zinc-200 text-center">
-                  <span className="text-xs text-zinc-400">
-                    No children linked yet. Use the search bar above to link students.
-                  </span>
-                </div>
-              ) : (
-                <div className="border border-zinc-200/80 rounded-xl overflow-hidden">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-zinc-50 border-b border-zinc-200/80 text-zinc-400 uppercase text-[10px] font-semibold">
-                      <tr>
-                        <th className="py-2.5 px-4">Student</th>
-                        <th className="py-2.5 px-4">Grade & Stage</th>
-                        <th className="py-2.5 px-4">Status</th>
-                        <th className="py-2.5 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-100">
-                      {linkedChildren.map((child) => (
-                        <tr key={child.id} className="hover:bg-zinc-50/50">
-                          <td className="py-3 px-4 font-semibold text-zinc-900">
-                            {child.name}
-                          </td>
-                          <td className="py-3 px-4 text-zinc-600">
-                            {[child.grade, child.stage].filter((v) => v && v !== "—").join(" · ") || child.grade}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium text-[#4D7C0F] bg-[#ECFCCB]">
-                              <span className="size-1.5 rounded-full bg-[#65A30D]" />
-                              Linked
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveChild(child.id)}
-                              className="text-zinc-400 hover:text-rose-500 transition-colors p-1 cursor-pointer"
-                              title="Unlink child"
-                            >
-                              <X className="size-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column: Review Live Summary */}
-          <div className="lg:col-span-1 sticky top-24 flex flex-col gap-4">
-            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-6 flex flex-col gap-6">
-              {/* Review Header */}
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-zinc-900">Review</h3>
-                <span className="text-xs text-zinc-400 font-normal">
-                  Live summary
-                </span>
-              </div>
-
-              {/* Parent Information Summary */}
-              <div className="flex flex-col gap-3">
-                <span className="text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">
-                  PARENT INFORMATION
-                </span>
-
-                <div className="flex flex-col divide-y divide-zinc-100 text-xs">
-                  <div className="flex items-center justify-between py-2.5">
-                    <span className="text-zinc-400 font-normal">Full Name</span>
-                    <span className="font-semibold text-zinc-900">
-                      {fullName || "—"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-2.5">
-                    <span className="text-zinc-400 font-normal">Email</span>
-                    <span className="font-semibold text-zinc-900 break-all">
-                      {email}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-2.5">
-                    <span className="text-zinc-400 font-normal">Phone</span>
-                    <span className="font-semibold text-zinc-900">
-                      {phone}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-2.5">
-                    <span className="text-zinc-400 font-normal">
-                      Account Status
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${status === "Active"
-                          ? "text-emerald-700 bg-emerald-50 border-emerald-200/60"
-                          : "text-zinc-500 bg-zinc-50 border-zinc-200"
-                        }`}
-                    >
-                      <span
-                        className={`size-1.5 rounded-full ${status === "Active" ? "bg-emerald-500" : "bg-zinc-400"
-                          }`}
-                      />
-                      {status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Linked Children Summary */}
-              <div className="flex flex-col gap-3">
-                <span className="text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">
-                  LINKED CHILDREN ({linkedChildren.length})
-                </span>
-
-                {linkedChildren.length === 0 ? (
-                  <span className="text-xs text-zinc-400 font-normal">
-                    No children selected.
-                  </span>
-                ) : (
-                  <div className="flex flex-col gap-2.5">
-                    {linkedChildren.map((child) => (
-                      <div
-                        key={child.id}
-                        className="flex items-center gap-2.5 text-xs"
-                      >
-                        <div className="size-7 rounded-full overflow-hidden shrink-0 border border-zinc-200 bg-zinc-100 flex items-center justify-center">
-                          {child.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={child.avatarUrl}
-                              alt={child.name}
-                              className="size-full object-cover"
-                            />
-                          ) : (
-                            <span className="font-semibold text-[10px] text-zinc-700">
-                              {child.name.slice(0, 2).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-semibold text-zinc-900 leading-tight truncate">
-                            {child.name}
-                          </span>
-                          <span className="text-[11px] text-zinc-400 truncate">
-                            {[child.grade, child.stage].filter((v) => v && v !== "—").join(" · ") || child.grade}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Save Changes and Cancel Buttons */}
-              <div className="flex flex-col gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleSaveChanges}
-                  disabled={updateParentMutation.isPending}
-                  className="w-full h-10 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white font-medium text-xs flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {updateParentMutation.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Check className="size-4 stroke-[2.5]" />
-                  )}
-                  <span>{updateParentMutation.isPending ? "Saving..." : "Save Changes"}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => router.push("/parent/parent_list")}
-                  className="w-full h-10 rounded-xl bg-white border border-zinc-200/90 hover:bg-zinc-50 text-zinc-700 font-medium text-xs flex items-center justify-center transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
               </div>
             </div>
-          </div>
-        </div>
+          </form>
+        </Form>
       </main>
     </div>
   )
 }
+

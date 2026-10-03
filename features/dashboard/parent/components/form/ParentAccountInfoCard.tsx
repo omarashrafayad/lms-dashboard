@@ -1,21 +1,30 @@
 "use client"
 
 import * as React from "react"
-import { Control, UseFormSetValue, useWatch } from "react-hook-form"
+import { Control, FieldPath, FieldValues, PathValue, UseFormSetValue, useWatch } from "react-hook-form"
 import { Check } from "lucide-react"
-import { CreateParentFormData } from "../../schema/parent.schema"
 
-export interface ParentAccountInfoCardProps {
-  control: Control<CreateParentFormData>
-  setValue: UseFormSetValue<CreateParentFormData>
+export interface ParentAccountInfoCardProps<
+  TFieldValues extends FieldValues = FieldValues
+> {
+  control: Control<TFieldValues>
+  setValue: UseFormSetValue<TFieldValues>
 }
 
-export function ParentAccountInfoCard({
-  control,
-  setValue,
-}: ParentAccountInfoCardProps) {
-  const isActive = useWatch({ control, name: "isActive" }) ?? true
-  const sendWelcomeEmail = useWatch({ control, name: "sendWelcomeEmail" }) ?? true
+export function ParentAccountInfoCard<
+  TFieldValues extends FieldValues = FieldValues
+>({ control, setValue }: ParentAccountInfoCardProps<TFieldValues>) {
+  const isActive =
+    (useWatch({
+      control,
+      name: "isActive" as FieldPath<TFieldValues>,
+    }) as boolean | undefined) ?? true
+
+  const sendWelcomeEmail =
+    (useWatch({
+      control,
+      name: "sendWelcomeEmail" as FieldPath<TFieldValues>,
+    }) as boolean | undefined) ?? false
 
   return (
     <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-6 flex flex-col gap-5">
@@ -35,7 +44,11 @@ export function ParentAccountInfoCard({
           <button
             type="button"
             onClick={() =>
-              setValue("isActive", true, { shouldDirty: true, shouldValidate: true })
+              setValue(
+                "isActive" as FieldPath<TFieldValues>,
+                true as PathValue<TFieldValues, FieldPath<TFieldValues>>,
+                { shouldDirty: true, shouldValidate: true }
+              )
             }
             className={`flex-1 sm:flex-none sm:w-36 h-10 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
               isActive
@@ -49,7 +62,11 @@ export function ParentAccountInfoCard({
           <button
             type="button"
             onClick={() =>
-              setValue("isActive", false, { shouldDirty: true, shouldValidate: true })
+              setValue(
+                "isActive" as FieldPath<TFieldValues>,
+                false as PathValue<TFieldValues, FieldPath<TFieldValues>>,
+                { shouldDirty: true, shouldValidate: true }
+              )
             }
             className={`flex-1 sm:flex-none sm:w-36 h-10 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
               !isActive
@@ -68,22 +85,14 @@ export function ParentAccountInfoCard({
           type="checkbox"
           checked={sendWelcomeEmail}
           onChange={(e) =>
-            setValue("sendWelcomeEmail", e.target.checked, { shouldDirty: true })
+            setValue(
+              "sendWelcomeEmail" as FieldPath<TFieldValues>,
+              e.target.checked as PathValue<TFieldValues, FieldPath<TFieldValues>>,
+              { shouldDirty: true }
+            )
           }
           className="sr-only"
         />
-        <div
-          className={`size-4 rounded-sm border flex items-center justify-center transition-colors ${
-            sendWelcomeEmail
-              ? "bg-[#F59E0B] border-[#F59E0B] text-white"
-              : "border-zinc-300 bg-white"
-          }`}
-        >
-          {sendWelcomeEmail && <Check className="size-3 stroke-[3]" />}
-        </div>
-        <span className="text-xs text-zinc-700 font-normal">
-          Send welcome email
-        </span>
       </label>
     </div>
   )

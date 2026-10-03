@@ -1,15 +1,19 @@
 "use client"
 
 import * as React from "react"
-import { Control } from "react-hook-form"
+import { Control, FieldPath, FieldValues } from "react-hook-form"
 import { UniInput } from "@/components/shared/UniInput"
-import { CreateParentFormData } from "../../schema/parent.schema"
 
-export interface ParentBasicInfoCardProps {
-  control: Control<CreateParentFormData>
+export interface ParentBasicInfoCardProps<
+  TFieldValues extends FieldValues = FieldValues
+> {
+  control: Control<TFieldValues>
+  isEditMode?: boolean
 }
 
-export function ParentBasicInfoCard({ control }: ParentBasicInfoCardProps) {
+export function ParentBasicInfoCard<
+  TFieldValues extends FieldValues = FieldValues
+>({ control, isEditMode = false }: ParentBasicInfoCardProps<TFieldValues>) {
   return (
     <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-6 flex flex-col gap-5">
       <div className="flex items-center gap-3">
@@ -22,7 +26,7 @@ export function ParentBasicInfoCard({ control }: ParentBasicInfoCardProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <UniInput
           control={control}
-          name="firstName"
+          name={"firstName" as FieldPath<TFieldValues>}
           label="First Name"
           placeholder="e.g. Hana"
           required
@@ -32,7 +36,7 @@ export function ParentBasicInfoCard({ control }: ParentBasicInfoCardProps) {
 
         <UniInput
           control={control}
-          name="lastName"
+          name={"lastName" as FieldPath<TFieldValues>}
           label="Last Name"
           placeholder="e.g. Mostafa"
           required
@@ -42,7 +46,7 @@ export function ParentBasicInfoCard({ control }: ParentBasicInfoCardProps) {
 
         <UniInput
           control={control}
-          name="email"
+          name={"email" as FieldPath<TFieldValues>}
           label="Email"
           type="email"
           placeholder="name@example.com"
@@ -53,7 +57,7 @@ export function ParentBasicInfoCard({ control }: ParentBasicInfoCardProps) {
 
         <UniInput
           control={control}
-          name="phoneNumber"
+          name={"phoneNumber" as FieldPath<TFieldValues>}
           label="Phone Number"
           type="tel"
           placeholder="+20 100 000 0000"
@@ -62,24 +66,21 @@ export function ParentBasicInfoCard({ control }: ParentBasicInfoCardProps) {
           labelClassName="text-xs font-medium text-zinc-700"
         />
 
-        <div className="sm:col-span-2">
-          <UniInput
-            control={control}
-            name="password"
-            label="Password"
-            type="password"
-            placeholder="••••••••"
-            required
-            helperText="Minimum 6 characters."
-            inputClassName="h-10 text-xs rounded-xl"
-            labelClassName="text-xs font-medium text-zinc-700"
-          />
-        </div>
+        {!isEditMode && (
+          <div className="sm:col-span-2">
+            <UniInput
+              control={control}
+              name={"password" as FieldPath<TFieldValues>}
+              label="Password"
+              type="password"
+              placeholder="password"
+              required
+              inputClassName="h-10 text-xs rounded-xl"
+              labelClassName="text-xs font-medium text-zinc-700"
+            />
+          </div>
+        )}
       </div>
-
-      <span className="text-[11px] text-zinc-400 font-normal">
-        Email and phone number are required for parent account notification and access.
-      </span>
     </div>
   )
 }

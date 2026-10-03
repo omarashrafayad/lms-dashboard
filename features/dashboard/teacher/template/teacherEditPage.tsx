@@ -26,6 +26,7 @@ import {
   TeacherFormActions,
 } from "../components/form"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
 
 const WEEK_DAYS: { name: string; dayOfWeek: number }[] = [
   { name: "Sunday", dayOfWeek: 0 },
@@ -363,10 +364,7 @@ export default function TeacherEditPage({ teacherId }: TeacherEditPageProps) {
   if (isTeacherLoading) {
     return (
       <div className="flex flex-col min-h-screen items-center justify-center p-8">
-        <Loader2 className="size-8 text-brand-orange animate-spin mb-3" />
-        <span className="text-sm text-zinc-500 font-medium">
-          Loading teacher details...
-        </span>
+        <LoadingSpinner title="Loading teacher details..." />
       </div>
     )
   }

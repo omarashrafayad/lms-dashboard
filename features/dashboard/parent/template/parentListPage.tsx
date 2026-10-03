@@ -9,7 +9,8 @@ import { ParentTable } from "../components/ParentTable"
 import { ParentFilterState } from "../types/parent.types"
 import { useParents } from "../hooks/useParents"
 import { mapApiParentToParent } from "../utils/parent.mapper"
-import { Loader2 } from "lucide-react"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
 
 const initialFilters: ParentFilterState = {
   search: "",
@@ -23,9 +24,7 @@ export default function ParentListPage() {
   const router = useRouter()
   const [filters, setFilters] = React.useState<ParentFilterState>(initialFilters)
 
-  const { data: apiParents, isLoading, error } = useParents({
-    search: filters.search.trim() || undefined,
-  })
+  const { data: apiParents, isLoading, isError } = useParents()
 
   const handleFilterChange = (updated: Partial<ParentFilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))
@@ -35,53 +34,54 @@ export default function ParentListPage() {
     setFilters(initialFilters)
   }
 
-  const baseParents = React.useMemo(() => {
-    if (apiParents && Array.isArray(apiParents)) {
-      return apiParents.map(mapApiParentToParent)
-    }
-    return []
-  }, [apiParents])
-
   const filteredParents = React.useMemo(() => {
-    return baseParents.filter((parent) => {
-      // Client-side search check
-      if (filters.search.trim()) {
-        const query = filters.search.toLowerCase()
-        const matchesName = parent.name.toLowerCase().includes(query)
-        const matchesEmail = parent.email.toLowerCase().includes(query)
-        const matchesPhone = parent.phone.toLowerCase().includes(query)
-        const matchesChildren = parent.childrenNames.some((c) =>
-          c.toLowerCase().includes(query)
-        )
-        if (!matchesName && !matchesEmail && !matchesPhone && !matchesChildren) {
+    if (!apiParents || !Array.isArray(apiParents)) return []
+
+    return apiParents
+      .filter((parent) => {
+        // Search filter
+        if (filters.search.trim()) {
+          const query = filters.search.toLowerCase()
+          const fullName =
+            parent.fullName ||
+            [parent.firstName, parent.lastName].filter(Boolean).join(" ") ||
+            ""
+          const matchesName = fullName.toLowerCase().includes(query)
+          const matchesEmail = parent.email?.toLowerCase().includes(query)
+          const matchesPhone = parent.phoneNumber?.toLowerCase().includes(query)
+          const linkedStudents = parent.linkedStudents || parent.childIds || []
+          const matchesChildren = linkedStudents.some((c) =>
+            (c.fullName || c.name || "").toLowerCase().includes(query)
+          )
+          const code = `par-${(parent.id || "").slice(0, 5)}`
+          const matchesCode = code.includes(query) || parent.id?.toLowerCase().includes(query)
+
+          if (!matchesName && !matchesEmail && !matchesPhone && !matchesChildren && !matchesCode) {
+            return false
+          }
+        }
+
+        // Status
+        if (filters.status !== "all") {
+          const status = parent.isActive ? "Active" : "Inactive"
+          if (status !== filters.status) {
+            return false
+          }
+        }
+
+        // Has Linked Children
+        const children = parent.linkedStudents || parent.childIds || []
+        if (filters.hasLinkedChildren === "yes" && children.length === 0) {
           return false
         }
-      }
+        if (filters.hasLinkedChildren === "no" && children.length > 0) {
+          return false
+        }
 
-      // Status
-      if (filters.status !== "all" && parent.status !== filters.status) {
-        return false
-      }
-
-      // Has Linked Children
-      if (filters.hasLinkedChildren === "yes" && parent.childrenCount === 0) {
-        return false
-      }
-      if (filters.hasLinkedChildren === "no" && parent.childrenCount > 0) {
-        return false
-      }
-
-      // Subscription Status
-      if (filters.subscriptionStatus === "active" && parent.activeSubscriptions === 0) {
-        return false
-      }
-      if (filters.subscriptionStatus === "none" && parent.activeSubscriptions > 0) {
-        return false
-      }
-
-      return true
-    })
-  }, [baseParents, filters])
+        return true
+      })
+      .map(mapApiParentToParent)
+  }, [apiParents, filters])
 
   const totalCount = filteredParents.length
   const activeCount = filteredParents.filter((p) => p.status === "Active").length
@@ -116,14 +116,9 @@ export default function ParentListPage() {
         />
 
         {isLoading ? (
-          <div className="flex items-center justify-center p-12 bg-white rounded-2xl border border-zinc-200/80 shadow-2xs">
-            <Loader2 className="size-6 text-brand-orange animate-spin mr-2" />
-            <span className="text-sm text-zinc-500">Loading parents...</span>
-          </div>
-        ) : error ? (
-          <div className="p-8 text-center bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm">
-            Failed to load parents. Please try again later.
-          </div>
+          <LoadingSpinner title="loading parents" />
+        ) : isError ? (
+          <GlobalError />
         ) : (
           <ParentTable data={filteredParents} />
         )}
