@@ -51,8 +51,6 @@ function appendCommonTeacherFields(
   }
 
   formData.append("IsActive", String(data.isActive))
-  formData.append("IsAvailable", "true")
-
   // Multi-select arrays
   data.subjectIds.forEach((id) => formData.append("SubjectIds", id))
   data.teachingLevelIds.forEach((id) =>

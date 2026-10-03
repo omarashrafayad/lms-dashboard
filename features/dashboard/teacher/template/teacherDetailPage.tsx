@@ -115,7 +115,7 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
         ? "Unavailable"
         : !apiTeacher.isActive
         ? "Offline"
-        : "Available") as any,
+        : "Available"),
       kpis: {
         totalStudents: 0,
         upcomingSessions: apiTeacher.availabilitySlots?.length ?? 0,
@@ -133,7 +133,7 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
               year: "numeric",
             })
           : "—",
-        gender: (apiTeacher.gender === "Female" ? "Female" : "Male") as any,
+        gender: (apiTeacher.gender === "Female" ? "Female" : "Male"),
         email: apiTeacher.email || "—",
         phone: apiTeacher.phoneNumber || "—",
       },

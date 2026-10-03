@@ -37,7 +37,7 @@ export function TeacherDocumentsCard({
         Verification Documents
       </h2>
       <p className="text-xs text-zinc-500 mb-6">
-        Upload the required documents to verify this teacher's identity and academic qualifications.
+        Upload the required documents to verify this teachers identity and academic qualifications.
       </p>
 
       {/* University Degree Certificate */}
@@ -46,7 +46,7 @@ export function TeacherDocumentsCard({
           University Degree Certificate
         </label>
         <p className="text-[11px] text-zinc-400 mb-3">
-          Upload a clear scan or image of the teacher's university degree certificate.
+          Upload a clear scan or image of the teachers university degree certificate.
         </p>
 
         <input
@@ -142,7 +142,7 @@ export function TeacherDocumentsCard({
           National ID Document <span className="text-amber-500">*</span>
         </label>
         <p className="text-[11px] text-zinc-400 mb-3">
-          Upload a clear scan or image of the teacher's national ID card.
+          Upload a clear scan or image of the teachers national ID card.
         </p>
 
         <input
