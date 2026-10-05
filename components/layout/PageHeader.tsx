@@ -53,19 +53,18 @@ export function PageHeader({
           <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-brand-orange ring-2 ring-white" />
         </button>
 
-        {/* User Profile Pill */}
+        {/* User Profile Pill matching Screenshots */}
         <div className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-full border border-zinc-200/80 bg-white hover:bg-zinc-50 transition-colors shadow-2xs cursor-pointer select-none">
-          <div className="size-7 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center shrink-0">
-            {user?.fullName?.slice(0, 2).toUpperCase()}
+          <div className="relative size-7 rounded-full overflow-hidden shrink-0 border border-zinc-200">
+            <img
+              src="/dina-farouk.jpg"
+              alt="Dina Farouk"
+              className="w-full h-full object-cover"
+            />
           </div>
-          <div className="flex flex-col text-left leading-none">
-            <span className="text-xs font-semibold text-zinc-900">
-              {user?.fullName}
-            </span>
-            <span className="text-[10px] text-zinc-400 mt-0.5">
-              {user?.email}
-            </span>
-          </div>
+          <span className="text-xs font-semibold text-zinc-900">
+            {user?.fullName || "Dina Farouk"}
+          </span>
           <ChevronDown className="size-3.5 text-zinc-400 ml-0.5" />
         </div>
       </div>

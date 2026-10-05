@@ -35,7 +35,8 @@ export function Sidebar() {
   const isLessonsRoute = pathname.startsWith("/lessons") || pathname.startsWith("/academic/lessons")
   const isCoursesRoute = pathname.startsWith("/courses") || pathname.startsWith("/academic/courses")
   const isSessionsRoute = pathname.startsWith("/sessions")
-  const isAcademicActive = isCurriculumRoute || pathname.startsWith("/academic") || isLessonsRoute || isCoursesRoute
+  const isExamsRoute = pathname.startsWith("/academic/exams") || pathname.startsWith("/exams")
+  const isAcademicActive = isCurriculumRoute || pathname.startsWith("/academic") || isLessonsRoute || isCoursesRoute || isExamsRoute
   const isRefAcademicStagesRoute = pathname.startsWith("/reference-data/academic-stages")
   const isRefEducationSystemsRoute = pathname.startsWith("/reference-data/education-systems")
   const isRefGradesRoute = pathname.startsWith("/reference-data/grades")
@@ -59,15 +60,20 @@ export function Sidebar() {
       {/* Top: Brand Logo */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3 px-2">
-          <div className="size-10 rounded-xl bg-brand-orange flex items-center justify-center shadow-sm text-white shrink-0">
-            <GraduationCap className="size-6" />
+          <div className="size-10 rounded-xl bg-[#F59E0B] flex items-center justify-center shadow-xs text-white shrink-0">
+            <svg
+              className="size-5.5 fill-white"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 2C12 7.52285 7.52285 12 2 12C7.52285 12 12 16.4772 12 22C12 16.4772 16.4772 12 22 12C16.4772 12 12 7.52285 12 2Z" />
+            </svg>
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-base text-zinc-900 tracking-tight leading-tight">
-              Scholar
+              Lumina
             </span>
             <span className="text-xs text-zinc-400 font-normal">
-              Admin Console
+              Learning Admin
             </span>
           </div>
         </div>
@@ -337,7 +343,7 @@ export function Sidebar() {
                   >
                     Courses
                   </Link>
-                  {/* <Link
+                  <Link
                     href="/lessons"
                     className={cn(
                       "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
@@ -347,12 +353,12 @@ export function Sidebar() {
                     )}
                   >
                     Lessons
-                  </Link> */}
+                  </Link>
                   <Link
                     href="/academic/exams"
                     className={cn(
                       "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      pathname.startsWith("/academic/exams")
+                      isExamsRoute
                         ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
                         : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
                     )}
@@ -574,17 +580,19 @@ export function Sidebar() {
 
         {/* User Card */}
         <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <div className="relative size-8 rounded-full overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center bg-amber-100">
-            <span className="text-xs font-semibold text-amber-900">
-              {user?.fullName?.slice(0, 2).toUpperCase()}
-            </span>
+          <div className="relative size-8 rounded-full overflow-hidden shrink-0 border border-zinc-200">
+            <img
+              src="/dina-farouk.jpg"
+              alt="Dina Farouk"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-semibold text-zinc-900 truncate">
-            {user?.fullName}
+              {user?.fullName || "Dina Farouk"}
             </span>
             <span className="text-[11px] text-zinc-400 truncate">
-             {user?.email}
+              {(user?.roles && user.roles[0]) || "Administrator"}
             </span>
           </div>
         </div>
