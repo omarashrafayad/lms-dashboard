@@ -70,16 +70,16 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
               {course.title}
             </h1>
 
-            {/* Badges row matching Image 2 */}
+            {/* Badges row */}
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Category Badge */}
+              <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200/80 shadow-2xs">
+                {course.category}
+              </span>
+
               {/* Level Badge */}
               <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-[#0284C7] border border-sky-200/60 shadow-2xs">
                 {course.level}
-              </span>
-
-              {/* Stage Badge */}
-              <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-zinc-50 text-zinc-700 border border-zinc-200/80 shadow-2xs">
-                {course.stage}
               </span>
 
               {/* Status Badge */}

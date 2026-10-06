@@ -2,6 +2,15 @@ export type CourseLevel = "Beginner" | "Intermediate" | "Advanced"
 export type CourseStatus = "Published" | "Draft" | "Archived"
 export type CourseLessonType = "Video" | "Reading" | "Quiz"
 
+export type CourseCategory =
+  | "Computer Science"
+  | "Mathematics"
+  | "Sciences"
+  | "Languages"
+  | "Business & Management"
+  | "Design & Arts"
+  | "Other"
+
 export interface CourseLessonItem {
   id: string
   order: number
@@ -16,11 +25,11 @@ export interface CourseLessonItem {
 export interface CourseListItem {
   id: string
   title: string
-  system: string
-  academicYear: string
+  category: string
+  instructor: string
   level: CourseLevel
-  stage: string
-  subject: string
+  duration?: string
+  rating?: number
   lessonsCount: number
   studentsCount: number
   status: CourseStatus
@@ -65,14 +74,18 @@ export interface CourseActivityItem {
 export interface CourseDetail {
   id: string
   title: string
+  category: string
+  instructor: string
   level: CourseLevel
-  stage: string
+  duration?: string
   status: CourseStatus
-  subject: string
-  system: string
-  academicYear: string
-  term: string
+  language?: string
   description: string
+  prerequisites?: string | string[]
+  targetAudience?: string
+  allowVideoDownload?: boolean
+  allowPdfDownload?: boolean
+  certificateAvailable?: boolean
   stats: {
     totalLessons: number
     totalVideos: number
@@ -89,17 +102,16 @@ export interface CourseDetail {
 
 export interface CourseFilterState {
   search: string
-  stage: string
-  year: string
-  system: string
-  term: string
-  subject: string
+  category: string
+  level: string
+  duration: string
   status: string
 }
 
 export interface CreateCourseLessonPayload {
   title: string
-  description?: string
-  videoFile?: File | null
+  type: CourseLessonType
+  duration: string
   offlineAvailable: boolean
+  description?: string
 }

@@ -16,11 +16,9 @@ export default function CourseListPage() {
   const router = useRouter()
   const [filters, setFilters] = React.useState<CourseFilterState>({
     search: "",
-    stage: "all",
-    year: "all",
-    system: "all",
-    term: "all",
-    subject: "all",
+    category: "all",
+    level: "all",
+    duration: "all",
     status: "all",
   })
 
@@ -33,11 +31,9 @@ export default function CourseListPage() {
   const handleResetFilters = () => {
     setFilters({
       search: "",
-      stage: "all",
-      year: "all",
-      system: "all",
-      term: "all",
-      subject: "all",
+      category: "all",
+      level: "all",
+      duration: "all",
       status: "all",
     })
   }

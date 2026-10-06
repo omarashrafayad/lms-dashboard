@@ -25,24 +25,24 @@ export const getCourseList = async (
     filtered = filtered.filter(
       (c) =>
         c.title.toLowerCase().includes(q) ||
-        c.subject.toLowerCase().includes(q) ||
-        c.system.toLowerCase().includes(q)
+        c.category.toLowerCase().includes(q) ||
+        c.instructor.toLowerCase().includes(q)
     )
   }
-  if (params.stage && params.stage !== "all") {
-    filtered = filtered.filter((c) => c.stage.toLowerCase() === params.stage?.toLowerCase())
+  if (params.category && params.category !== "all") {
+    filtered = filtered.filter(
+      (c) => c.category.toLowerCase() === params.category?.toLowerCase()
+    )
   }
-  if (params.year && params.year !== "all") {
-    filtered = filtered.filter((c) => c.academicYear.includes(params.year as string))
-  }
-  if (params.system && params.system !== "all") {
-    filtered = filtered.filter((c) => c.system.toLowerCase() === params.system?.toLowerCase())
-  }
-  if (params.subject && params.subject !== "all") {
-    filtered = filtered.filter((c) => c.subject.toLowerCase() === params.subject?.toLowerCase())
+  if (params.level && params.level !== "all") {
+    filtered = filtered.filter(
+      (c) => c.level.toLowerCase() === params.level?.toLowerCase()
+    )
   }
   if (params.status && params.status !== "all") {
-    filtered = filtered.filter((c) => c.status.toLowerCase() === params.status?.toLowerCase())
+    filtered = filtered.filter(
+      (c) => c.status.toLowerCase() === params.status?.toLowerCase()
+    )
   }
 
   return filtered
@@ -69,16 +69,15 @@ export const getCourseDetailById = async (
       ...mockMathFundamentalsDetail,
       id: foundItem.id,
       title: foundItem.title,
+      category: foundItem.category,
+      instructor: foundItem.instructor,
       level: foundItem.level,
-      stage: foundItem.stage,
       status: foundItem.status,
-      subject: foundItem.subject,
-      system: foundItem.system,
-      academicYear: foundItem.academicYear,
+      duration: foundItem.duration || "14h",
       stats: {
         totalLessons: foundItem.lessonsCount,
         totalVideos: foundItem.lessonsCount * 3,
-        estimatedDuration: `${Math.round(foundItem.lessonsCount * 0.7)}h`,
+        estimatedDuration: foundItem.duration || `${Math.round(foundItem.lessonsCount * 1.5)}h`,
         totalStudents: foundItem.studentsCount,
         completionRate: "74%",
       },
@@ -101,28 +100,21 @@ export const updateCourse = async (
   }
 
   const existing = await getCourseDetailById(courseId)
-  const updated: CourseDetail = {
-    ...existing,
-    ...updatedData,
-    id: courseId,
-  }
-  localCourseDetails[courseId] = updated
+  const merged = { ...existing, ...updatedData }
+  localCourseDetails[courseId] = merged
 
-  // Update in localCourses list
-  const index = localCourses.findIndex((c) => c.id === courseId)
-  if (index !== -1) {
-    localCourses[index] = {
-      ...localCourses[index],
-      title: updated.title,
-      stage: updated.stage,
-      level: updated.level,
-      subject: updated.subject,
-      system: updated.system,
-      academicYear: updated.academicYear,
-      lessonsCount: updated.lessons.length,
-      lastUpdated: "Just now",
-    }
-  }
+  localCourses = localCourses.map((c) =>
+    c.id === courseId
+      ? {
+          ...c,
+          title: merged.title || c.title,
+          category: merged.category || c.category,
+          instructor: merged.instructor || c.instructor,
+          level: merged.level || c.level,
+          status: merged.status || c.status,
+        }
+      : c
+  )
 
-  return updated
+  return merged
 }

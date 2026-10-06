@@ -1,9 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react"
 import { CourseListItem, CourseLevel, CourseStatus } from "../../types/course.types"
 import { CourseRowActions } from "./CourseRowActions"
 
@@ -63,13 +61,10 @@ export function CourseTable({ courses, isLoading = false }: CourseTableProps) {
                 COURSE
               </th>
               <th className="py-3.5 px-4 text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
+                CATEGORY
+              </th>
+              <th className="py-3.5 px-4 text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
                 LEVEL
-              </th>
-              <th className="py-3.5 px-4 text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                EDUCATION STAGE
-              </th>
-              <th className="py-3.5 px-4 text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                SUBJECT
               </th>
               <th className="py-3.5 px-4 text-[11px] font-bold tracking-wider text-zinc-400 uppercase text-center">
                 LESSONS
@@ -91,7 +86,7 @@ export function CourseTable({ courses, isLoading = false }: CourseTableProps) {
           <tbody className="divide-y divide-zinc-100 text-xs">
             {courses.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-zinc-400">
+                <td colSpan={8} className="py-12 text-center text-zinc-400">
                   No courses found matching your criteria.
                 </td>
               </tr>
@@ -105,16 +100,24 @@ export function CourseTable({ courses, isLoading = false }: CourseTableProps) {
                     onClick={() => router.push(`/courses/${course.id}`)}
                     className="hover:bg-zinc-50/70 transition-colors cursor-pointer group"
                   >
-                    {/* Course Name & Subtitle */}
+                    {/* Course Name & Instructor */}
                     <td className="py-4 px-5">
                       <div className="flex flex-col">
                         <span className="font-bold text-zinc-900 group-hover:text-amber-600 transition-colors">
                           {course.title}
                         </span>
                         <span className="text-[11px] text-zinc-400 font-normal mt-0.5">
-                          {course.system} · {course.academicYear}
+                          By {course.instructor}
+                          {course.duration ? ` · ${course.duration}` : ""}
                         </span>
                       </div>
+                    </td>
+
+                    {/* Category */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200/60 shadow-2xs">
+                        {course.category}
+                      </span>
                     </td>
 
                     {/* Level */}
@@ -126,16 +129,6 @@ export function CourseTable({ courses, isLoading = false }: CourseTableProps) {
                       >
                         {course.level}
                       </span>
-                    </td>
-
-                    {/* Education Stage */}
-                    <td className="py-4 px-4 text-zinc-700 whitespace-nowrap font-medium">
-                      {course.stage}
-                    </td>
-
-                    {/* Subject */}
-                    <td className="py-4 px-4 text-zinc-700 whitespace-nowrap font-medium">
-                      {course.subject}
                     </td>
 
                     {/* Lessons */}
@@ -153,13 +146,15 @@ export function CourseTable({ courses, isLoading = false }: CourseTableProps) {
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusStyle.badge}`}
                       >
-                        <span className={`size-1.5 rounded-full ${statusStyle.dot}`} />
+                        <span
+                          className={`size-1.5 rounded-full ${statusStyle.dot}`}
+                        />
                         {course.status}
                       </span>
                     </td>
 
                     {/* Last Updated */}
-                    <td className="py-4 px-4 text-zinc-500 whitespace-nowrap font-normal">
+                    <td className="py-4 px-4 text-zinc-500 whitespace-nowrap">
                       {course.lastUpdated}
                     </td>
 

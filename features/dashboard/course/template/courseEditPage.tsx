@@ -9,15 +9,17 @@ import {
   Plus,
   Trash2,
   FileQuestion,
-  HelpCircle,
-  Clock,
   Check,
   Loader2,
-  Pencil,
   Save,
 } from "lucide-react"
 import { AddCourseStepper } from "../components/add/AddCourseStepper"
-import { CourseLessonItem, CourseExamData } from "../types/course.types"
+import {
+  CourseLessonItem,
+  CourseExamData,
+  CourseCategory,
+  CourseLevel,
+} from "../types/course.types"
 import { CourseExamBuilder } from "../components/detail/CourseExamBuilder"
 import { useCourseDetail, useUpdateCourse } from "../hooks/useCourses"
 import { toast } from "sonner"
@@ -31,19 +33,34 @@ import {
 
 export interface EditCourseFormValues {
   courseName: string
-  educationStage: string
-  courseLevel: string
-  subject: string
+  category: CourseCategory
+  courseLevel: CourseLevel
+  instructor: string
+  duration: string
+  language: string
   description: string
-  educationSystem: string
-  academicYear: string
-  term: string
+  prerequisites: string
+  targetAudience: string
   lessons: CourseLessonItem[]
   exam: CourseExamData | null
   allowVideoDownload: boolean
   allowPdfDownload: boolean
   certificateOnCompletion: boolean
 }
+
+const CATEGORIES: CourseCategory[] = [
+  "Computer Science",
+  "Mathematics",
+  "Sciences",
+  "Languages",
+  "Business & Management",
+  "Design & Arts",
+  "Other",
+]
+
+const LEVELS: CourseLevel[] = ["Beginner", "Intermediate", "Advanced"]
+
+const LANGUAGES = ["English", "Arabic", "French", "German", "Spanish"]
 
 export interface CourseEditPageProps {
   courseId: string
@@ -61,13 +78,14 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
     useForm<EditCourseFormValues>({
       defaultValues: {
         courseName: "",
-        educationStage: "",
-        courseLevel: "",
-        subject: "",
+        category: "Mathematics",
+        courseLevel: "Intermediate",
+        instructor: "Dr. Sarah Adams",
+        duration: "14 Hours",
+        language: "English",
         description: "",
-        educationSystem: "",
-        academicYear: "",
-        term: "First Term",
+        prerequisites: "Basic algebra and arithmetic",
+        targetAudience: "Secondary & College students",
         lessons: [],
         exam: null,
         allowVideoDownload: true,
@@ -81,62 +99,52 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
     if (course) {
       reset({
         courseName: course.title || "",
-        educationStage: course.stage || "Primary",
-        courseLevel: course.level || "Beginner",
-        subject: course.subject || "Mathematics",
+        category: (course.category as CourseCategory) || "Mathematics",
+        courseLevel: course.level || "Intermediate",
+        instructor: course.instructor || "Dr. Sarah Adams",
+        duration: course.duration || "14 Hours",
+        language: course.language || "English",
         description:
           course.description ||
-          "This course covers foundational mathematics concepts, problem solving, and analytical thinking through structured lessons and hands-on practice.",
-        educationSystem: course.system || "National General Education",
-        academicYear: course.academicYear || "Grade 1",
-        term: course.term || "First Term",
+          "Comprehensive course covering fundamental and advanced concepts through structured modules.",
+        prerequisites: Array.isArray(course.prerequisites)
+          ? course.prerequisites.join(", ")
+          : course.prerequisites || "None",
+        targetAudience: course.targetAudience || "All learners",
         lessons: course.lessons && course.lessons.length > 0 ? course.lessons : [],
         exam: course.exam || {
-          title: "Final Comprehensive Course Exam",
+          title: "Course Comprehensive Final Exam",
           timeLimit: 45,
           attemptsAllowed: 1,
-          passingScore: 70,
+          passingScore: 60,
           isPublished: true,
           questions: [
             {
               id: "q-1",
-              text: "What is the sum of the interior angles of a quadrilateral?",
+              text: "Which of the following describes the key principle taught in Module 1?",
               type: "Multiple Choice",
               points: 1,
               required: true,
               options: [
-                { id: "opt-1", text: "180 degrees", isCorrect: false },
-                { id: "opt-2", text: "360 degrees", isCorrect: true },
-                { id: "opt-3", text: "540 degrees", isCorrect: false },
-                { id: "opt-4", text: "720 degrees", isCorrect: false },
+                { id: "opt-1", text: "Iterative algorithmic synthesis", isCorrect: true },
+                { id: "opt-2", text: "Linear sequential compilation", isCorrect: false },
+                { id: "opt-3", text: "Direct memory mapping", isCorrect: false },
               ],
             },
           ],
         },
-        allowVideoDownload: true,
-        allowPdfDownload: true,
-        certificateOnCompletion: true,
+        allowVideoDownload: course.allowVideoDownload ?? true,
+        allowPdfDownload: course.allowPdfDownload ?? true,
+        certificateOnCompletion: course.certificateAvailable ?? true,
       })
     }
   }, [course, courseId, reset])
 
   const formValues = watch()
-  const stage = formValues.educationStage
+  const category = formValues.category
   const courseLevel = formValues.courseLevel
-  const subject = formValues.subject
   const lessons = formValues.lessons || []
   const exam = formValues.exam
-
-  // Auto-calculate course level based on education stage
-  React.useEffect(() => {
-    if (stage === "Primary") {
-      setValue("courseLevel", "Beginner")
-    } else if (stage === "Preparatory") {
-      setValue("courseLevel", "Intermediate")
-    } else if (stage === "Secondary") {
-      setValue("courseLevel", "Advanced")
-    }
-  }, [stage, setValue])
 
   const handleNext = () => {
     if (currentStep === 1) {
@@ -144,12 +152,12 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
         toast.error("Please enter a course name")
         return
       }
-      if (!stage) {
-        toast.error("Please select an education stage")
+      if (!category) {
+        toast.error("Please select a course category")
         return
       }
     }
-    setCurrentStep((prev) => Math.min(6, prev + 1))
+    setCurrentStep((prev) => Math.min(5, prev + 1))
   }
 
   const handleBack = () => {
@@ -161,7 +169,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
       {
         id: `c-les-${Date.now()}-1`,
         order: lessons.length + 1,
-        title: "Mathematics: Advanced Application",
+        title: "Module In-depth Applications",
         type: "Video",
         duration: "28 min",
         offlineAvailable: true,
@@ -169,7 +177,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
       {
         id: `c-les-${Date.now()}-2`,
         order: lessons.length + 2,
-        title: "Mathematics: Synthesis & Problems",
+        title: "Synthesis & Case Studies",
         type: "Reading",
         duration: "35 min",
         offlineAvailable: true,
@@ -189,30 +197,30 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
     toast.info("Lesson removed")
   }
 
-  // const handleSaveExam = (examData: CourseExamData) => {
-  //   setValue("exam", examData)
-  //   setIsExamBuilding(false)
-  //   toast.success("Exam details updated successfully")
-  // }
-
   const handleSaveCourse = async () => {
     try {
       await updateCourseMutation.mutateAsync({
         title: formValues.courseName,
-        stage: formValues.educationStage as any,
-        level: formValues.courseLevel as any,
-        subject: formValues.subject,
+        category: formValues.category,
+        level: formValues.courseLevel,
+        instructor: formValues.instructor,
+        duration: formValues.duration,
+        language: formValues.language,
         description: formValues.description,
-        system: formValues.educationSystem,
-        academicYear: formValues.academicYear,
-        term: formValues.term,
+        targetAudience: formValues.targetAudience,
+        prerequisites: formValues.prerequisites
+          ? formValues.prerequisites.split(",").map((s) => s.trim())
+          : [],
         lessons: formValues.lessons,
         exam: formValues.exam || undefined,
+        allowVideoDownload: formValues.allowVideoDownload,
+        allowPdfDownload: formValues.allowPdfDownload,
+        certificateAvailable: formValues.certificateOnCompletion,
       })
 
       toast.success("Course updated successfully!")
       router.push(`/courses/${courseId}`)
-    } catch  {
+    } catch {
       toast.error("Failed to update course. Please try again.")
     }
   }
@@ -222,6 +230,30 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
       <div className="flex flex-col items-center justify-center min-h-[500px] gap-3">
         <Loader2 className="size-8 animate-spin text-[#F59E0B]" />
         <span className="text-xs text-zinc-500 font-medium">Loading course details...</span>
+      </div>
+    )
+  }
+
+  // Builder mode for Course Exam
+  if (isExamBuilding) {
+    return (
+      <div className="p-6 md:p-8 max-w-[1200px] w-full mx-auto">
+        <CourseExamBuilder
+          courseTitle={formValues.courseName || "Course Exam"}
+          courseLevel={courseLevel || "Beginner"}
+          initialExam={exam}
+          onSaveDraft={(savedExam) => {
+            setValue("exam", savedExam)
+            setIsExamBuilding(false)
+            toast.success("Exam draft saved")
+          }}
+          onPublish={(publishedExam) => {
+            setValue("exam", publishedExam)
+            setIsExamBuilding(false)
+            toast.success("Exam updated")
+          }}
+          onBack={() => setIsExamBuilding(false)}
+        />
       </div>
     )
   }
@@ -252,7 +284,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
               Edit Course
             </h1>
             <p className="text-xs text-zinc-500 mt-1">
-              Update learning program, curriculum, and course settings across all 6 steps.
+              Update course curriculum, instructor info, exam, and configuration.
             </p>
           </div>
 
@@ -282,7 +314,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
 
         {/* Wizard Layout: Stepper + Main Content */}
         <div className="flex flex-col md:flex-row gap-8 items-start">
-          {/* Vertical Stepper - in Edit mode, clicking any step jumps to it */}
+          {/* Vertical Stepper */}
           <AddCourseStepper
             currentStep={currentStep}
             onStepClick={(step) => setCurrentStep(step)}
@@ -300,7 +332,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                     Course Information
                   </h2>
                   <span className="text-[11px] text-zinc-400 font-medium">
-                    Step 1 of 6
+                    Step 1 of 5
                   </span>
                 </div>
 
@@ -317,96 +349,129 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                   />
                 </div>
 
-                {/* Education Stage */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-zinc-700">
-                    Education Stage <span className="text-rose-500">*</span>
-                  </label>
-                  <Select
-                    value={stage}
-                    onValueChange={(val) => setValue("educationStage", val ?? "")}
-                  >
-                    <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
-                      <SelectValue placeholder="Select education stage" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-zinc-200">
-                      <SelectItem value="Primary" className="text-xs cursor-pointer">
-                        Primary
-                      </SelectItem>
-                      <SelectItem
-                        value="Preparatory"
-                        className="text-xs cursor-pointer"
-                      >
-                        Preparatory
-                      </SelectItem>
-                      <SelectItem
-                        value="Secondary"
-                        className="text-xs cursor-pointer"
-                      >
-                        Secondary
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Category & Difficulty Level */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-zinc-700">
+                      Category / Track <span className="text-rose-500">*</span>
+                    </label>
+                    <Select
+                      value={category}
+                      onValueChange={(val) =>
+                        setValue("category", (val as CourseCategory) ?? "Mathematics")
+                      }
+                    >
+                      <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-zinc-200">
+                        {CATEGORIES.map((cat) => (
+                          <SelectItem key={cat} value={cat} className="text-xs cursor-pointer">
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-zinc-700">
+                      Difficulty Level
+                    </label>
+                    <Select
+                      value={courseLevel}
+                      onValueChange={(val) =>
+                        setValue("courseLevel", (val as CourseLevel) ?? "Intermediate")
+                      }
+                    >
+                      <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
+                        <SelectValue placeholder="Select level" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-zinc-200">
+                        {LEVELS.map((lvl) => (
+                          <SelectItem key={lvl} value={lvl} className="text-xs cursor-pointer">
+                            {lvl}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
-                {/* Course Level (Auto-calculated) */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
+                {/* Instructor & Duration */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-zinc-700">
-                      Course Level
+                      Instructor
                     </label>
-                    <span className="text-[11px] text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
-                      Auto-calculated from stage
-                    </span>
+                    <input
+                      type="text"
+                      {...register("instructor")}
+                      placeholder="e.g. Dr. Sarah Adams"
+                      className="h-10 px-3.5 rounded-xl border border-zinc-200 text-xs text-zinc-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder:text-zinc-400 bg-white"
+                    />
                   </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-zinc-700">
+                      Estimated Duration
+                    </label>
+                    <input
+                      type="text"
+                      {...register("duration")}
+                      placeholder="e.g. 14 Hours"
+                      className="h-10 px-3.5 rounded-xl border border-zinc-200 text-xs text-zinc-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder:text-zinc-400 bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Language & Target Audience */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-zinc-700">
+                      Instruction Language
+                    </label>
+                    <Select
+                      value={formValues.language}
+                      onValueChange={(val) => setValue("language", val ?? "English")}
+                    >
+                      <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-zinc-200">
+                        {LANGUAGES.map((lang) => (
+                          <SelectItem key={lang} value={lang} className="text-xs cursor-pointer">
+                            {lang}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-zinc-700">
+                      Target Audience
+                    </label>
+                    <input
+                      type="text"
+                      {...register("targetAudience")}
+                      placeholder="e.g. Secondary students"
+                      className="h-10 px-3.5 rounded-xl border border-zinc-200 text-xs text-zinc-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder:text-zinc-400 bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Prerequisites */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-zinc-700">
+                    Prerequisites
+                  </label>
                   <input
                     type="text"
-                    value={courseLevel}
-                    readOnly
-                    placeholder="Select an Education Stage above"
-                    className="h-10 px-3.5 rounded-xl border border-zinc-200 text-xs text-zinc-600 bg-zinc-50 cursor-not-allowed font-medium"
+                    {...register("prerequisites")}
+                    placeholder="e.g. Basic arithmetic, pre-algebra"
+                    className="h-10 px-3.5 rounded-xl border border-zinc-200 text-xs text-zinc-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder:text-zinc-400 bg-white"
                   />
-                </div>
-
-                {/* Subject */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-zinc-700">
-                    Subject
-                  </label>
-                  <Select
-                    value={subject}
-                    onValueChange={(val) => setValue("subject", val ?? "")}
-                  >
-                    <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-zinc-200">
-                      <SelectItem
-                        value="Mathematics"
-                        className="text-xs cursor-pointer"
-                      >
-                        Mathematics
-                      </SelectItem>
-                      <SelectItem
-                        value="Science"
-                        className="text-xs cursor-pointer"
-                      >
-                        Science
-                      </SelectItem>
-                      <SelectItem
-                        value="English"
-                        className="text-xs cursor-pointer"
-                      >
-                        English
-                      </SelectItem>
-                      <SelectItem
-                        value="Arabic"
-                        className="text-xs cursor-pointer"
-                      >
-                        Arabic
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 {/* Description */}
@@ -436,167 +501,9 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
             )}
 
             {/* ================================================================= */}
-            {/* STEP 2: Academic Mapping */}
+            {/* STEP 2: Course Content */}
             {/* ================================================================= */}
             {currentStep === 2 && (
-              <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-8 flex flex-col gap-6 animate-in fade-in duration-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold text-zinc-900 tracking-tight">
-                    Academic Mapping
-                  </h2>
-                  <span className="text-[11px] text-zinc-400 font-medium">
-                    Step 2 of 6
-                  </span>
-                </div>
-
-                {/* Education System */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-zinc-700">
-                    Education System <span className="text-rose-500">*</span>
-                  </label>
-                  <Select
-                    value={formValues.educationSystem}
-                    onValueChange={(val) => setValue("educationSystem", val ?? "")}
-                  >
-                    <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
-                      <SelectValue placeholder="Select system" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-zinc-200">
-                      <SelectItem
-                        value="National General Education"
-                        className="text-xs cursor-pointer"
-                      >
-                        National General Education
-                      </SelectItem>
-                      <SelectItem
-                        value="Experimental Language Schools"
-                        className="text-xs cursor-pointer"
-                      >
-                        Experimental Language Schools
-                      </SelectItem>
-                      <SelectItem
-                        value="International Baccalaureate"
-                        className="text-xs cursor-pointer"
-                      >
-                        International Baccalaureate
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Academic Year */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-zinc-700">
-                    Academic Year <span className="text-rose-500">*</span>
-                  </label>
-                  <Select
-                    value={formValues.academicYear}
-                    onValueChange={(val) => setValue("academicYear", val ?? "")}
-                  >
-                    <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-zinc-200">
-                      <SelectItem
-                        value="Grade 1"
-                        className="text-xs cursor-pointer"
-                      >
-                        Grade 1
-                      </SelectItem>
-                      <SelectItem
-                        value="Grade 2"
-                        className="text-xs cursor-pointer"
-                      >
-                        Grade 2
-                      </SelectItem>
-                      <SelectItem
-                        value="Grade 3"
-                        className="text-xs cursor-pointer"
-                      >
-                        Grade 3
-                      </SelectItem>
-                      <SelectItem
-                        value="Grade 4"
-                        className="text-xs cursor-pointer"
-                      >
-                        Grade 4
-                      </SelectItem>
-                      <SelectItem
-                        value="Grade 5"
-                        className="text-xs cursor-pointer"
-                      >
-                        Grade 5
-                      </SelectItem>
-                      <SelectItem
-                        value="Grade 6"
-                        className="text-xs cursor-pointer"
-                      >
-                        Grade 6
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Term */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-zinc-700">
-                    Term <span className="text-rose-500">*</span>
-                  </label>
-                  <Select
-                    value={formValues.term}
-                    onValueChange={(val) => setValue("term", val ?? "")}
-                  >
-                    <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-800 bg-white focus:ring-2 focus:ring-amber-500/20">
-                      <SelectValue placeholder="Select term" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-zinc-200">
-                      <SelectItem
-                        value="First Term"
-                        className="text-xs cursor-pointer"
-                      >
-                        First Term
-                      </SelectItem>
-                      <SelectItem
-                        value="Second Term"
-                        className="text-xs cursor-pointer"
-                      >
-                        Second Term
-                      </SelectItem>
-                      <SelectItem
-                        value="Full Year"
-                        className="text-xs cursor-pointer"
-                      >
-                        Full Year
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Footer Actions */}
-                <div className="flex items-center justify-between pt-4 border-t border-zinc-100">
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    className="h-10 px-5 rounded-xl border border-zinc-200 bg-white text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition-colors shadow-2xs cursor-pointer active:scale-[0.98]"
-                  >
-                    Back
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="h-10 px-6 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all cursor-pointer active:scale-[0.98]"
-                  >
-                    Continue
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ================================================================= */}
-            {/* STEP 3: Course Content */}
-            {/* ================================================================= */}
-            {currentStep === 3 && (
               <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-8 flex flex-col gap-6 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
                   <div>
@@ -604,7 +511,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                       Course Content
                     </h2>
                     <p className="text-xs text-zinc-500 mt-0.5">
-                      Organize, reorder, or add lessons to this course.
+                      Manage lessons and multimedia materials in this course.
                     </p>
                   </div>
 
@@ -618,14 +525,14 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                   </button>
                 </div>
 
-                {/* Lessons list */}
+                {/* Lessons List */}
                 {lessons.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-zinc-200 p-12 md:p-16 flex flex-col items-center justify-center text-center gap-1 bg-zinc-50/40">
+                  <div className="rounded-2xl border border-dashed border-zinc-200 p-12 flex flex-col items-center justify-center text-center gap-1 bg-zinc-50/40">
                     <span className="text-sm font-bold text-zinc-900">
-                      No lessons yet
+                      No lessons attached
                     </span>
                     <span className="text-xs text-zinc-400 font-normal">
-                      Click the &ldquo;Add Lessons&rdquo; button above to add lessons.
+                      Click the button above to add lessons.
                     </span>
                   </div>
                 ) : (
@@ -633,7 +540,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                     {lessons.map((lesson, idx) => (
                       <div
                         key={lesson.id}
-                        className="bg-white rounded-xl border border-zinc-200/80 p-3.5 flex items-center justify-between gap-4 shadow-2xs hover:border-zinc-300 transition-colors"
+                        className="bg-white rounded-xl border border-zinc-200/80 p-3.5 flex items-center justify-between gap-4 shadow-2xs"
                       >
                         <div className="flex items-center gap-3">
                           <div className="size-6 rounded-md bg-zinc-100 text-zinc-700 font-bold text-xs flex items-center justify-center shrink-0">
@@ -645,21 +552,17 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                             </span>
                             <span className="text-[11px] text-zinc-400">
                               {lesson.type} · {lesson.duration}
-                              {lesson.offlineAvailable && " · Offline Ready"}
                             </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveLesson(lesson.id)}
-                            className="size-7 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer"
-                            title="Remove lesson"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveLesson(lesson.id)}
+                          className="size-7 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -687,9 +590,9 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
             )}
 
             {/* ================================================================= */}
-            {/* STEP 4: Course Exam */}
+            {/* STEP 3: Course Exam */}
             {/* ================================================================= */}
-            {currentStep === 4 && (
+            {currentStep === 3 && (
               <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-8 flex flex-col gap-6 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
                   <div>
@@ -697,7 +600,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                       Final Course Exam
                     </h2>
                     <p className="text-xs text-zinc-500 mt-0.5">
-                      Configure exam questions, passing score, and time duration.
+                      Configure the exam required for course graduation.
                     </p>
                   </div>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A]">
@@ -705,82 +608,72 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                   </span>
                 </div>
 
-                {isExamBuilding ? (
-                  <div className="pt-2">
-                    <CourseExamBuilder
-                      courseTitle={formValues.courseName || "Course Exam"}
-                      courseLevel={formValues.courseLevel || "Beginner"}
-                      initialExam={exam}
-                      onSaveDraft={(savedExam) => {
-                        setValue("exam", savedExam)
-                        setIsExamBuilding(false)
-                        toast.success("Exam draft saved")
-                      }}
-                      onPublish={(publishedExam) => {
-                        setValue("exam", publishedExam)
-                        setIsExamBuilding(false)
-                        toast.success("Exam updated successfully")
-                      }}
-                      onBack={() => setIsExamBuilding(false)}
-                    />
-                  </div>
-                ) : exam ? (
-                  <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-6 flex flex-col gap-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-xl bg-amber-50 text-[#D97706] border border-amber-200/60 flex items-center justify-center shrink-0">
-                          <FileQuestion className="size-5 stroke-[2]" />
-                        </div>
-                        <div className="flex flex-col">
-                          <h3 className="text-sm font-bold text-zinc-900">
-                            {exam.title}
-                          </h3>
-                          <div className="flex items-center gap-3 text-xs text-zinc-500 mt-0.5">
-                            <span className="flex items-center gap-1">
-                              <Clock className="size-3 text-zinc-400" />
-                              {exam.timeLimit} min
-                            </span>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              <HelpCircle className="size-3 text-zinc-400" />
-                              {exam.questions?.length ?? 0} Questions
-                            </span>
-                            <span>•</span>
-                            <span>Passing: {exam.passingScore}%</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setIsExamBuilding(true)}
-                          className="h-8 px-3 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Pencil className="size-3" />
-                          <span>Edit Exam</span>
-                        </button>
-                      </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
+                      DIFFICULTY LEVEL
+                    </label>
+                    <div className="flex items-center h-10 px-3.5 rounded-xl border border-zinc-200 bg-zinc-50 text-xs font-semibold text-zinc-700 shadow-2xs">
+                      {courseLevel}
                     </div>
                   </div>
-                ) : (
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
+                      PASSING SCORE
+                    </label>
+                    <div className="flex items-center h-10 px-3.5 rounded-xl border border-zinc-200 bg-zinc-50 text-xs font-semibold text-zinc-700 shadow-2xs">
+                      {exam?.passingScore || 60}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Exam Details Card */}
+                {!exam ? (
                   <div className="rounded-2xl border border-dashed border-zinc-200 p-12 flex flex-col items-center justify-center text-center gap-3 bg-zinc-50/40">
-                    <FileQuestion className="size-8 text-zinc-400 stroke-[1.5]" />
+                    <div className="size-10 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center">
+                      <FileQuestion className="size-5" />
+                    </div>
                     <div>
                       <span className="text-sm font-bold text-zinc-900 block">
-                        No Final Exam Configured
+                        No Course Exam Configured
                       </span>
-                      <span className="text-xs text-zinc-400 font-normal">
-                        Create an exam to assess student competency upon course completion.
+                      <span className="text-xs text-zinc-400">
+                        Add an exam to test learner proficiency.
                       </span>
                     </div>
+
                     <button
                       type="button"
                       onClick={() => setIsExamBuilding(true)}
-                      className="h-9 px-4 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      className="mt-2 h-9 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
                     >
                       <Plus className="size-3.5 stroke-[2.5]" />
-                      <span>Create Final Exam</span>
+                      <span>Create Exam</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-5 rounded-xl border border-emerald-200 bg-emerald-50/50 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="size-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <Check className="size-4 stroke-[2.5]" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-zinc-900">
+                          {exam.title}
+                        </span>
+                        <span className="text-[11px] text-zinc-500">
+                          {exam.questions?.length || 1} questions · {exam.passingScore || 60}% pass · {exam.timeLimit || 45} min
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsExamBuilding(true)}
+                      className="text-xs font-semibold text-amber-600 hover:text-amber-700 cursor-pointer"
+                    >
+                      Edit Exam
                     </button>
                   </div>
                 )}
@@ -807,28 +700,28 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
             )}
 
             {/* ================================================================= */}
-            {/* STEP 5: Course Settings */}
+            {/* STEP 4: Course Settings */}
             {/* ================================================================= */}
-            {currentStep === 5 && (
+            {currentStep === 4 && (
               <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-8 flex flex-col gap-6 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-bold text-zinc-900 tracking-tight">
                     Course Settings
                   </h2>
                   <span className="text-[11px] text-zinc-400 font-medium">
-                    Step 5 of 6
+                    Step 4 of 5
                   </span>
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  {/* Allow Video Downloads */}
+                  {/* Video Download */}
                   <label className="flex items-start justify-between gap-4 p-4 rounded-xl border border-zinc-200 hover:border-zinc-300 transition-colors cursor-pointer bg-white">
                     <div className="flex flex-col">
                       <span className="text-xs font-bold text-zinc-900">
-                        Allow Video Downloads
+                        Allow Video Download
                       </span>
                       <span className="text-[11px] text-zinc-500 mt-0.5">
-                        Students can download video lectures for offline viewing within the mobile app.
+                        Permit students to download video lectures locally for offline viewing.
                       </span>
                     </div>
                     <input
@@ -838,14 +731,14 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                     />
                   </label>
 
-                  {/* Allow PDF Material Downloads */}
+                  {/* PDF Download */}
                   <label className="flex items-start justify-between gap-4 p-4 rounded-xl border border-zinc-200 hover:border-zinc-300 transition-colors cursor-pointer bg-white">
                     <div className="flex flex-col">
                       <span className="text-xs font-bold text-zinc-900">
-                        Allow PDF Material Downloads
+                        Allow PDF Resource Download
                       </span>
                       <span className="text-[11px] text-zinc-500 mt-0.5">
-                        Students can export and print attached study guides, reading sheets, and summaries.
+                        Allow downloading attached course notes, summaries, and formula sheets.
                       </span>
                     </div>
                     <input
@@ -855,7 +748,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                     />
                   </label>
 
-                  {/* Certificate on Completion */}
+                  {/* Certificate */}
                   <label className="flex items-start justify-between gap-4 p-4 rounded-xl border border-zinc-200 hover:border-zinc-300 transition-colors cursor-pointer bg-white">
                     <div className="flex flex-col">
                       <span className="text-xs font-bold text-zinc-900">
@@ -895,9 +788,9 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
             )}
 
             {/* ================================================================= */}
-            {/* STEP 6: Review & Save Changes */}
+            {/* STEP 5: Review & Save Changes */}
             {/* ================================================================= */}
-            {currentStep === 6 && (
+            {currentStep === 5 && (
               <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-8 flex flex-col gap-6 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
                   <div>
@@ -905,11 +798,11 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                       Review & Save Changes
                     </h2>
                     <p className="text-xs text-zinc-500 mt-0.5">
-                      Verify all changes made across the 6 steps before saving.
+                      Verify all changes made across the 5 steps before saving.
                     </p>
                   </div>
                   <span className="text-[11px] text-zinc-400 font-medium">
-                    Step 6 of 6
+                    Step 5 of 5
                   </span>
                 </div>
 
@@ -924,11 +817,13 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                         {formValues.courseName || "Untitled Course"}
                       </h4>
                       <div className="flex items-center gap-2 text-xs text-zinc-600 mt-0.5">
-                        <span className="font-semibold">{formValues.educationStage}</span>
+                        <span className="font-semibold">{category}</span>
                         <span>•</span>
-                        <span>Level: {formValues.courseLevel}</span>
+                        <span>Level: {courseLevel}</span>
                         <span>•</span>
-                        <span>{formValues.subject}</span>
+                        <span>Instructor: {formValues.instructor || "—"}</span>
+                        <span>•</span>
+                        <span>Duration: {formValues.duration || "—"}</span>
                       </div>
                       <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
                         {formValues.description}
@@ -944,32 +839,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                     </button>
                   </div>
 
-                  {/* Card 2: Academic Mapping */}
-                  <div className="rounded-xl border border-zinc-200/80 p-4.5 flex items-start justify-between gap-4 bg-zinc-50/30">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                        Academic Mapping
-                      </span>
-                      <h4 className="text-sm font-bold text-zinc-900">
-                        {formValues.educationSystem}
-                      </h4>
-                      <div className="flex items-center gap-2 text-xs text-zinc-600 mt-0.5">
-                        <span>{formValues.academicYear}</span>
-                        <span>•</span>
-                        <span>{formValues.term}</span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setCurrentStep(2)}
-                      className="text-xs font-semibold text-[#D97706] hover:text-[#B45309] hover:underline cursor-pointer shrink-0"
-                    >
-                      Edit
-                    </button>
-                  </div>
-
-                  {/* Card 3: Content */}
+                  {/* Card 2: Content */}
                   <div className="rounded-xl border border-zinc-200/80 p-4.5 flex items-start justify-between gap-4 bg-zinc-50/30">
                     <div className="flex flex-col gap-1">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
@@ -995,14 +865,14 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
 
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(3)}
+                      onClick={() => setCurrentStep(2)}
                       className="text-xs font-semibold text-[#D97706] hover:text-[#B45309] hover:underline cursor-pointer shrink-0"
                     >
                       Edit
                     </button>
                   </div>
 
-                  {/* Card 4: Final Exam */}
+                  {/* Card 3: Final Exam */}
                   <div className="rounded-xl border border-zinc-200/80 p-4.5 flex items-start justify-between gap-4 bg-zinc-50/30">
                     <div className="flex flex-col gap-1">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
@@ -1024,14 +894,14 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
 
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(4)}
+                      onClick={() => setCurrentStep(3)}
                       className="text-xs font-semibold text-[#D97706] hover:text-[#B45309] hover:underline cursor-pointer shrink-0"
                     >
                       Edit
                     </button>
                   </div>
 
-                  {/* Card 5: Settings */}
+                  {/* Card 4: Settings */}
                   <div className="rounded-xl border border-zinc-200/80 p-4.5 flex items-start justify-between gap-4 bg-zinc-50/30">
                     <div className="flex flex-col gap-1">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
@@ -1058,9 +928,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                           <Check className="size-3.5 text-emerald-600" />
                           Certificate:{" "}
                           <strong>
-                            {formValues.certificateOnCompletion
-                              ? "Enabled"
-                              : "Disabled"}
+                            {formValues.certificateOnCompletion ? "Yes" : "None"}
                           </strong>
                         </span>
                       </div>
@@ -1068,7 +936,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
 
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(5)}
+                      onClick={() => setCurrentStep(4)}
                       className="text-xs font-semibold text-[#D97706] hover:text-[#B45309] hover:underline cursor-pointer shrink-0"
                     >
                       Edit
@@ -1076,7 +944,7 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                   </div>
                 </div>
 
-                {/* Footer Save Action */}
+                {/* Footer Actions */}
                 <div className="flex items-center justify-between pt-4 border-t border-zinc-100">
                   <button
                     type="button"
@@ -1090,12 +958,12 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                     type="button"
                     onClick={handleSaveCourse}
                     disabled={updateCourseMutation.isPending}
-                    className="h-10 px-7 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-50"
+                    className="h-10 px-6 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-50"
                   >
                     {updateCourseMutation.isPending ? (
-                      <Loader2 className="size-4 animate-spin" />
+                      <Loader2 className="size-3.5 animate-spin" />
                     ) : (
-                      <Save className="size-4" />
+                      <Check className="size-3.5 stroke-[3]" />
                     )}
                     <span>Save Changes</span>
                   </button>

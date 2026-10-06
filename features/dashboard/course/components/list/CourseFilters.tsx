@@ -18,132 +18,98 @@ export interface CourseFiltersProps {
 }
 
 export function CourseFilters({ filters, onChange, onReset }: CourseFiltersProps) {
+  const categories = [
+    "Computer Science",
+    "Mathematics",
+    "Sciences",
+    "Languages",
+    "Design & Arts",
+    "Humanities",
+  ]
+
   return (
     <div className="flex flex-col gap-3">
-      {/* First row of filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {/* Search input */}
-        <div className="relative sm:col-span-2 md:col-span-1 lg:col-span-1">
+        <div className="relative sm:col-span-2 md:col-span-1 lg:col-span-2">
           <input
             type="text"
             value={filters.search}
             onChange={(e) => onChange("search", e.target.value)}
-            placeholder="Search courses..."
+            placeholder="Search by course name or instructor..."
             className="w-full h-10 pl-3.5 pr-3 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
           />
         </div>
 
-        {/* Education Stage */}
+        {/* Category Filter */}
         <Select
-          value={filters.stage}
-          onValueChange={(val) => onChange("stage", val ?? "all")}
+          value={filters.category}
+          onValueChange={(val) => onChange("category", val ?? "all")}
         >
           <SelectTrigger className="h-10 text-xs rounded-xl border-zinc-200 bg-white text-zinc-700 shadow-2xs font-normal">
-            <SelectValue placeholder="Education Stage" />
+            <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
-            <SelectItem value="all" className="text-xs">All Stages</SelectItem>
-            <SelectItem value="Primary" className="text-xs">Primary</SelectItem>
-            <SelectItem value="Preparatory" className="text-xs">Preparatory</SelectItem>
-            <SelectItem value="Secondary" className="text-xs">Secondary</SelectItem>
+            <SelectItem value="all" className="text-xs">All Categories</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat} value={cat} className="text-xs">
+                {cat}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
-        {/* Academic Year */}
+        {/* Level Filter */}
         <Select
-          value={filters.year}
-          onValueChange={(val) => onChange("year", val ?? "all")}
+          value={filters.level}
+          onValueChange={(val) => onChange("level", val ?? "all")}
         >
           <SelectTrigger className="h-10 text-xs rounded-xl border-zinc-200 bg-white text-zinc-700 shadow-2xs font-normal">
-            <SelectValue placeholder="Academic Year" />
+            <SelectValue placeholder="All Levels" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
-            <SelectItem value="all" className="text-xs">All Years</SelectItem>
-            <SelectItem value="2026" className="text-xs">2026 / 2027</SelectItem>
-            <SelectItem value="2025" className="text-xs">2025 / 2026</SelectItem>
-            <SelectItem value="2024" className="text-xs">2024 / 2025</SelectItem>
+            <SelectItem value="all" className="text-xs">All Levels</SelectItem>
+            <SelectItem value="Beginner" className="text-xs">Beginner</SelectItem>
+            <SelectItem value="Intermediate" className="text-xs">Intermediate</SelectItem>
+            <SelectItem value="Advanced" className="text-xs">Advanced</SelectItem>
           </SelectContent>
         </Select>
 
-        {/* Education System */}
+        {/* Status Filter */}
         <Select
-          value={filters.system}
-          onValueChange={(val) => onChange("system", val ?? "all")}
+          value={filters.status}
+          onValueChange={(val) => onChange("status", val ?? "all")}
         >
           <SelectTrigger className="h-10 text-xs rounded-xl border-zinc-200 bg-white text-zinc-700 shadow-2xs font-normal">
-            <SelectValue placeholder="Education System" />
+            <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
-            <SelectItem value="all" className="text-xs">All Systems</SelectItem>
-            <SelectItem value="National" className="text-xs">National</SelectItem>
-            <SelectItem value="American" className="text-xs">American</SelectItem>
-            <SelectItem value="IGCSE" className="text-xs">IGCSE</SelectItem>
-            <SelectItem value="IB" className="text-xs">IB</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Term */}
-        <Select
-          value={filters.term}
-          onValueChange={(val) => onChange("term", val ?? "all")}
-        >
-          <SelectTrigger className="h-10 text-xs rounded-xl border-zinc-200 bg-white text-zinc-700 shadow-2xs font-normal">
-            <SelectValue placeholder="Term" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="all" className="text-xs">All Terms</SelectItem>
-            <SelectItem value="Term 1" className="text-xs">Term 1</SelectItem>
-            <SelectItem value="Term 2" className="text-xs">Term 2</SelectItem>
-            <SelectItem value="Full Year" className="text-xs">Full Year</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Subject */}
-        <Select
-          value={filters.subject}
-          onValueChange={(val) => onChange("subject", val ?? "all")}
-        >
-          <SelectTrigger className="h-10 text-xs rounded-xl border-zinc-200 bg-white text-zinc-700 shadow-2xs font-normal">
-            <SelectValue placeholder="Subject" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="all" className="text-xs">All Subjects</SelectItem>
-            <SelectItem value="Mathematics" className="text-xs">Mathematics</SelectItem>
-            <SelectItem value="Physics" className="text-xs">Physics</SelectItem>
-            <SelectItem value="Chemistry" className="text-xs">Chemistry</SelectItem>
-            <SelectItem value="English" className="text-xs">English</SelectItem>
-            <SelectItem value="Biology" className="text-xs">Biology</SelectItem>
-            <SelectItem value="History" className="text-xs">History</SelectItem>
+            <SelectItem value="all" className="text-xs">All Statuses</SelectItem>
+            <SelectItem value="Published" className="text-xs">Published</SelectItem>
+            <SelectItem value="Draft" className="text-xs">Draft</SelectItem>
+            <SelectItem value="Archived" className="text-xs">Archived</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Second row of filters */}
-      <div className="flex items-center gap-3">
-        <div className="w-48">
-          <Select
-            value={filters.status}
-            onValueChange={(val) => onChange("status", val ?? "all")}
-          >
-            <SelectTrigger className="h-10 text-xs rounded-xl border-zinc-200 bg-white text-zinc-700 shadow-2xs font-normal">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="all" className="text-xs">All Statuses</SelectItem>
-              <SelectItem value="Published" className="text-xs">Published</SelectItem>
-              <SelectItem value="Draft" className="text-xs">Draft</SelectItem>
-              <SelectItem value="Archived" className="text-xs">Archived</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Active Filter Indicators & Reset */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs text-zinc-400">
+          {(filters.search ||
+            filters.category !== "all" ||
+            filters.level !== "all" ||
+            filters.status !== "all") && (
+            <span>Filtered results active</span>
+          )}
         </div>
 
         <button
           type="button"
           onClick={onReset}
-          className="h-10 px-4 rounded-xl border border-zinc-200 bg-white text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900 rounded-xl hover:bg-zinc-100 transition-colors cursor-pointer self-end"
         >
-          <RotateCcw className="size-3.5 text-zinc-400" />
-          <span>Reset Filters</span>
+          <RotateCcw className="size-3" />
+          <span>Reset filters</span>
         </button>
       </div>
     </div>

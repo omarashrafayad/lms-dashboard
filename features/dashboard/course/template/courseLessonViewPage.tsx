@@ -59,8 +59,10 @@ export default function CourseLessonViewPage({
               {lesson.title}
             </h1>
             <div className="flex items-center gap-2 text-xs text-zinc-400 font-normal mt-0.5">
-              <span>{course?.subject || "Mathematics"}</span>
+              <span>{course?.category || "Computer Science"}</span>
+              <span>·</span>
               <span>{lesson.type}</span>
+              <span>·</span>
               <div className="flex items-center gap-1">
                 <Clock className="size-3 text-zinc-400" />
                 <span>{lesson.duration}</span>

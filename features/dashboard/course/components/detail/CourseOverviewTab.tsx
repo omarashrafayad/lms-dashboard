@@ -18,13 +18,13 @@ export function CourseOverviewTab({ course }: CourseOverviewTabProps) {
     },
     {
       label: "Total videos",
-      value: course.stats?.totalVideos ?? 23,
+      value: course.stats?.totalVideos ?? 21,
       icon: Video,
       iconBg: "bg-[#E0F2FE] text-[#0284C7]",
     },
     {
       label: "Estimated duration",
-      value: course.stats?.estimatedDuration ?? "5h",
+      value: course.stats?.estimatedDuration ?? (course.duration || "14h"),
       icon: Clock,
       iconBg: "bg-[#FEF9C3] text-[#CA8A04]",
     },
@@ -64,6 +64,15 @@ export function CourseOverviewTab({ course }: CourseOverviewTabProps) {
 
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
+                CATEGORY
+              </span>
+              <span className="font-semibold text-zinc-900">
+                {course.category}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
                 LEVEL
               </span>
               <span className="font-semibold text-zinc-900">
@@ -73,28 +82,37 @@ export function CourseOverviewTab({ course }: CourseOverviewTabProps) {
 
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                EDUCATION STAGE
+                INSTRUCTOR
               </span>
               <span className="font-semibold text-zinc-900">
-                {course.stage}
+                {course.instructor}
               </span>
             </div>
 
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                SUBJECT
+                LANGUAGE
               </span>
               <span className="font-semibold text-zinc-900">
-                {course.subject}
+                {course.language || "English"}
               </span>
             </div>
 
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                EDUCATION SYSTEM
+                DURATION
               </span>
               <span className="font-semibold text-zinc-900">
-                {course.system}
+                {course.duration || "14h"}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
+                CERTIFICATE
+              </span>
+              <span className="font-semibold text-zinc-900">
+                {course.certificateAvailable !== false ? "Included on Completion" : "Not Included"}
               </span>
             </div>
 
@@ -119,46 +137,46 @@ export function CourseOverviewTab({ course }: CourseOverviewTabProps) {
           </p>
         </div>
 
-        {/* Card 3: Academic Mapping */}
+        {/* Card 3: Course Specifications & Requirements */}
         <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-6 md:p-8 flex flex-col gap-5">
           <h3 className="text-sm font-bold text-zinc-900 tracking-tight">
-            Academic Mapping
+            Course Specifications & Prerequisites
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-xs">
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                EDUCATION SYSTEM
+                PREREQUISITES
               </span>
               <span className="font-semibold text-zinc-900">
-                {course.system}
+                {course.prerequisites || "Basic arithmetic and introductory algebra foundations"}
               </span>
             </div>
 
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                ACADEMIC YEAR
+                TARGET AUDIENCE
               </span>
               <span className="font-semibold text-zinc-900">
-                {course.academicYear}
+                {course.targetAudience || "Students, engineers, and self-learners"}
               </span>
             </div>
 
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                EDUCATION STAGE
+                ACCESS TYPE
               </span>
               <span className="font-semibold text-zinc-900">
-                {course.stage}
+                Full Lifetime Access
               </span>
             </div>
 
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                TERM
+                DOWNLOADABLE MATERIALS
               </span>
               <span className="font-semibold text-zinc-900">
-                {course.term || "Term 1"}
+                Supported for Offline Learning
               </span>
             </div>
           </div>

@@ -10,11 +10,10 @@ export interface AddCourseStepItem {
 
 export const ADD_COURSE_STEPS: AddCourseStepItem[] = [
   { id: 1, title: "Course Information" },
-  { id: 2, title: "Academic Mapping" },
-  { id: 3, title: "Course Content" },
-  { id: 4, title: "Course Exam" },
-  { id: 5, title: "Course Settings" },
-  { id: 6, title: "Review" },
+  { id: 2, title: "Course Content" },
+  { id: 3, title: "Course Exam" },
+  { id: 4, title: "Course Settings" },
+  { id: 5, title: "Review" },
 ]
 
 export interface AddCourseStepperProps {
