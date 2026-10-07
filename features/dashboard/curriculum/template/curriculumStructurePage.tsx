@@ -5,13 +5,13 @@ import { PageHeader } from "@/components/layout/PageHeader"
 import { CurriculumStructure } from "../components/structure/CurriculumStructure"
 import { AddChapterModal } from "../components/structure/AddChapterModal"
 import {
-  useCurriculumSubject,
-  useChapters,
+  useCurriculumSubjectStructure,
   useCreateChapter,
 } from "../hooks/useCurriculum"
 import { CurriculumSubject, CreateChapterPayload } from "../types/curriculum.types"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 export interface CurriculumStructurePageProps {
   subjectId: string
@@ -20,28 +20,23 @@ export interface CurriculumStructurePageProps {
 export default function CurriculumStructurePage({
   subjectId,
 }: CurriculumStructurePageProps) {
-  const { data: subjectData, isLoading: isSubjectLoading } =
-    useCurriculumSubject(subjectId)
-  const { data: chaptersData = [], isLoading: isChaptersLoading } =
-    useChapters(subjectId)
+  const { data: structureData, isLoading } =
+    useCurriculumSubjectStructure(subjectId)
   const createChapterMutation = useCreateChapter()
 
   const [isAddChapterModalOpen, setIsAddChapterModalOpen] = React.useState(false)
 
   const subject: CurriculumSubject =
-    subjectData?.subject || {
+    structureData?.subject || {
       id: subjectId,
       name: "Curriculum Subject",
       term: "",
     }
 
-  // Prefer chapters fetched from GET /curriculum/chapters?subjectId=...
-  const chapters =
-    chaptersData.length > 0
-      ? chaptersData
-      : subject.chapters || []
+  const chapters = structureData?.chapters || []
+  
 
-  if (isSubjectLoading && isChaptersLoading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col min-h-full">
         <PageHeader title="Curriculum" description="Loading structure..." />
@@ -57,13 +52,8 @@ export default function CurriculumStructurePage({
       await createChapterMutation.mutateAsync(payload)
       toast.success("Chapter created successfully!")
       setIsAddChapterModalOpen(false)
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.title ||
-        err?.message ||
-        "Failed to create chapter"
-      toast.error(msg)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
     }
   }
 
@@ -87,7 +77,7 @@ export default function CurriculumStructurePage({
         <CurriculumStructure
           subject={subject}
           chapters={chapters}
-          isLoading={isChaptersLoading}
+          isLoading={isLoading}
           onAddChapter={() => setIsAddChapterModalOpen(true)}
         />
       </main>

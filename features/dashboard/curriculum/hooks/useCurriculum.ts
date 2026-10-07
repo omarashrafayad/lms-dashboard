@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getCurriculumSubjects,
   getCurriculumSubjectById,
+  getCurriculumSubjectStructure,
   createCurriculumSubject,
   updateCurriculumSubject,
   deleteCurriculumSubject,
@@ -51,6 +52,14 @@ export const useCurriculumSubject = (subjectId: string) => {
   })
 }
 
+export const useCurriculumSubjectStructure = (subjectId: string) => {
+  return useQuery({
+    queryKey: ["curriculum-subject-structure", subjectId],
+    queryFn: () => getCurriculumSubjectStructure(subjectId),
+    enabled: !!subjectId,
+  })
+}
+
 export const useCreateCurriculumSubject = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -69,6 +78,7 @@ export const useUpdateCurriculumSubject = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["curriculum-subjects"] })
       queryClient.invalidateQueries({ queryKey: ["curriculum-subject", variables.id] })
+      queryClient.invalidateQueries({ queryKey: ["curriculum-subject-structure", variables.id] })
     },
   })
 }
@@ -108,6 +118,9 @@ export const useCreateChapter = () => {
       queryClient.invalidateQueries({
         queryKey: ["curriculum-chapters", variables.subjectId],
       })
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-subject-structure", variables.subjectId],
+      })
     },
   })
 }
@@ -121,7 +134,7 @@ export const useUnits = (chapterId: string) => {
   })
 }
 
-export const useCreateUnit = () => {
+export const useCreateUnit = (subjectId?: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: CreateUnitPayload) => createUnit(data),
@@ -131,6 +144,9 @@ export const useCreateUnit = () => {
       })
       queryClient.invalidateQueries({
         queryKey: ["curriculum-chapters"],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-subject-structure"],
       })
     },
   })
@@ -145,7 +161,7 @@ export const useLessons = (unitId: string) => {
   })
 }
 
-export const useCreateLesson = () => {
+export const useCreateLesson = (subjectId?: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: CreateLessonPayload) => createLesson(data),
@@ -155,6 +171,9 @@ export const useCreateLesson = () => {
       })
       queryClient.invalidateQueries({
         queryKey: ["curriculum-units"],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-subject-structure"],
       })
     },
   })

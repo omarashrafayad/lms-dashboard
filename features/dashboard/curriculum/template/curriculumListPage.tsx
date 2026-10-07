@@ -20,6 +20,7 @@ import {
 } from "../types/curriculum.types"
 import { toast } from "sonner"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 const initialFilters: SubjectFilterState = {
   search: "",
@@ -68,13 +69,8 @@ export default function CurriculumListPage() {
         toast.success(`Subject "${payload.name}" created successfully!`)
       }
       setIsModalOpen(false)
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.title ||
-        err?.message ||
-        "An error occurred while saving the subject"
-      toast.error(msg)
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error))
     }
   }
 
@@ -82,13 +78,8 @@ export default function CurriculumListPage() {
     try {
       await deleteMutation.mutateAsync(id)
       toast.success("Subject deleted successfully!")
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.title ||
-        err?.message ||
-        "Failed to delete subject"
-      toast.error(msg)
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error))
     }
   }
 

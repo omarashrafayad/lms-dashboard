@@ -73,11 +73,7 @@ export default function CurriculumLessonPage({
       {/* Header matching Screenshots 1 and 5 */}
       <PageHeader
         title={lessonTitle}
-        description={
-          lesson.id === "les-1"
-            ? "Lesson content, videos, PDF, quiz, and access settings for this lesson."
-            : "Lesson content, videos, PDF, quiz, access, and history."
-        }
+        description="Lesson content, videos, PDF, quiz, and access settings for this lesson."
       />
 
       <main className="flex-1 p-8 flex flex-col gap-6 max-w-[1400px] w-full">
@@ -123,7 +119,7 @@ export default function CurriculumLessonPage({
 
               <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-medium border text-brand-green bg-emerald-50/80 border-emerald-200/60">
                 <span className="size-1.5 rounded-full bg-brand-green" />
-                {lesson.id === "les-1" ? "Active" : lesson.status || "Active"}
+                {lesson.status || "Active"}
               </span>
             </div>
 

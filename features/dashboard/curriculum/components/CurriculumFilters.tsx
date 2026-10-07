@@ -34,34 +34,15 @@ export function CurriculumFilters({
   const { data: grades = [] } = useGrades()
 
   const stageOptions = React.useMemo(() => {
-    const set = new Set<string>()
-    stages.forEach((s) => s.name && set.add(s.name))
-    ;["Primary", "Preparatory", "Secondary"].forEach((s) => set.add(s))
-    return Array.from(set)
+    return Array.from(new Set(stages.map((s) => s.name).filter(Boolean)))
   }, [stages])
 
   const gradeOptions = React.useMemo(() => {
-    const set = new Set<string>()
-    grades.forEach((g) => g.name && set.add(g.name))
-    ;[
-      "Grade 4",
-      "Grade 5",
-      "Grade 6",
-      "Grade 7",
-      "Grade 8",
-      "Grade 9",
-      "Grade 10",
-      "Grade 11",
-      "Grade 12",
-    ].forEach((g) => set.add(g))
-    return Array.from(set)
+    return Array.from(new Set(grades.map((g) => g.name).filter(Boolean)))
   }, [grades])
 
   const systemOptions = React.useMemo(() => {
-    const set = new Set<string>()
-    systems.forEach((s) => s.name && set.add(s.name))
-    ;["National", "American", "IGCSE", "International"].forEach((s) => set.add(s))
-    return Array.from(set)
+    return Array.from(new Set(systems.map((s) => s.name).filter(Boolean)))
   }, [systems])
   return (
     <div className="p-4 rounded-2xl bg-white border border-zinc-200/80 shadow-2xs flex flex-col gap-4">

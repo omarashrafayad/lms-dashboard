@@ -77,14 +77,16 @@ export function SubjectModal({
     mode: "onTouched",
   })
 
+  const { control, handleSubmit, reset, setValue, getValues } = form
+
   // Watch selected stage ID to dynamically load and filter grades
   const selectedStageId = useWatch({
-    control: form.control,
+    control,
     name: "educationStageId",
   })
 
   const watchedName = useWatch({
-    control: form.control,
+    control,
     name: "name",
   })
   const { data: grades = [], isLoading: gradesLoading } = useGrades(
@@ -113,6 +115,15 @@ export function SubjectModal({
     }))
   }, [grades])
 
+  const handleStageChange = (newStageId: string) => {
+    if (newStageId !== selectedStageId) {
+      setValue("gradeId", "", {
+        shouldValidate: true,
+        shouldDirty: true,
+      })
+    }
+  }
+
   // Reset or initialize state whenever modal opens or subjectToEdit changes
   React.useEffect(() => {
     if (open) {
@@ -135,7 +146,7 @@ export function SubjectModal({
         )
         const systemIdVal = matchedSystem?.id || subjectToEdit.educationSystemId || ""
 
-        form.reset({
+        reset({
           name: subjectToEdit.name || "",
           educationStageId: stageIdVal,
           gradeId: subjectToEdit.gradeId || "",
@@ -144,7 +155,7 @@ export function SubjectModal({
           status: subjectToEdit.status || "Active",
         })
       } else {
-        form.reset({
+        reset({
           name: "",
           educationStageId: stages[0]?.id || "",
           gradeId: "",
@@ -154,11 +165,11 @@ export function SubjectModal({
         })
       }
     }
-  }, [open, subjectToEdit, stages, systems, form])
+  }, [open, subjectToEdit, stages, systems, reset])
 
   // If in edit mode and grades load, match grade by name if gradeId was missing
   React.useEffect(() => {
-    if (open && subjectToEdit && !form.getValues("gradeId") && grades.length > 0) {
+    if (open && subjectToEdit && !getValues("gradeId") && grades.length > 0) {
       const targetGradeName = (
         subjectToEdit.gradeName ||
         subjectToEdit.year ||
@@ -168,22 +179,28 @@ export function SubjectModal({
         (g) => g.name.toLowerCase() === targetGradeName
       )
       if (matchedGrade) {
-        form.setValue("gradeId", matchedGrade.id, { shouldValidate: true })
+        setValue("gradeId", matchedGrade.id, { shouldValidate: true })
       }
     }
-  }, [open, subjectToEdit, grades, form])
+  }, [open, subjectToEdit, grades, getValues, setValue])
 
-  const handleFormSubmit = async (values: SubjectFormData) => {
+  const handleFormSubmit = async ({
+    name,
+    educationStageId,
+    gradeId,
+    educationSystemId,
+    term,
+    status,
+  }: SubjectFormData) => {
     await onSubmit({
-      name: values.name.trim(),
-      educationStageId: values.educationStageId,
-      gradeId: values.gradeId,
-      educationSystemId: values.educationSystemId,
-      term: values.term,
-      status: values.status,
+      name: name.trim(),
+      educationStageId,
+      gradeId,
+      educationSystemId,
+      term,
+      status,
     })
   }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent onClose={() => onOpenChange(false)} className="max-w-[500px] p-6">
@@ -207,13 +224,13 @@ export function SubjectModal({
 
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(handleFormSubmit)}
+            onSubmit={handleSubmit(handleFormSubmit)}
             className="flex flex-col gap-4 mt-2"
           >
             {/* Subject Name Input with UniInput */}
             <div className="flex flex-col gap-1.5">
               <UniInput
-                control={form.control}
+                control={control}
                 name="name"
                 label="Subject Name"
                 placeholder="e.g. Mathematics, Science, Arabic..."
@@ -229,7 +246,7 @@ export function SubjectModal({
                     key={suggestion}
                     type="button"
                     onClick={() => {
-                      form.setValue("name", suggestion, {
+                      setValue("name", suggestion, {
                         shouldValidate: true,
                         shouldDirty: true,
                       })
@@ -250,7 +267,7 @@ export function SubjectModal({
             {/* Education Stage & Academic Year (Grade) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UniSelect
-                control={form.control}
+                control={control}
                 name="educationStageId"
                 label="Education Stage"
                 placeholder={stagesLoading ? "Loading stages..." : "Select stage"}
@@ -258,16 +275,11 @@ export function SubjectModal({
                 isLoading={stagesLoading}
                 required
                 labelClassName="text-xs font-semibold text-zinc-700"
-                onChangeCallback={() => {
-                  form.setValue("gradeId", "", {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  })
-                }}
+                onChangeCallback={handleStageChange}
               />
 
               <UniSelect
-                control={form.control}
+                control={control}
                 name="gradeId"
                 label="Academic Year / Grade"
                 placeholder={
@@ -290,7 +302,7 @@ export function SubjectModal({
             {/* Education System & Term */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UniSelect
-                control={form.control}
+                control={control}
                 name="educationSystemId"
                 label="Education System"
                 placeholder={systemsLoading ? "Loading systems..." : "Select system"}
@@ -301,7 +313,7 @@ export function SubjectModal({
               />
 
               <UniSelect
-                control={form.control}
+                control={control}
                 name="term"
                 label="Term"
                 placeholder="Select term"
@@ -318,7 +330,7 @@ export function SubjectModal({
 
             {/* Status */}
             <UniSelect
-              control={form.control}
+              control={control}
               name="status"
               label="Status"
               placeholder="Select status"

@@ -25,14 +25,13 @@ import {
   CreateLessonPayload,
 } from "../../types/curriculum.types"
 import {
-  useUnits,
   useCreateUnit,
-  useLessons,
   useCreateLesson,
 } from "../../hooks/useCurriculum"
 import { AddUnitModal } from "./AddUnitModal"
 import { AddLessonModal } from "./AddLessonModal"
 import { toast } from "sonner"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 export interface CurriculumStructureProps {
   subject: CurriculumSubject
@@ -57,9 +56,7 @@ function UnitItem({
   onAddLesson: (unitId: string) => void
 }) {
   const router = useRouter()
-  const { data: apiLessons, isLoading: isLoadingLessons } = useLessons(unit.id)
-  const lessons: LessonSummary[] =
-    apiLessons && apiLessons.length > 0 ? apiLessons : unit.lessons || []
+  const lessons: LessonSummary[] = unit.lessons || []
 
   return (
     <div className="rounded-xl border border-zinc-200/80 bg-white shadow-2xs overflow-hidden">
@@ -92,23 +89,15 @@ function UnitItem({
           </div>
         </div>
 
-        <span className="text-xs text-zinc-400 font-normal flex items-center gap-1.5">
-          {isLoadingLessons ? (
-            <Loader2 className="size-3 animate-spin text-zinc-400" />
-          ) : null}
-          <span>{lessons.length} lessons</span>
+        <span className="text-xs text-zinc-400 font-normal">
+          {lessons.length} lessons
         </span>
       </button>
 
       {/* Unit Lessons List */}
       {isUnitOpen && (
         <div className="flex flex-col border-t border-zinc-100 divide-y divide-zinc-100">
-          {isLoadingLessons && lessons.length === 0 ? (
-            <div className="p-4 flex items-center justify-center gap-2 text-xs text-zinc-400">
-              <Loader2 className="size-3.5 animate-spin text-brand-orange" />
-              <span>Loading lessons...</span>
-            </div>
-          ) : lessons.length > 0 ? (
+          {lessons.length > 0 ? (
             lessons.map((lesson, idx) => (
               <div
                 key={lesson.id}
@@ -199,10 +188,8 @@ function ChapterItem({
   onAddUnit: (chapterId: string) => void
   onAddLesson: (chapterId: string, unitId: string) => void
 }) {
-  const { data: apiUnits, isLoading: isLoadingUnits } = useUnits(chapter.id)
-  const units: Unit[] =
-    apiUnits && apiUnits.length > 0 ? apiUnits : chapter.units || []
-
+  const units: Unit[] = chapter.units || []
+  
   return (
     <div className="rounded-2xl border border-zinc-200/80 bg-white shadow-2xs overflow-hidden transition-all">
       {/* Chapter Header */}
@@ -234,23 +221,15 @@ function ChapterItem({
           </div>
         </div>
 
-        <span className="text-xs text-zinc-400 font-normal flex items-center gap-1.5">
-          {isLoadingUnits ? (
-            <Loader2 className="size-3 animate-spin text-zinc-400" />
-          ) : null}
-          <span>{units.length} units</span>
+        <span className="text-xs text-zinc-400 font-normal">
+          {units.length} units
         </span>
       </button>
 
       {/* Chapter Body: Units */}
       {isChapterOpen && (
         <div className="flex flex-col gap-3.5 p-4 pt-1 border-t border-zinc-100 bg-zinc-50/30">
-          {isLoadingUnits && units.length === 0 ? (
-            <div className="p-6 flex items-center justify-center gap-2 text-xs text-zinc-400">
-              <Loader2 className="size-4 animate-spin text-brand-orange" />
-              <span>Loading units...</span>
-            </div>
-          ) : units.length > 0 ? (
+          {units.length > 0 ? (
             units.map((unit) => (
               <UnitItem
                 key={unit.id}
@@ -338,13 +317,8 @@ export function CurriculumStructure({
       setIsAddUnitOpen(false)
       // Automatically expand this chapter
       setExpandedChapters((prev) => ({ ...prev, [payload.chapterId]: true }))
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.title ||
-        err?.message ||
-        "Failed to create unit"
-      toast.error(msg)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
     }
   }
 
@@ -356,13 +330,8 @@ export function CurriculumStructure({
       setIsAddLessonOpen(false)
       // Automatically expand this unit
       setExpandedUnits((prev) => ({ ...prev, [payload.unitId]: true }))
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.title ||
-        err?.message ||
-        "Failed to create lesson"
-      toast.error(msg)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
     }
   }
 
@@ -434,8 +403,8 @@ export function CurriculumStructure({
           </div>
           <h3 className="text-sm font-bold text-zinc-900">No chapters yet</h3>
           <p className="text-xs text-zinc-500 max-w-sm">
-            This subject doesn't have any chapters added to its curriculum yet.
-            Click below to create the first chapter.
+            This subject doesn&apos;t have any chapters added to its curriculum
+            yet. Click below to create the first chapter.
           </p>
           <Button
             type="button"
