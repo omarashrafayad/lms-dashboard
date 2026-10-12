@@ -11,6 +11,8 @@ export type CourseCategory =
   | "Design & Arts"
   | "Other"
 
+import { QuizQuestion } from "@/features/dashboard/lesson/types/lesson.types"
+
 export interface CourseLessonItem {
   id: string
   order: number
@@ -21,22 +23,6 @@ export interface CourseLessonItem {
   description?: string
   videoUrl?: string
 }
-
-export interface CourseListItem {
-  id: string
-  title: string
-  category: string
-  instructor: string
-  level: CourseLevel
-  duration?: string
-  rating?: number
-  lessonsCount: number
-  studentsCount: number
-  status: CourseStatus
-  lastUpdated: string
-}
-
-import { QuizQuestion } from "@/features/dashboard/lesson/types/lesson.types"
 
 export interface CourseExamData {
   title: string
@@ -71,33 +57,84 @@ export interface CourseActivityItem {
   date: string
 }
 
-export interface CourseDetail {
+export interface ApiCourse {
   id: string
-  title: string
-  category: string
-  instructor: string
-  level: CourseLevel
-  duration?: string
-  status: CourseStatus
-  language?: string
+  name: string
   description: string
-  prerequisites?: string | string[]
-  targetAudience?: string
-  allowVideoDownload?: boolean
-  allowPdfDownload?: boolean
-  certificateAvailable?: boolean
-  stats: {
+  category: string
+  difficultyLevel: string
+  leadInstructor: string
+  instructionLanguage: string
+  targetAudience: string
+  prerequisites: string
+  estimatedDurationHours: number
+  status: string
+  coverImageUrl?: string
+  order?: number
+  settings?: any
+  createdAt?: string
+  updatedAt?: string
+
+  // Compatibility helpers
+  title?: string
+  instructor?: string
+  level?: CourseLevel
+  duration?: string
+  rating?: number
+  lessonsCount?: number
+  studentsCount?: number
+  lastUpdated?: string
+  lessons?: CourseLessonItem[]
+  stats?: {
     totalLessons: number
     totalVideos: number
     estimatedDuration: string
     totalStudents: number
     completionRate: string
   }
-  lessons: CourseLessonItem[]
-  exam: CourseExamData | null
+  exam?: CourseExamData | null
   students?: StudentProgressItem[]
   analytics?: CourseAnalyticsData
   activityHistory?: CourseActivityItem[]
+}
+
+export type Course = ApiCourse
+export type CourseListItem = ApiCourse
+
+export interface CreateCoursePayload {
+  name: string
+  description: string
+  category: string
+  difficultyLevel: string
+  leadInstructor: string
+  instructionLanguage: string
+  targetAudience: string
+  prerequisites: string
+  estimatedDurationHours: number
+  coverImageUrl?: string
+  order?: number
+}
+
+export interface UpdateCoursePayload {
+  name?: string
+  description?: string
+  category?: string
+  difficultyLevel?: string
+  leadInstructor?: string
+  instructionLanguage?: string
+  targetAudience?: string
+  prerequisites?: string
+  estimatedDurationHours?: number
+  coverImageUrl?: string
+  order?: number
+  status?: string
+}
+
+export interface CourseDetail extends ApiCourse {
+  language?: string
+  allowVideoDownload?: boolean
+  allowPdfDownload?: boolean
+  certificateAvailable?: boolean
 }
 
 export interface CourseFilterState {

@@ -21,7 +21,7 @@ export default function CourseLessonViewPage({
 
   // Find targeted lesson or fallback to Mathematics: Core Concepts matching Image 1
   const lesson =
-    course?.lessons.find((l: CourseLessonItem) => l.id === lessonId) || {
+    course?.lessons?.find((l: CourseLessonItem) => l.id === lessonId) || {
       id: "lesson-c-2",
       order: 2,
       title: "Mathematics: Core Concepts",

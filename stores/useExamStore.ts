@@ -1,7 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { ExamItem } from "@/features/dashboard/exam/types/exam.types"
-import { initialExamsMockData } from "@/features/dashboard/exam/data/examMockData"
 
 interface ExamStoreState {
   exams: ExamItem[]
@@ -17,12 +16,12 @@ interface ExamStoreState {
 export const useExamStore = create<ExamStoreState>()(
   persist(
     (set, get) => ({
-      exams: initialExamsMockData,
+      exams: [],
 
       getExamByIdOrSlug: (idOrSlug: string) => {
         const decoded = decodeURIComponent(idOrSlug).toLowerCase()
         return get().exams.find(
-          (e) => e.id.toLowerCase() === decoded || e.slug.toLowerCase() === decoded
+          (e) => e.id.toLowerCase() === decoded || (e.slug && e.slug.toLowerCase() === decoded)
         )
       },
 
@@ -35,61 +34,38 @@ export const useExamStore = create<ExamStoreState>()(
 
         const newExam: ExamItem = {
           ...examData,
-          id: newId,
+          id: examData.id || newId,
           slug,
           title: examData.title || `Exam ${newId}`,
-          type: examData.type || "Monthly",
+          examType: (examData.examType || examData.type || "Monthly") as any,
+          type: (examData.type || examData.examType || "Monthly") as any,
           level: examData.level || "Beginner",
           subject: examData.subject || "Mathematics",
           educationStage: examData.educationStage || "Primary",
           academicYear: examData.academicYear || "2026 / 2027",
           term: examData.term || "Term 1",
           month: examData.month || "October",
-          questionsCount: examData.questionsCount || 20,
-          totalPoints: examData.totalPoints || 40,
-          duration: examData.duration || "30 min",
           durationMinutes: examData.durationMinutes || 30,
           attemptsAllowed: examData.attemptsAllowed || 1,
-          passingScore: examData.passingScore || "60%",
-          passingScorePercent: examData.passingScorePercent || 60,
+          passingScore: examData.passingScore || 60,
+          availability: examData.availability || "Always available",
           status: examData.status || "Draft",
+          questionsCount: examData.questionsCount || 0,
+          questionCount: examData.questionCount || 0,
+          totalPoints: examData.totalPoints || 0,
           studentsCount: 0,
+          studentCount: 0,
           passRate: "0%",
-          passRatePercent: 0,
-          failRatePercent: 0,
-          averageScore: "0%",
-          avgCompletionTime: "—",
+          duration: `${examData.durationMinutes || 30} min`,
+          passingScorePercent: typeof examData.passingScore === "number" ? examData.passingScore : 60,
           lastUpdated: new Date().toLocaleDateString("en-US", {
             month: "short",
             day: "2-digit",
             year: "numeric",
           }),
-          linkedTo: examData.linkedTo || {
-            type: "Subject",
-            subject: examData.subject || "Mathematics",
-            stage: examData.educationStage || "Primary",
-            term: examData.term || "Term 1",
-          },
           students: [],
-          activityHistory: [
-            {
-              id: `act-${Date.now()}`,
-              action: "Exam created",
-              admin: "Dina Farouk",
-              dateTime: `${new Date().toLocaleDateString("en-US", {
-                month: "short",
-                day: "2-digit",
-                year: "numeric",
-              })} · ${new Date().toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              })}`,
-              previousValue: "—",
-              newValue: examData.status || "Draft",
-            },
-          ],
-          questions: examData.questions || [],
+          activityHistory: [],
+          questions: (examData.questions as any) || [],
         }
 
         set((state) => ({
@@ -103,29 +79,9 @@ export const useExamStore = create<ExamStoreState>()(
         set((state) => ({
           exams: state.exams.map((exam) => {
             if (exam.id === id || exam.slug === id) {
-              const updatedActivity = [...exam.activityHistory]
-              if (updates.status && updates.status !== exam.status) {
-                updatedActivity.unshift({
-                  id: `act-${Date.now()}`,
-                  action: "Status changed",
-                  admin: "Dina Farouk",
-                  dateTime: `${new Date().toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "2-digit",
-                    year: "numeric",
-                  })} · ${new Date().toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                  })}`,
-                  previousValue: exam.status,
-                  newValue: updates.status,
-                })
-              }
               return {
                 ...exam,
                 ...updates,
-                activityHistory: updatedActivity,
                 lastUpdated: new Date().toLocaleDateString("en-US", {
                   month: "short",
                   day: "2-digit",
@@ -153,35 +109,15 @@ export const useExamStore = create<ExamStoreState>()(
           title: copyTitle,
           status: "Draft",
           studentsCount: 0,
+          studentCount: 0,
           passRate: "0%",
-          passRatePercent: 0,
-          failRatePercent: 0,
-          averageScore: "0%",
-          avgCompletionTime: "—",
           lastUpdated: new Date().toLocaleDateString("en-US", {
             month: "short",
             day: "2-digit",
             year: "numeric",
           }),
           students: [],
-          activityHistory: [
-            {
-              id: `act-${Date.now()}`,
-              action: "Exam duplicated",
-              admin: "Dina Farouk",
-              dateTime: `${new Date().toLocaleDateString("en-US", {
-                month: "short",
-                day: "2-digit",
-                year: "numeric",
-              })} · ${new Date().toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              })}`,
-              previousValue: exam.title,
-              newValue: copyTitle,
-            },
-          ],
+          activityHistory: [],
         }
 
         set((state) => ({
@@ -217,7 +153,7 @@ export const useExamStore = create<ExamStoreState>()(
       },
 
       resetToDefault: () => {
-        set({ exams: initialExamsMockData })
+        set({ exams: [] })
       },
     }),
     {

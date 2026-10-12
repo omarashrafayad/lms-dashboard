@@ -2,16 +2,28 @@ export type ExamType = "Monthly" | "Subject" | "Course"
 export type ExamLevel = "Beginner" | "Intermediate" | "Advanced"
 export type ExamStatus = "Published" | "Draft" | "Archived"
 
+export interface ApiExamQuestion {
+  id?: string
+  examId?: string
+  questionText: string
+  questionType: string
+  points: number
+  options: string
+  correctAnswer: string
+  isRequired: boolean
+  order?: number
+}
+
 export interface StudentExamRecord {
   id: string
   studentName: string
   level: ExamLevel
-  score: string // e.g. "75%" or "—"
-  correctAnswers: string // e.g. "15" or "—"
-  wrongAnswers: string // e.g. "5" or "—"
+  score: string
+  correctAnswers: string
+  wrongAnswers: string
   result: "Passed" | "Failed" | "Not Attempted"
-  attempts: string // e.g. "1" or "—"
-  completionTime: string // e.g. "24 min" or "—"
+  attempts: string
+  completionTime: string
 }
 
 export interface ExamActivityItem {
@@ -34,41 +46,109 @@ export interface ExamQuestionItem {
   difficulty: ExamLevel
 }
 
-export interface ExamItem {
+export interface ApiExam {
   id: string
-  slug: string
   title: string
-  type: ExamType
+  description?: string
+  examType: ExamType
   level: ExamLevel
-  subject: string
-  educationStage: string
-  academicYear: string
-  term: string
+  educationStage?: string
+  academicYear?: string
+  term?: string
   month?: string
-  questionsCount: number
-  totalPoints: number
-  duration: string
+  subjects?: string[]
+  courseId?: string | null
+  courseName?: string | null
   durationMinutes: number
   attemptsAllowed: number
-  passingScore: string
-  passingScorePercent: number
+  passingScore: number
+  availability: string
+  availableFrom?: string | null
+  availableTo?: string | null
   status: ExamStatus
-  studentsCount: number
-  passRate: string
-  passRatePercent: number
-  failRatePercent: number
-  averageScore: string
-  avgCompletionTime: string
-  lastUpdated: string
-  linkedTo: {
+  questionCount?: number
+  totalPoints?: number
+  studentCount?: number
+  passedCount?: number
+  passRate?: number | string
+  createdAt?: string
+  updatedAt?: string | null
+
+  // Compatibility helpers for UI tabs
+  slug?: string
+  type?: ExamType
+  subject?: string
+  questionsCount?: number
+  duration?: string
+  passingScorePercent?: number
+  studentsCount?: number
+  passRatePercent?: number
+  failRatePercent?: number
+  averageScore?: string
+  avgCompletionTime?: string
+  lastUpdated?: string
+  linkedTo?: {
     type: string
     subject: string
     stage: string
     term: string
   }
-  students: StudentExamRecord[]
-  activityHistory: ExamActivityItem[]
-  questions: ExamQuestionItem[]
+  students?: StudentExamRecord[]
+  activityHistory?: ExamActivityItem[]
+  questions?: any[]
+}
+
+export type Exam = ApiExam
+export type ExamItem = ApiExam
+
+export interface CreateExamPayload {
+  title: string
+  description?: string
+  examType: string
+  level: string
+  educationStage?: string
+  academicYear?: string
+  term?: string
+  month?: string
+  subjects?: string[]
+  courseId?: string | null
+  courseName?: string | null
+  durationMinutes: number
+  attemptsAllowed: number
+  passingScore: number
+  availability: string
+  availableFrom?: string | null
+  availableTo?: string | null
+  status: string
+  questions?: {
+    questionText: string
+    questionType: string
+    points: number
+    options: string
+    correctAnswer: string
+    isRequired: boolean
+  }[]
+}
+
+export interface UpdateExamPayload {
+  title?: string
+  description?: string
+  examType?: string
+  level?: string
+  educationStage?: string
+  academicYear?: string
+  term?: string
+  month?: string
+  subjects?: string[]
+  courseId?: string | null
+  courseName?: string | null
+  durationMinutes?: number
+  attemptsAllowed?: number
+  passingScore?: number
+  availability?: string
+  availableFrom?: string | null
+  availableTo?: string | null
+  status?: string
 }
 
 export interface ExamFilterState {

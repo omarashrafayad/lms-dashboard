@@ -10,50 +10,83 @@ import { CourseFilters } from "../components/list/CourseFilters"
 import { CourseTable } from "../components/list/CourseTable"
 import { useCourses } from "../hooks/useCourses"
 import { CourseFilterState } from "../types/course.types"
-import { toast } from "sonner"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
+
+const initialFilters: CourseFilterState = {
+  search: "",
+  category: "all",
+  level: "all",
+  duration: "all",
+  status: "all",
+}
 
 export default function CourseListPage() {
   const router = useRouter()
-  const [filters, setFilters] = React.useState<CourseFilterState>({
-    search: "",
-    category: "all",
-    level: "all",
-    duration: "all",
-    status: "all",
-  })
+  const [filters, setFilters] = React.useState<CourseFilterState>(initialFilters)
 
-  const { data: courses = [], isLoading } = useCourses(filters)
+  const { data: apiCourses, isLoading, isError } = useCourses()
 
   const handleFilterChange = (key: keyof CourseFilterState, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleResetFilters = () => {
-    setFilters({
-      search: "",
-      category: "all",
-      level: "all",
-      duration: "all",
-      status: "all",
-    })
+    setFilters(initialFilters)
   }
 
-  // Calculate counts for metric cards based on all courses
-  const totalCount = courses.length
-  const publishedCount = courses.filter((c) => c.status === "Published").length
-  const draftCount = courses.filter((c) => c.status === "Draft").length
-  const archivedCount = courses.filter((c) => c.status === "Archived").length
+  const filteredCourses = React.useMemo(() => {
+    if (!apiCourses || !Array.isArray(apiCourses)) return []
+    return apiCourses.filter((course) => {
+      if (filters.search.trim()) {
+        const query = filters.search.toLowerCase()
+        const name = (course.name || course.title || "").toLowerCase()
+        const instructor = (course.leadInstructor || course.instructor || "").toLowerCase()
+        const category = (course.category || "").toLowerCase()
+        if (!name.includes(query) && !instructor.includes(query) && !category.includes(query)) {
+          return false
+        }
+      }
+
+      if (filters.category !== "all" && course.category?.toLowerCase() !== filters.category.toLowerCase()) {
+        return false
+      }
+
+      if (filters.level !== "all") {
+        const level = (course.difficultyLevel || course.level || "").toLowerCase()
+        if (level !== filters.level.toLowerCase()) {
+          return false
+        }
+      }
+
+      if (filters.status !== "all") {
+        const status = (course.status || "").toLowerCase()
+        if (status !== filters.status.toLowerCase()) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }, [apiCourses, filters])
+
+  const totalCount = filteredCourses.length
+  const publishedCount = filteredCourses.filter(
+    (c) => c.status?.toLowerCase() === "published" || c.status?.toLowerCase() === "active"
+  ).length
+  const draftCount = filteredCourses.filter((c) => c.status?.toLowerCase() === "draft").length
+  const archivedCount = filteredCourses.filter(
+    (c) => c.status?.toLowerCase() === "archived" || c.status?.toLowerCase() === "inactive"
+  ).length
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Top Page Header matching Image 1 */}
       <PageHeader
         title="Courses"
         description="Manage learning programs, organize course content, and control student access."
       />
 
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1300px] w-full mx-auto pb-20">
-        {/* Header Action Row matching Image 1 */}
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-zinc-500">
             Showing <strong className="font-bold text-zinc-800">{totalCount}</strong> courses
@@ -61,14 +94,13 @@ export default function CourseListPage() {
 
           <Link
             href="/courses/add"
-            className="h-10 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+            className="h-10 px-5 rounded-xl bg-brand-orange hover:bg-brand-orange/90 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
           >
             <Plus className="size-4 stroke-[2.5]" />
             <span>Add Course</span>
           </Link>
         </div>
 
-        {/* 4 Metrics Cards matching Image 1 */}
         <CourseMetricsCards
           total={totalCount}
           published={publishedCount}
@@ -76,15 +108,19 @@ export default function CourseListPage() {
           archived={archivedCount}
         />
 
-        {/* Filter Bar matching Image 1 */}
         <CourseFilters
           filters={filters}
           onChange={handleFilterChange}
           onReset={handleResetFilters}
         />
 
-        {/* Courses Table matching Image 1 */}
-        <CourseTable courses={courses} isLoading={isLoading} />
+        {isLoading ? (
+          <LoadingSpinner title="Loading courses..." />
+        ) : isError ? (
+          <GlobalError />
+        ) : (
+          <CourseTable courses={filteredCourses} />
+        )}
       </main>
     </div>
   )

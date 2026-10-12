@@ -14,9 +14,11 @@ import { ExamAnalyticsTab } from "../components/detail/ExamAnalyticsTab"
 import { ExamActivityHistoryTab } from "../components/detail/ExamActivityHistoryTab"
 import { ExamFormModal } from "../components/modal/ExamFormModal"
 import { ExamPreviewModal } from "../components/modal/ExamPreviewModal"
-import { useExamStore } from "@/stores/useExamStore"
-import { ExamItem } from "../types/exam.types"
-import { initialExamsMockData } from "../data/examMockData"
+import { useExam, useUpdateExam, useDuplicateExam } from "../hooks/useExams"
+import { ApiExam } from "../types/exam.types"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 interface ExamDetailPageProps {
   id: string
@@ -27,38 +29,90 @@ export default function ExamDetailPage({ id }: ExamDetailPageProps) {
   const searchParams = useSearchParams()
   const initialTab = (searchParams.get("tab") as DetailTabType) || "overview"
 
-  const { getExamByIdOrSlug, updateExam, duplicateExam, archiveExam } =
-    useExamStore()
-
-  // Find exam or fallback to the Math October Monthly Exam (Image 2-5)
-  const exam = getExamByIdOrSlug(id) || initialExamsMockData[0]
+  const { data: exam, isLoading, isError } = useExam(id)
+  const updateExamMutation = useUpdateExam(id)
+  const duplicateExamMutation = useDuplicateExam()
 
   const [activeTab, setActiveTab] = React.useState<DetailTabType>(initialTab)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
   const [isPreviewModalOpen, setIsPreviewModalOpen] = React.useState(false)
 
-  const handleUpdateExam = (updatedFields: Partial<ExamItem>) => {
-    updateExam(exam.id, updatedFields)
-    toast.success("Exam updated successfully")
-    setIsEditModalOpen(false)
-  }
-
-  const handleDuplicate = () => {
-    const copy = duplicateExam(exam.id)
-    if (copy) {
-      toast.success(`Exam duplicated: "${copy.title}"`)
+  const handleUpdateExam = async (updatedFields: Partial<ApiExam>) => {
+    if (!exam) return
+    try {
+      await updateExamMutation.mutateAsync({
+        examId: exam.id,
+        data: {
+          title: updatedFields.title,
+          description: updatedFields.description,
+          examType: (updatedFields.examType || updatedFields.type) as any,
+          level: updatedFields.level as any,
+          educationStage: updatedFields.educationStage,
+          academicYear: updatedFields.academicYear,
+          term: updatedFields.term,
+          month: updatedFields.month,
+          subjects: updatedFields.subjects,
+          courseId: updatedFields.courseId,
+          courseName: updatedFields.courseName,
+          durationMinutes: updatedFields.durationMinutes,
+          attemptsAllowed: updatedFields.attemptsAllowed,
+          passingScore:
+            typeof updatedFields.passingScore === "number"
+              ? updatedFields.passingScore
+              : updatedFields.passingScorePercent,
+          status: updatedFields.status,
+        },
+      })
+      toast.success("Exam updated successfully")
+      setIsEditModalOpen(false)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
     }
   }
 
-  const handleArchive = () => {
-    archiveExam(exam.id)
-    toast.success(`Exam "${exam.title}" archived`)
+  const handleDuplicate = async () => {
+    if (!exam) return
+    try {
+      const copy = await duplicateExamMutation.mutateAsync(exam.id)
+      toast.success(`Exam duplicated: "${copy?.title || exam.title}"`)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
+  const handleArchive = async () => {
+    if (!exam) return
+    try {
+      await updateExamMutation.mutateAsync({
+        examId: exam.id,
+        data: { status: "Archived" },
+      })
+      toast.success(`Exam "${exam.title}" archived`)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-8 flex items-center justify-center">
+        <LoadingSpinner title="Loading exam details..." />
+      </div>
+    )
+  }
+
+  if (isError || !exam) {
+    return (
+      <div className="flex-1 p-8">
+        <GlobalError />
+      </div>
+    )
   }
 
   return (
     <div className="flex flex-col min-h-full">
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-8 max-w-[1400px] w-full mx-auto pb-24">
-        {/* Detail Header matching Images 2, 3, 4, 5 */}
+        {/* Detail Header */}
         <ExamDetailHeader
           exam={exam}
           activeTab={activeTab}
@@ -69,7 +123,7 @@ export default function ExamDetailPage({ id }: ExamDetailPageProps) {
           onEdit={() => setIsEditModalOpen(true)}
         />
 
-        {/* Tab 1: Overview matching Image 2 */}
+        {/* Tab 1: Overview */}
         {activeTab === "overview" && <ExamOverviewTab exam={exam} />}
 
         {/* Tab 2: Questions */}
@@ -80,13 +134,13 @@ export default function ExamDetailPage({ id }: ExamDetailPageProps) {
           />
         )}
 
-        {/* Tab 3: Students & Results matching Image 3 */}
+        {/* Tab 3: Students & Results */}
         {activeTab === "students" && <ExamStudentsTab exam={exam} />}
 
-        {/* Tab 4: Analytics matching Image 4 */}
+        {/* Tab 4: Analytics */}
         {activeTab === "analytics" && <ExamAnalyticsTab exam={exam} />}
 
-        {/* Tab 5: Activity History matching Image 5 */}
+        {/* Tab 5: Activity History */}
         {activeTab === "history" && <ExamActivityHistoryTab exam={exam} />}
       </main>
 
@@ -111,3 +165,4 @@ export default function ExamDetailPage({ id }: ExamDetailPageProps) {
     </div>
   )
 }
+

@@ -119,7 +119,7 @@ export function ExamQuestionsTab({
 
               {/* Multiple Choice Options */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                {q.options.map((opt) => {
+                {(q.options || []).map((opt: any) => {
                   const isCorrect = opt.key === q.correctAnswer
                   return (
                     <div

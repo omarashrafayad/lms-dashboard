@@ -34,7 +34,6 @@ export default function CurriculumStructurePage({
     }
 
   const chapters = structureData?.chapters || []
-  
 
   if (isLoading) {
     return (

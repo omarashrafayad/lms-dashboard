@@ -27,8 +27,8 @@ export function ExamPreviewModal({
             <h2 className="text-base font-bold text-zinc-900">
               Exam Preview (Student View)
             </h2>
-            <ExamTypeBadge type={exam.type} />
-            <ExamLevelBadge level={exam.level} />
+            <ExamTypeBadge type={exam.type || exam.examType || "Monthly"} />
+            <ExamLevelBadge level={exam.level || "Beginner"} />
           </div>
           <button
             type="button"
@@ -46,21 +46,21 @@ export function ExamPreviewModal({
             <div className="flex flex-col gap-1">
               <h1 className="text-xl font-bold text-zinc-900">{exam.title}</h1>
               <p className="text-xs text-zinc-500">
-                {exam.subject} · {exam.educationStage} · {exam.academicYear}
+                {exam.subject || (exam.subjects && exam.subjects[0]) || exam.courseName || "General"} · {exam.educationStage} · {exam.academicYear}
               </p>
             </div>
             <div className="flex items-center gap-4 text-xs font-semibold text-zinc-700">
               <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-zinc-200/80 shadow-2xs">
                 <Clock className="size-3.5 text-amber-600" />
-                <span>{exam.duration}</span>
+                <span>{exam.duration || `${exam.durationMinutes || 30} min`}</span>
               </div>
               <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-zinc-200/80 shadow-2xs">
                 <HelpCircle className="size-3.5 text-amber-600" />
-                <span>{exam.questionsCount} Questions</span>
+                <span>{exam.questions?.length ?? exam.questionsCount ?? 0} Questions</span>
               </div>
               <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-zinc-200/80 shadow-2xs">
                 <Award className="size-3.5 text-amber-600" />
-                <span>{exam.totalPoints} Points</span>
+                <span>{exam.totalPoints || 0} Points</span>
               </div>
             </div>
           </div>
@@ -68,10 +68,10 @@ export function ExamPreviewModal({
           {/* Sample Questions List */}
           <div className="flex flex-col gap-5">
             <h3 className="text-sm font-bold text-zinc-900">
-              Questions ({exam.questions.length || exam.questionsCount})
+              Questions ({exam.questions?.length ?? exam.questionsCount ?? 0})
             </h3>
 
-            {exam.questions.map((q) => (
+            {(exam.questions || []).map((q: any) => (
               <div
                 key={q.id}
                 className="bg-zinc-50/60 rounded-xl border border-zinc-200/80 p-5 flex flex-col gap-3.5"
@@ -90,7 +90,7 @@ export function ExamPreviewModal({
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                  {q.options.map((opt) => {
+                  {(q.options || []).map((opt: any) => {
                     const isCorrect = opt.key === q.correctAnswer
                     return (
                       <div

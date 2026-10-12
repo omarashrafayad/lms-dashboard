@@ -137,18 +137,23 @@ export function ExamDetailHeader({
 
         {/* Linked Type Pill */}
         <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200/60">
-          {exam.linkedTo.type || "Subject"}
+          {exam.linkedTo?.type || exam.examType || exam.type || "Subject"}
         </span>
 
         {/* Breadcrumb Path */}
         <div className="flex items-center gap-2 text-zinc-600">
           <strong className="font-bold text-zinc-900">
-            {exam.linkedTo.subject || exam.subject}
+            {exam.linkedTo?.subject ||
+              exam.courseName ||
+              (exam.subjects && exam.subjects.length > 0
+                ? exam.subjects[0]
+                : exam.subject) ||
+              "General"}
           </strong>
           <ChevronRight className="size-3.5 text-zinc-400" />
-          <span>{exam.linkedTo.stage || exam.educationStage}</span>
+          <span>{exam.linkedTo?.stage || exam.educationStage || "Primary"}</span>
           <ChevronRight className="size-3.5 text-zinc-400" />
-          <span>{exam.linkedTo.term || exam.term}</span>
+          <span>{exam.linkedTo?.term || exam.term || "Term 1"}</span>
         </div>
       </div>
 

@@ -9,12 +9,15 @@ import { ExamFilters } from "../components/list/ExamFilters"
 import { ExamTable } from "../components/list/ExamTable"
 import { ExamFormModal } from "../components/modal/ExamFormModal"
 import { ExamPreviewModal } from "../components/modal/ExamPreviewModal"
-import { useExamStore } from "@/stores/useExamStore"
-import { ExamFilterState, ExamItem } from "../types/exam.types"
+import { useExams, useUpdateExam } from "../hooks/useExams"
+import { ExamFilterState, ApiExam } from "../types/exam.types"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 export default function ExamListPage() {
-  const { exams, addExam, updateExam, duplicateExam, archiveExam } =
-    useExamStore()
+  const { data: apiExams, isLoading, isError } = useExams()
+  const updateExamMutation = useUpdateExam()
 
   const [filters, setFilters] = React.useState<ExamFilterState>({
     tab: "all",
@@ -26,9 +29,8 @@ export default function ExamListPage() {
   })
 
   // Modal states
-  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false)
-  const [editingExam, setEditingExam] = React.useState<ExamItem | null>(null)
-  const [previewingExam, setPreviewingExam] = React.useState<ExamItem | null>(null)
+  const [editingExam, setEditingExam] = React.useState<ApiExam | null>(null)
+  const [previewingExam, setPreviewingExam] = React.useState<ApiExam | null>(null)
 
   const handleFilterChange = (key: keyof ExamFilterState, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
@@ -46,97 +48,113 @@ export default function ExamListPage() {
     toast.info("Filters reset to default")
   }
 
+  const allExams = React.useMemo(() => {
+    return Array.isArray(apiExams) ? apiExams : []
+  }, [apiExams])
+
   // Filter logic
-  const filteredExams = exams.filter((exam) => {
-    // Tab filter
-    if (filters.tab === "monthly" && exam.type !== "Monthly") return false
-    if (filters.tab === "subject" && exam.type !== "Subject") return false
-    if (filters.tab === "course" && exam.type !== "Course") return false
+  const filteredExams = React.useMemo(() => {
+    return allExams.filter((exam) => {
+      const examType = exam.examType || exam.type || "Monthly"
 
-    // Search query
-    if (filters.search.trim()) {
-      const q = filters.search.toLowerCase()
-      const matchTitle = exam.title.toLowerCase().includes(q)
-      const matchSubject = exam.subject.toLowerCase().includes(q)
-      const matchYear = exam.academicYear.toLowerCase().includes(q)
-      if (!matchTitle && !matchSubject && !matchYear) return false
-    }
+      // Tab filter
+      if (filters.tab === "monthly" && examType !== "Monthly") return false
+      if (filters.tab === "subject" && examType !== "Subject") return false
+      if (filters.tab === "course" && examType !== "Course") return false
 
-    // Type filter
-    if (filters.type !== "all" && exam.type !== filters.type) return false
+      // Search query
+      if (filters.search.trim()) {
+        const q = filters.search.toLowerCase()
+        const matchTitle = (exam.title || "").toLowerCase().includes(q)
+        const matchSubject =
+          (exam.subjects && exam.subjects.join(" ").toLowerCase().includes(q)) ||
+          (exam.subject || "").toLowerCase().includes(q)
+        const matchCourse = (exam.courseName || "").toLowerCase().includes(q)
+        const matchYear = (exam.academicYear || "").toLowerCase().includes(q)
+        if (!matchTitle && !matchSubject && !matchCourse && !matchYear) return false
+      }
 
-    // Level filter
-    if (filters.level !== "all" && exam.level !== filters.level) return false
+      // Type filter
+      if (filters.type !== "all" && examType !== filters.type) return false
 
-    // Questions count filter
-    if (filters.questions === "<15" && exam.questionsCount >= 15) return false
-    if (
-      filters.questions === "15-20" &&
-      (exam.questionsCount < 15 || exam.questionsCount > 20)
-    )
-      return false
-    if (
-      filters.questions === "21-30" &&
-      (exam.questionsCount < 21 || exam.questionsCount > 30)
-    )
-      return false
-    if (filters.questions === ">30" && exam.questionsCount <= 30) return false
+      // Level filter
+      if (filters.level !== "all" && exam.level !== filters.level) return false
 
-    // Duration filter
-    if (filters.duration === "<30" && exam.durationMinutes >= 30) return false
-    if (
-      filters.duration === "30-45" &&
-      (exam.durationMinutes < 30 || exam.durationMinutes > 45)
-    )
-      return false
-    if (filters.duration === ">45" && exam.durationMinutes <= 45) return false
+      // Questions count filter
+      const qCount =
+        exam.questionCount !== undefined
+          ? exam.questionCount
+          : exam.questionsCount !== undefined
+          ? exam.questionsCount
+          : exam.questions?.length || 0
 
-    return true
-  })
+      if (filters.questions === "<15" && qCount >= 15) return false
+      if (filters.questions === "15-20" && (qCount < 15 || qCount > 20)) return false
+      if (filters.questions === "21-30" && (qCount < 21 || qCount > 30)) return false
+      if (filters.questions === ">30" && qCount <= 30) return false
+
+      // Duration filter
+      const duration = exam.durationMinutes || 0
+      if (filters.duration === "<30" && duration >= 30) return false
+      if (filters.duration === "30-45" && (duration < 30 || duration > 45)) return false
+      if (filters.duration === ">45" && duration <= 45) return false
+
+      return true
+    })
+  }, [allExams, filters])
 
   // Tab counts
-  const counts = {
-    all: exams.length,
-    monthly: exams.filter((e) => e.type === "Monthly").length,
-    subject: exams.filter((e) => e.type === "Subject").length,
-    course: exams.filter((e) => e.type === "Course").length,
-  }
+  const counts = React.useMemo(() => {
+    return {
+      all: allExams.length,
+      monthly: allExams.filter((e) => (e.examType || e.type) === "Monthly").length,
+      subject: allExams.filter((e) => (e.examType || e.type) === "Subject").length,
+      course: allExams.filter((e) => (e.examType || e.type) === "Course").length,
+    }
+  }, [allExams])
 
   // Action handlers
-  const handleSaveExam = (examData: Partial<ExamItem>) => {
-    if (editingExam) {
-      updateExam(editingExam.id, examData)
+  const handleSaveExam = async (examData: Partial<ApiExam>) => {
+    if (!editingExam) return
+    try {
+      await updateExamMutation.mutateAsync({
+        examId: editingExam.id,
+        data: {
+          title: examData.title,
+          description: examData.description,
+          examType: (examData.examType || examData.type) as any,
+          level: examData.level as any,
+          educationStage: examData.educationStage,
+          academicYear: examData.academicYear,
+          term: examData.term,
+          month: examData.month,
+          subjects: examData.subjects,
+          courseId: examData.courseId,
+          courseName: examData.courseName,
+          durationMinutes: examData.durationMinutes,
+          attemptsAllowed: examData.attemptsAllowed,
+          passingScore:
+            typeof examData.passingScore === "number"
+              ? examData.passingScore
+              : examData.passingScorePercent,
+          status: examData.status,
+        },
+      })
       toast.success("Exam updated successfully")
       setEditingExam(null)
-    } else {
-      addExam(examData as any)
-      toast.success("Exam created successfully")
-      setIsAddModalOpen(false)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
     }
-  }
-
-  const handleDuplicate = (exam: ExamItem) => {
-    const copy = duplicateExam(exam.id)
-    if (copy) {
-      toast.success(`Exam duplicated: "${copy.title}"`)
-    }
-  }
-
-  const handleArchive = (exam: ExamItem) => {
-    archiveExam(exam.id)
-    toast.success(`Exam "${exam.title}" archived`)
   }
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Top Page Header matching Image 1 */}
       <PageHeader
         title="Exams"
         description="Manage monthly, subject, and course exams, including questions, duration, access, and student results."
       />
 
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto pb-20">
-        {/* Top Action Row matching Image 1: Showing N exams & + Add Exam button */}
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-zinc-500">
             Showing{" "}
@@ -155,7 +173,6 @@ export default function ExamListPage() {
           </Link>
         </div>
 
-        {/* Filter Bar matching Image 1 */}
         <ExamFilters
           filters={filters}
           counts={counts}
@@ -163,24 +180,24 @@ export default function ExamListPage() {
           onReset={handleResetFilters}
         />
 
-        {/* Exams Table matching Image 1 */}
-        <ExamTable
-          exams={filteredExams}
-          onEdit={(exam) => setEditingExam(exam)}
-          onDuplicate={handleDuplicate}
-          onArchive={handleArchive}
-        />
+        {isLoading ? (
+          <LoadingSpinner title="Loading exams..." />
+        ) : isError ? (
+          <GlobalError />
+        ) : (
+          <ExamTable
+            exams={filteredExams}
+            onEdit={(exam) => setEditingExam(exam)}
+          />
+        )}
       </main>
 
-      {/* Add / Edit Exam Modal */}
-      {(isAddModalOpen || editingExam) && (
+      {/* Edit Exam Modal */}
+      {editingExam && (
         <ExamFormModal
-          isOpen={isAddModalOpen || !!editingExam}
+          isOpen={!!editingExam}
           initialData={editingExam}
-          onClose={() => {
-            setIsAddModalOpen(false)
-            setEditingExam(null)
-          }}
+          onClose={() => setEditingExam(null)}
           onSave={handleSaveExam}
         />
       )}
@@ -196,3 +213,4 @@ export default function ExamListPage() {
     </div>
   )
 }
+

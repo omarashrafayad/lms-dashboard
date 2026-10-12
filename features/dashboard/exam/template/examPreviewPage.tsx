@@ -3,9 +3,10 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"
-import { useExamStore } from "@/stores/useExamStore"
-import { initialExamsMockData } from "../data/examMockData"
+import { useExam } from "../hooks/useExams"
 import { ExamQuestionItem } from "../types/exam.types"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
 
 interface ExamPreviewPageProps {
   id: string
@@ -13,9 +14,23 @@ interface ExamPreviewPageProps {
 
 export default function ExamPreviewPage({ id }: ExamPreviewPageProps) {
   const router = useRouter()
-  const { getExamByIdOrSlug } = useExamStore()
+  const { data: exam, isLoading, isError } = useExam(id)
 
-  const exam = getExamByIdOrSlug(id) || initialExamsMockData[0]
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-8 flex items-center justify-center min-h-[50vh]">
+        <LoadingSpinner title="Loading exam preview..." />
+      </div>
+    )
+  }
+
+  if (isError || !exam) {
+    return (
+      <div className="flex-1 p-8">
+        <GlobalError />
+      </div>
+    )
+  }
 
   // Default sample questions if exam.questions is empty
   const defaultQuestions: ExamQuestionItem[] = [
@@ -105,7 +120,12 @@ export default function ExamPreviewPage({ id }: ExamPreviewPageProps) {
       <main className="flex-1 p-6 md:p-10 flex flex-col max-w-3xl w-full mx-auto pb-24">
         {/* Subject Category */}
         <span className="text-xs font-semibold text-zinc-500 mb-1">
-          {exam.subject || "Mathematics"}
+          {exam.subject ||
+            (exam.subjects && exam.subjects.length > 0
+              ? exam.subjects[0]
+              : null) ||
+            exam.courseName ||
+            "Mathematics"}
         </span>
 
         {/* Title */}
@@ -116,8 +136,15 @@ export default function ExamPreviewPage({ id }: ExamPreviewPageProps) {
         {/* Meta Stats row */}
         <div className="flex items-center gap-4 text-xs font-medium text-zinc-500 mb-6">
           <span>{totalQuestions} questions</span>
-          <span>{exam.duration}</span>
-          <span>Passing score {exam.passingScore}</span>
+          <span>{exam.duration || `${exam.durationMinutes || 30} min`}</span>
+          <span>
+            Passing score{" "}
+            {exam.passingScore
+              ? typeof exam.passingScore === "number"
+                ? `${exam.passingScore}%`
+                : exam.passingScore
+              : "60%"}
+          </span>
         </div>
 
         {/* Question Counter & Progress Percent */}
@@ -156,7 +183,7 @@ export default function ExamPreviewPage({ id }: ExamPreviewPageProps) {
 
           {/* Options List matching Image 1 */}
           <div className="flex flex-col gap-3">
-            {currentQuestion.options.map((opt) => {
+            {(currentQuestion.options || []).map((opt: any) => {
               const isSelected = selectedAnswers[currentIdx] === opt.key
 
               return (

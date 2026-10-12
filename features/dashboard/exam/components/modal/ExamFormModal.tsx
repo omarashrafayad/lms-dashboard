@@ -37,20 +37,28 @@ export function ExamFormModal({
   React.useEffect(() => {
     if (initialData) {
       setFormData({
-        title: initialData.title,
-        type: initialData.type,
-        level: initialData.level,
-        subject: initialData.subject,
-        educationStage: initialData.educationStage,
-        academicYear: initialData.academicYear,
-        term: initialData.term,
+        title: initialData.title || "",
+        type: (initialData.examType || initialData.type || "Monthly") as ExamType,
+        level: (initialData.level || "Beginner") as ExamLevel,
+        subject:
+          initialData.subject ||
+          (initialData.subjects && initialData.subjects.length > 0
+            ? initialData.subjects[0]
+            : "Mathematics"),
+        educationStage: initialData.educationStage || "Primary",
+        academicYear: initialData.academicYear || "2026 / 2027",
+        term: initialData.term || "Term 1",
         month: initialData.month || "October",
-        questionsCount: initialData.questionsCount,
-        totalPoints: initialData.totalPoints,
+        questionsCount:
+          initialData.questionsCount || initialData.questionCount || 20,
+        totalPoints: initialData.totalPoints || 40,
         durationMinutes: initialData.durationMinutes || 30,
         attemptsAllowed: initialData.attemptsAllowed || 1,
-        passingScorePercent: initialData.passingScorePercent || 60,
-        status: initialData.status,
+        passingScorePercent:
+          typeof initialData.passingScore === "number"
+            ? initialData.passingScore
+            : initialData.passingScorePercent || 60,
+        status: (initialData.status || "Published") as ExamStatus,
       })
     } else {
       setFormData({
@@ -78,8 +86,11 @@ export function ExamFormModal({
     e.preventDefault()
     onSave({
       ...formData,
+      examType: formData.type,
+      durationMinutes: formData.durationMinutes,
+      passingScore: formData.passingScorePercent,
       duration: `${formData.durationMinutes} min`,
-      passingScore: `${formData.passingScorePercent}%`,
+      passingScorePercent: formData.passingScorePercent,
     })
     onClose()
   }

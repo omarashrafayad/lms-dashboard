@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, Eye, Pencil, Users, BarChart3, History } from "lucide-react"
+import { ChevronLeft, Eye, Pencil } from "lucide-react"
 import { CourseOverviewTab } from "../components/detail/CourseOverviewTab"
 import { CourseContentTab } from "../components/detail/CourseContentTab"
 import { CourseExamTab } from "../components/detail/CourseExamTab"
@@ -12,6 +12,9 @@ import { CourseAnalyticsTab } from "../components/detail/CourseAnalyticsTab"
 import { CourseActivityTab } from "../components/detail/CourseActivityTab"
 import { useCourseDetail } from "../hooks/useCourses"
 import { toast } from "sonner"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
+import { CourseDetail, CourseLevel } from "../types/course.types"
 
 export type CourseDetailTab =
   | "Overview"
@@ -28,14 +31,52 @@ export interface CourseDetailPageProps {
 export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = React.useState<CourseDetailTab>("Overview")
-  const { data: course, isLoading } = useCourseDetail(courseId)
+  const { data: rawCourse, isLoading, isError } = useCourseDetail(courseId)
 
-  if (isLoading || !course) {
+  const course: CourseDetail | null = React.useMemo(() => {
+    if (!rawCourse) return null
+    return {
+      ...rawCourse,
+      title: rawCourse.name || rawCourse.title || "Course Details",
+      instructor: rawCourse.leadInstructor || rawCourse.instructor || "Instructor",
+      level: ((rawCourse.difficultyLevel || rawCourse.level || "Beginner") as CourseLevel),
+      duration: rawCourse.estimatedDurationHours
+        ? `${rawCourse.estimatedDurationHours} Hours`
+        : rawCourse.duration || "—",
+      lessons: rawCourse.lessons || [],
+      stats: rawCourse.stats || {
+        totalLessons: rawCourse.lessons?.length || 0,
+        totalVideos: 0,
+        estimatedDuration: rawCourse.estimatedDurationHours
+          ? `${rawCourse.estimatedDurationHours}h`
+          : "0h",
+        totalStudents: 0,
+        completionRate: "0%",
+      },
+      exam: rawCourse.exam || null,
+      students: rawCourse.students || [],
+      analytics: rawCourse.analytics || {
+        completionRate: "0%",
+        avgWatchTime: "0m",
+        activeLearners: 0,
+        lessonEngagement: [],
+      },
+      activityHistory: rawCourse.activityHistory || [],
+    } as CourseDetail
+  }, [rawCourse])
+
+  if (isLoading) {
     return (
-      <div className="flex-1 p-8 flex items-center justify-center min-h-[400px]">
-        <div className="text-xs text-zinc-400 font-medium animate-pulse">
-          Loading course details...
-        </div>
+      <div className="flex-1 p-12 flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner title="Loading course details..." />
+      </div>
+    )
+  }
+
+  if (isError || !course) {
+    return (
+      <div className="flex-1 p-12 flex items-center justify-center min-h-[400px]">
+        <GlobalError />
       </div>
     )
   }
@@ -52,7 +93,7 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
   return (
     <div className="flex flex-col min-h-full">
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1300px] w-full mx-auto pb-20">
-        {/* Back Link matching Image 2 */}
+        {/* Back Link */}
         <div>
           <Link
             href="/courses"
@@ -63,7 +104,7 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
           </Link>
         </div>
 
-        {/* Top Header Card matching Image 2 */}
+        {/* Top Header Card */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
@@ -90,7 +131,7 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
             </div>
           </div>
 
-          {/* Action Buttons matching Image 2 */}
+          {/* Action Buttons */}
           <div className="flex items-center gap-2.5">
             <button
               type="button"
@@ -104,7 +145,7 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
             <button
               type="button"
               onClick={() => router.push(`/courses/${course.id}/edit`)}
-              className="h-9 px-4 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+              className="h-9 px-4 rounded-xl bg-brand-orange hover:bg-brand-orange/90 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
             >
               <Pencil className="size-3.5" />
               <span>Edit Course</span>
@@ -112,7 +153,7 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
           </div>
         </div>
 
-        {/* Navigation Tabs matching Images 2 & 3 */}
+        {/* Navigation Tabs */}
         <div className="border-b border-zinc-200/80 overflow-x-auto">
           <div className="flex items-center gap-8 min-w-[600px]">
             {tabs.map((tab) => {
@@ -125,7 +166,7 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
                   onClick={() => setActiveTab(tab)}
                   className={`pb-3 text-xs whitespace-nowrap cursor-pointer transition-all relative ${
                     isActive
-                      ? "font-bold text-zinc-900 border-b-2 border-[#F59E0B]"
+                      ? "font-bold text-zinc-900 border-b-2 border-brand-orange"
                       : "font-medium text-zinc-500 hover:text-zinc-800"
                   }`}
                 >
@@ -139,21 +180,21 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
         {/* Tab Contents */}
         {activeTab === "Overview" && <CourseOverviewTab course={course} />}
         {activeTab === "Course Content" && (
-          <CourseContentTab initialLessons={course.lessons} courseId={course.id} />
+          <CourseContentTab initialLessons={course.lessons || []} courseId={course.id} />
         )}
         {activeTab === "Course Exam" && (
           <CourseExamTab
             courseId={course.id}
-            courseTitle={course.title}
-            courseLevel={course.level}
+            courseTitle={course.title || course.name || "Course"}
+            courseLevel={course.level || "Beginner"}
             initialExam={course.exam}
           />
         )}
         {activeTab === "Students" && (
           <CourseStudentsTab
             students={course.students || []}
-            totalEnrolled={course.stats.totalStudents}
-            avgCompletion={course.stats.completionRate}
+            totalEnrolled={course.stats?.totalStudents || 0}
+            avgCompletion={course.stats?.completionRate || "0%"}
           />
         )}
         {activeTab === "Analytics" && (

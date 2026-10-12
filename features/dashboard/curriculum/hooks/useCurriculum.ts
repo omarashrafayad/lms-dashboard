@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getCurriculumSubjects,
-  getCurriculumSubjectById,
+  // getCurriculumSubjectById,
   getCurriculumSubjectStructure,
   createCurriculumSubject,
   updateCurriculumSubject,
@@ -44,13 +44,13 @@ export const useCurriculumSubjects = (
   })
 }
 
-export const useCurriculumSubject = (subjectId: string) => {
-  return useQuery({
-    queryKey: ["curriculum-subject", subjectId],
-    queryFn: () => getCurriculumSubjectById(subjectId),
-    enabled: !!subjectId,
-  })
-}
+// export const useCurriculumSubject = (subjectId: string) => {
+//   return useQuery({
+//     queryKey: ["curriculum-subject", subjectId],
+//     queryFn: () => getCurriculumSubjectById(subjectId),
+//     enabled: !!subjectId,
+//   })
+// }
 
 export const useCurriculumSubjectStructure = (subjectId: string) => {
   return useQuery({

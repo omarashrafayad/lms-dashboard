@@ -33,16 +33,16 @@ export const getCurriculumSubjects = async (
   return []
 }
 
-export const getCurriculumSubjectById = async (
-  subjectId: string
-): Promise<{ subject: CurriculumSubject; chapters: Chapter[] }> => {
-  const res = await clientAxios.get(`/curriculum/subjects/${subjectId}`)
-  const data = res.data?.data || res.data
-  return {
-    subject: data?.subject || data,
-    chapters: data?.chapters || [],
-  }
-}
+// export const getCurriculumSubjectById = async (
+//   subjectId: string
+// ): Promise<{ subject: CurriculumSubject; chapters: Chapter[] }> => {
+//   const res = await clientAxios.get(`/curriculum/subjects/${subjectId}`)
+//   const data = res.data?.data || res.data
+//   return {
+//     subject: data?.subject || data,
+//     chapters: data?.chapters || [],
+//   }
+// }
 
 export const getCurriculumSubjectStructure = async (
   subjectId: string
