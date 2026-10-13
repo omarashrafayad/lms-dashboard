@@ -74,7 +74,6 @@ export const useExamStore = create<ExamStoreState>()(
 
         return newExam
       },
-
       updateExam: (id, updates) => {
         set((state) => ({
           exams: state.exams.map((exam) => {

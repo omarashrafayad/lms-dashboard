@@ -15,9 +15,10 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { LessonVideo } from "../../types/curriculum.types"
+import { LessonVideo, VideoUploadProgress } from "../../types/curriculum.types"
 import { AddVideoModal } from "./AddVideoModal"
 import { EditVideoModal } from "./EditVideoModal"
+import { VideoUploadProgressCard } from "./VideoUploadProgressCard"
 import { useDeleteVideo } from "../../hooks/useCurriculum"
 import { toast } from "sonner"
 
@@ -35,12 +36,44 @@ export function LessonVideosCard({
   const [videos, setVideos] = React.useState<LessonVideo[]>(initialVideos || [])
   const [isAddOpen, setIsAddOpen] = React.useState(false)
   const [videoToEdit, setVideoToEdit] = React.useState<LessonVideo | null>(null)
+  const [activeUpload, setActiveUpload] = React.useState<{
+    progress: VideoUploadProgress
+    meta: {
+      title: string
+      fileName: string
+      fileSize: number
+      onCancel?: () => void
+    }
+  } | null>(null)
 
   const deleteVideoMutation = useDeleteVideo()
 
   React.useEffect(() => {
     setVideos(initialVideos || [])
   }, [initialVideos])
+
+  const handleUploadProgressChange = (
+    progress: VideoUploadProgress | null,
+    meta?: {
+      title: string
+      fileName: string
+      fileSize: number
+      onCancel?: () => void
+    }
+  ) => {
+    if (!progress || progress.status === "idle") {
+      setActiveUpload(null)
+    } else {
+      setActiveUpload({
+        progress,
+        meta: meta || {
+          title: "Video upload",
+          fileName: "video.mp4",
+          fileSize: 0,
+        },
+      })
+    }
+  }
 
   const handleAddVideo = (newVideoData: {
     title: string
@@ -116,6 +149,19 @@ export function LessonVideosCard({
           The first video is available to Free Plan students. Additional videos require a Premium plan.
         </span>
       </div>
+
+      {/* Active Video Upload Banner (Visible during upload even if modal is minimized) */}
+      {activeUpload && (
+        <VideoUploadProgressCard
+          variant="banner"
+          title={activeUpload.meta.title}
+          fileName={activeUpload.meta.fileName}
+          fileSize={activeUpload.meta.fileSize}
+          progress={activeUpload.progress}
+          onCancel={activeUpload.meta.onCancel}
+          onDismiss={() => setActiveUpload(null)}
+        />
+      )}
 
       {/* Videos List */}
       <div className="flex flex-col gap-3">
@@ -254,6 +300,7 @@ export function LessonVideosCard({
         lessonId={lessonId}
         defaultOrder={videos.length + 1}
         onAddVideo={handleAddVideo}
+        onUploadProgressChange={handleUploadProgressChange}
       />
 
       {/* Edit Video Modal */}

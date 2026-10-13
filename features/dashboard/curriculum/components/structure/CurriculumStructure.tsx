@@ -112,9 +112,9 @@ export function CurriculumStructure({
         <h2 className="text-base font-bold text-zinc-900 tracking-tight">
           Curriculum Structure
         </h2>
-        {/* <span className="text-xs text-zinc-400 font-normal">
+        <span className="text-xs text-zinc-400 font-normal">
           {chapters.length} chapters
-        </span> */}
+        </span>
       </div>
 
       {/* Chapters Accordion List */}

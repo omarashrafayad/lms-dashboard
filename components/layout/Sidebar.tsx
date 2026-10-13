@@ -14,18 +14,12 @@ import {
   Settings,
   ChevronRight,
   ChevronDown,
-  LogOut,
   Database,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAuthStore } from "@/stores/useAuthStore"
-import { logoutAction } from "@/features/auth/api/auth"
-import { useRouter } from "next/navigation"
 
 export function Sidebar() {
-    const user = useAuthStore().user;
   const pathname = usePathname()
-  const router = useRouter();
   const isOverviewActive = pathname === "/" || pathname === "/overview"
   const isStudentRoute = pathname.startsWith("/student")
   const isTeacherRoute = pathname.startsWith("/teacher")
@@ -42,6 +36,8 @@ export function Sidebar() {
   const isRefGradesRoute = pathname.startsWith("/reference-data/grades")
   const isRefGendersRoute = pathname.startsWith("/reference-data/genders")
   const isReferenceDataActive = pathname.startsWith("/reference-data")
+  const isSubscriptionsRoute = pathname.startsWith("/subscriptions")
+  const isSupportActive = pathname.startsWith("/support")
 
   const [usersExpanded, setUsersExpanded] = React.useState<boolean>(isUsersActive)
   const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || false)
@@ -50,30 +46,22 @@ export function Sidebar() {
   const [academicExpanded, setAcademicExpanded] = React.useState<boolean>(isAcademicActive || false)
   const [referenceDataExpanded, setReferenceDataExpanded] = React.useState<boolean>(isReferenceDataActive || false)
   const [sessionsExpanded, setSessionsExpanded] = React.useState<boolean>(isSessionsRoute || false)
+  const [subscriptionsExpanded, setSubscriptionsExpanded] = React.useState<boolean>(isSubscriptionsRoute || false)
 
-  const handleLogout = async () => {
-    await logoutAction();
-    router.push("/login");
-  };
   return (
     <aside className="w-64 min-w-[16rem] h-screen sticky top-0 flex flex-col justify-between bg-white border-r border-zinc-200/80 px-4 py-6 select-none z-30 overflow-y-auto">
       {/* Top: Brand Logo */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3 px-2">
-          <div className="size-10 rounded-xl bg-[#F59E0B] flex items-center justify-center shadow-xs text-white shrink-0">
-            <svg
-              className="size-5.5 fill-white"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 2C12 7.52285 7.52285 12 2 12C7.52285 12 12 16.4772 12 22C12 16.4772 16.4772 12 22 12C16.4772 12 12 7.52285 12 2Z" />
-            </svg>
+          <div className="size-10  flex items-center bg-transparent justify-center shrink-0">
+           <img src="/INNOVATION LOGO.png" alt="logo"  />
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-base text-zinc-900 tracking-tight leading-tight">
-              Lumina
+              LMS
             </span>
             <span className="text-xs text-zinc-400 font-normal">
-              Learning Admin
+              Dashboard
             </span>
           </div>
         </div>
@@ -521,16 +509,87 @@ export function Sidebar() {
             </div>
 
             {/* Subscriptions & Payments */}
-            <Link
-              href="/subscriptions"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <CreditCard className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
-                <span>Subscriptions & Payments</span>
-              </div>
-              <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
-            </Link>
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setSubscriptionsExpanded(!subscriptionsExpanded)}
+                className={cn(
+                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
+                  isSubscriptionsRoute
+                    ? "text-zinc-900 font-semibold"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <CreditCard
+                    className={cn(
+                      "size-[18px] transition-colors",
+                      isSubscriptionsRoute
+                        ? "text-zinc-900"
+                        : "text-zinc-400 group-hover:text-zinc-600"
+                    )}
+                  />
+                  <span>Subscriptions & Payments</span>
+                </div>
+                {subscriptionsExpanded ? (
+                  <ChevronDown className="size-4 text-zinc-600" />
+                ) : (
+                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
+                )}
+              </button>
+
+              {subscriptionsExpanded && (
+                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
+                  <Link
+                    href="/subscriptions"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      pathname === "/subscriptions"
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Overview & All
+                  </Link>
+                  <Link
+                    href="/subscriptions/plans"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      pathname === "/subscriptions/plans"
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Pricing Plans
+                  </Link>
+                  <Link
+                    href="/subscriptions/transactions"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      pathname === "/subscriptions/transactions"
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Transactions & Invoices
+                  </Link>
+                  {/* <Link
+                    href="/subscriptions/requests"
+                    className={cn(
+                      "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      pathname === "/subscriptions/requests"
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    <span>Offline Verifications</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
+                      New
+                    </span>
+                  </Link> */}
+                </div>
+              )}
+            </div>
 
             {/* Content */}
             <Link
@@ -557,10 +616,22 @@ export function Sidebar() {
             {/* Support */}
             <Link
               href="/support"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
+              className={cn(
+                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                isSupportActive
+                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+              )}
             >
               <div className="flex items-center gap-3">
-                <HelpCircle className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                <HelpCircle
+                  className={cn(
+                    "size-[18px] transition-colors",
+                    isSupportActive
+                      ? "text-brand-orange"
+                      : "text-zinc-400 group-hover:text-zinc-600"
+                  )}
+                />
                 <span>Support</span>
               </div>
             </Link>
@@ -568,7 +639,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Bottom: Settings & User Profile Card */}
+      {/* Bottom: Settings */}
       <div className="flex flex-col gap-3 pt-4 border-t border-zinc-100">
         <Link
           href="/settings"
@@ -577,35 +648,6 @@ export function Sidebar() {
           <Settings className="size-[18px] text-zinc-400" />
           <span>Settings</span>
         </Link>
-
-        {/* User Card */}
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <div className="relative size-8 rounded-full overflow-hidden shrink-0 border border-zinc-200">
-            <img
-              src="/dina-farouk.jpg"
-              alt="Dina Farouk"
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs font-semibold text-zinc-900 truncate">
-              {user?.fullName || "Dina Farouk"}
-            </span>
-            <span className="text-[11px] text-zinc-400 truncate">
-              {(user?.roles && user.roles[0]) || "Administrator"}
-            </span>
-          </div>
-        </div>
-
-        {/* Logout */}
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors cursor-pointer text-left"
-        >
-          <LogOut className="size-[18px] text-zinc-400" />
-          <span>Logout</span>
-        </button>
       </div>
     </aside>
   )

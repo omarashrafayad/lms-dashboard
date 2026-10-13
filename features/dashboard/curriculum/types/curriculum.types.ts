@@ -200,6 +200,16 @@ export interface ContentPdfResponse {
   createdAt: string
 }
 
+export interface VideoUploadProgress {
+  percentage: number
+  loaded: number
+  total: number
+  rate?: number
+  estimated?: number
+  status: "idle" | "uploading" | "processing" | "success" | "error"
+  error?: string
+}
+
 // ======================== Content: Video ========================
 export interface CreateVideoPayload {
   lessonId: string
@@ -211,6 +221,8 @@ export interface CreateVideoPayload {
   isPremium: boolean
   isOfflineAvailable: boolean
   file: File
+  onProgress?: (progress: VideoUploadProgress) => void
+  signal?: AbortSignal
 }
 
 export interface ContentVideoResponse {

@@ -32,7 +32,7 @@ export default function NotFound() {
                         Back to Home
                     </Link>
                     <Link
-                        href="/contact"
+                        href="/support"
                         className="flex items-center justify-center px-6 py-3 border border-gray-300 dark:border-zinc-700 text-base font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 md:py-4 md:text-lg transition-all"
                     >
                         Contact Support

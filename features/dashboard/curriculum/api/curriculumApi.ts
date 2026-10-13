@@ -47,7 +47,7 @@ export const getCurriculumSubjects = async (
 export const getCurriculumSubjectStructure = async (
   subjectId: string
 ): Promise<{ subject: CurriculumSubject; chapters: Chapter[] }> => {
-  const res = await clientAxios.get(`/curriculum/subjects/${subjectId}`)
+  const res = await clientAxios.get(`/curriculum/subjects/${subjectId}/structure`)
   const data = res.data?.data || res.data
   return {
     subject: data?.subject || data,
@@ -192,11 +192,60 @@ export const uploadVideo = async (
   formData.append("IsOfflineAvailable", payload.isOfflineAvailable.toString())
   formData.append("file", payload.file)
 
+  let lastTime = Date.now()
+  let lastLoaded = 0
+
   const res = await clientAxios.post("/content/videos", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
+    signal: payload.signal,
+    onUploadProgress: (progressEvent) => {
+      if (!payload.onProgress) return
+
+      const total =
+        progressEvent.total || payload.fileSize || payload.file.size || 1
+      const loaded = progressEvent.loaded || 0
+      const percentage = Math.min(100, Math.round((loaded * 100) / total))
+
+      const now = Date.now()
+      const timeDiff = (now - lastTime) / 1000
+      let speed = progressEvent.rate
+      if (!speed && timeDiff > 0.25) {
+        speed = Math.round((loaded - lastLoaded) / timeDiff)
+        lastTime = now
+        lastLoaded = loaded
+      }
+
+      const remainingBytes = Math.max(0, total - loaded)
+      const estimated =
+        progressEvent.estimated ??
+        (speed && speed > 0 ? Math.round(remainingBytes / speed) : undefined)
+
+      const status = percentage >= 100 ? "processing" : "uploading"
+
+      payload.onProgress({
+        percentage,
+        loaded,
+        total,
+        rate: speed,
+        estimated,
+        status,
+      })
+    },
   })
+
+  // Once backend responds with 200 OK, update to success
+  if (payload.onProgress) {
+    const total = payload.fileSize || payload.file.size
+    payload.onProgress({
+      percentage: 100,
+      loaded: total,
+      total,
+      status: "success",
+    })
+  }
+
   return res.data?.data || res.data
 }
 
