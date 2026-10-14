@@ -189,6 +189,14 @@ export interface CreatePdfPayload {
   file: File
 }
 
+export interface UpdatePdfPayload {
+  lessonId?: string
+  title?: string
+  fileSize?: number
+  isOfflineAvailable?: boolean
+  file?: File
+}
+
 export interface ContentPdfResponse {
   id: string
   lessonId: string
@@ -225,6 +233,16 @@ export interface CreateVideoPayload {
   signal?: AbortSignal
 }
 
+export interface UpdateVideoPayload {
+  title?: string
+  order?: number
+  duration?: number
+  fileSize?: number
+  isFree?: boolean
+  isPremium?: boolean
+  isOfflineAvailable?: boolean
+}
+
 export interface ContentVideoResponse {
   id: string
   lessonId: string
@@ -257,6 +275,17 @@ export interface CreateQuizPayload {
     isPublished: boolean
   }
   questions: CreateQuizQuestionPayload[]
+}
+
+export interface UpdateQuizPayload {
+  request?: {
+    lessonId?: string
+    title?: string
+    passingScore?: number
+    timeLimit?: number
+    isPublished?: boolean
+  }
+  questions?: CreateQuizQuestionPayload[]
 }
 
 export interface ContentQuizResponse {

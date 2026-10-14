@@ -10,10 +10,13 @@ import {
   CreateUnitPayload,
   CreateLessonPayload,
   CreatePdfPayload,
+  UpdatePdfPayload,
   ContentPdfResponse,
   CreateVideoPayload,
+  UpdateVideoPayload,
   ContentVideoResponse,
   CreateQuizPayload,
+  UpdateQuizPayload,
   ContentQuizResponse,
 } from "../types/curriculum.types"
 
@@ -32,17 +35,6 @@ export const getCurriculumSubjects = async (
   }
   return []
 }
-
-// export const getCurriculumSubjectById = async (
-//   subjectId: string
-// ): Promise<{ subject: CurriculumSubject; chapters: Chapter[] }> => {
-//   const res = await clientAxios.get(`/curriculum/subjects/${subjectId}`)
-//   const data = res.data?.data || res.data
-//   return {
-//     subject: data?.subject || data,
-//     chapters: data?.chapters || [],
-//   }
-// }
 
 export const getCurriculumSubjectStructure = async (
   subjectId: string
@@ -173,6 +165,35 @@ export const getPdfs = async (
   return []
 }
 
+export const getPdfById = async (
+  pdfId: string
+): Promise<ContentPdfResponse> => {
+  const res = await clientAxios.get(`/content/pdfs/${pdfId}`)
+  return res.data?.data || res.data
+}
+
+export const updatePdf = async (
+  pdfId: string,
+  payload: UpdatePdfPayload
+): Promise<ContentPdfResponse> => {
+  if (payload.file) {
+    const formData = new FormData()
+    if (payload.lessonId) formData.append("LessonId", payload.lessonId)
+    if (payload.title) formData.append("Title", payload.title)
+    if (payload.fileSize) formData.append("FileSize", payload.fileSize.toString())
+    if (payload.isOfflineAvailable !== undefined) {
+      formData.append("IsOfflineAvailable", payload.isOfflineAvailable.toString())
+    }
+    formData.append("file", payload.file)
+    const res = await clientAxios.put(`/content/pdfs/${pdfId}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    return res.data?.data || res.data
+  }
+  const res = await clientAxios.put(`/content/pdfs/${pdfId}`, payload)
+  return res.data?.data || res.data
+}
+
 export const deletePdf = async (pdfId: string): Promise<void> => {
   await clientAxios.delete(`/content/pdfs/${pdfId}`)
 }
@@ -258,6 +279,21 @@ export const getVideos = async (
   return []
 }
 
+export const getVideoById = async (
+  videoId: string
+): Promise<ContentVideoResponse> => {
+  const res = await clientAxios.get(`/content/videos/${videoId}`)
+  return res.data?.data || res.data
+}
+
+export const updateVideo = async (
+  videoId: string,
+  payload: UpdateVideoPayload
+): Promise<ContentVideoResponse> => {
+  const res = await clientAxios.put(`/content/videos/${videoId}`, payload)
+  return res.data?.data || res.data
+}
+
 export const deleteVideo = async (videoId: string): Promise<void> => {
   await clientAxios.delete(`/content/videos/${videoId}`)
 }
@@ -277,6 +313,21 @@ export const getQuizzes = async (
   if (Array.isArray(res.data)) return res.data
   if (res.data && Array.isArray(res.data.data)) return res.data.data
   return []
+}
+
+export const getQuizById = async (
+  quizId: string
+): Promise<ContentQuizResponse> => {
+  const res = await clientAxios.get(`/content/quizzes/${quizId}`)
+  return res.data?.data || res.data
+}
+
+export const updateQuiz = async (
+  quizId: string,
+  payload: UpdateQuizPayload
+): Promise<ContentQuizResponse> => {
+  const res = await clientAxios.put(`/content/quizzes/${quizId}`, payload)
+  return res.data?.data || res.data
 }
 
 export const deleteQuiz = async (quizId: string): Promise<void> => {

@@ -11,8 +11,12 @@ import { LessonPdfCard } from "../components/lesson/LessonPdfCard"
 import { LessonQuizCard } from "../components/lesson/LessonQuizCard"
 import { LessonSettingsCard } from "../components/lesson/LessonSettingsCard"
 import { LessonContentModelCard } from "../components/lesson/LessonContentModelCard"
-import { useLessonDetail } from "../hooks/useCurriculum"
-import { LessonVideo, LessonPdf } from "../types/curriculum.types"
+import {
+  useLessonDetail,
+  useLessonVideos,
+  useLessonPdfs,
+  useLessonQuizzes,
+} from "../hooks/useCurriculum"
 
 export interface CurriculumLessonPageProps {
   subjectId: string
@@ -24,15 +28,9 @@ export default function CurriculumLessonPage({
   lessonId,
 }: CurriculumLessonPageProps) {
   const { data: lesson, isLoading, isError } = useLessonDetail(subjectId, lessonId)
-  const [currentVideos, setCurrentVideos] = React.useState<LessonVideo[]>(lesson?.videos || [])
-  const [currentPdf, setCurrentPdf] = React.useState<LessonPdf | null>(lesson?.pdf || null)
-
-  React.useEffect(() => {
-    if (lesson) {
-      setCurrentVideos(lesson.videos || [])
-      setCurrentPdf(lesson.pdf || null)
-    }
-  }, [lesson])
+  const { data: videos = [] } = useLessonVideos(lessonId)
+  const { data: pdfs = [] } = useLessonPdfs(lessonId)
+  const { data: quizzes = [] } = useLessonQuizzes(lessonId)
 
   if (isLoading) {
     return (
@@ -65,14 +63,11 @@ export default function CurriculumLessonPage({
     )
   }
 
-  const lessonTitle = lesson.title || lesson.name || "Lesson"
-  const lessonOrder = lesson.order ?? lesson.lessonOrder ?? 1
-
   return (
     <div className="flex flex-col min-h-full">
       {/* Header matching Screenshots 1 and 5 */}
       <PageHeader
-        title={lessonTitle}
+        title={lesson.name!}
         description="Lesson content, videos, PDF, quiz, and access settings for this lesson."
       />
 
@@ -86,35 +81,14 @@ export default function CurriculumLessonPage({
             Curriculum
           </Link>
           <ChevronRight className="size-3 text-zinc-300" />
-          <Link
-            href={`/curriculum/${subjectId}`}
-            className="hover:text-zinc-700 transition-colors"
-          >
-            {lesson.subjectName || "Subject"}
-          </Link>
-          {lesson.chapterTitle && (
-            <>
-              <ChevronRight className="size-3 text-zinc-300" />
-              <span className="text-zinc-500">{lesson.chapterTitle}</span>
-            </>
-          )}
-          {lesson.unitTitle && (
-            <>
-              <ChevronRight className="size-3 text-zinc-300" />
-              <span className="text-zinc-500">{lesson.unitTitle}</span>
-            </>
-          )}
-          <ChevronRight className="size-3 text-zinc-300" />
-          <span className="font-semibold text-zinc-800">{lessonTitle}</span>
+          <span className="font-semibold text-zinc-800">{lesson.name}</span>
         </div>
 
-        {/* Lesson Top Card with Meta & Action buttons */}
         <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-2xs flex flex-col gap-4">
-          {/* Top Row: Title, Published/Active Badge, Action Buttons */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-zinc-900 tracking-tight">
-                Lesson {lessonOrder} — {lessonTitle}
+                Lesson {lesson.lessonOrder} — {lesson.name}
               </h2>
 
               <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-medium border text-brand-green bg-emerald-50/80 border-emerald-200/60">
@@ -147,46 +121,15 @@ export default function CurriculumLessonPage({
 
           {/* Bottom Meta Row */}
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-zinc-400 font-normal pt-1 border-t border-zinc-100">
-            {lesson.stage && (
-              <div>
-                Stage: <span className="font-medium text-zinc-700">{lesson.stage}</span>
-              </div>
-            )}
-            {lesson.year && (
-              <div>
-                Year: <span className="font-medium text-zinc-700">{lesson.year}</span>
-              </div>
-            )}
-            {lesson.system && (
-              <div>
-                System: <span className="font-medium text-zinc-700">{lesson.system}</span>
-              </div>
-            )}
-            {lesson.term && (
-              <div>
-                Term: <span className="font-medium text-zinc-700">{lesson.term}</span>
-              </div>
-            )}
             <div>
               Subject:{" "}
               <span className="font-medium text-zinc-700">
-                {lesson.subjectName || "Curriculum"}
+                {lesson.name || "Curriculum"}
               </span>
             </div>
-            {lesson.chapterTitle && (
-              <div>
-                Chapter:{" "}
-                <span className="font-medium text-zinc-700">{lesson.chapterTitle}</span>
-              </div>
-            )}
-            {lesson.unitTitle && (
-              <div>
-                Unit: <span className="font-medium text-zinc-700">{lesson.unitTitle}</span>
-              </div>
-            )}
             <div>
               Lesson order:{" "}
-              <span className="font-medium text-zinc-700">{lessonOrder}</span>
+              <span className="font-medium text-zinc-700">{lesson.lessonOrder}</span>
             </div>
             {lesson.accessType && (
               <div>
@@ -197,32 +140,20 @@ export default function CurriculumLessonPage({
           </div>
         </div>
 
-        {/* Two Column Layout matching Screenshot 5 */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column (8 cols): Overview, Video Content, PDF, Lesson Quiz */}
           <div className="lg:col-span-8 flex flex-col gap-6">
             <LessonOverviewCard
               description={lesson.description || lesson.overview?.description || "No description provided."}
-              order={lessonOrder}
+              order={lesson.lessonOrder}
               duration={lesson.duration || lesson.overview?.duration || "30 min"}
               access={lesson.access || lesson.accessType || lesson.overview?.access || "Premium"}
             />
 
-            <LessonVideosCard
-              lessonId={lessonId}
-              videos={currentVideos}
-              onVideosChange={setCurrentVideos}
-            />
+            <LessonVideosCard lessonId={lessonId} />
 
-            <LessonPdfCard
-              lessonId={lessonId}
-              pdf={currentPdf}
-              initialOfflineAvailability={lesson.pdfOfflineAvailability ?? false}
-              onPdfChange={setCurrentPdf}
-              onRemovePdf={() => setCurrentPdf(null)}
-            />
+            <LessonPdfCard lessonId={lessonId} />
 
-            <LessonQuizCard lessonId={lessonId} quiz={lesson.quiz} />
+            <LessonQuizCard lessonId={lessonId} />
           </div>
 
           {/* Right Column (4 cols): Access & Offline Settings, Lesson Content Model */}
@@ -239,9 +170,9 @@ export default function CurriculumLessonPage({
             />
 
             <LessonContentModelCard
-              videosCount={currentVideos?.length ?? 0}
-              pdfCount={currentPdf ? 1 : 0}
-              quizCount={lesson.quiz ? 1 : 0}
+              videosCount={videos.length}
+              pdfCount={pdfs.length}
+              quizCount={quizzes.length}
             />
           </div>
         </div>

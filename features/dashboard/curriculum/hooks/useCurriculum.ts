@@ -17,12 +17,18 @@ import {
   createLesson,
   uploadPdf,
   getPdfs,
+  getPdfById,
+  updatePdf,
   deletePdf,
   uploadVideo,
   getVideos,
+  getVideoById,
+  updateVideo,
   deleteVideo,
   createQuiz,
   getQuizzes,
+  getQuizById,
+  updateQuiz,
   deleteQuiz,
 } from "../api/curriculumApi"
 import {
@@ -31,8 +37,11 @@ import {
   CreateUnitPayload,
   CreateLessonPayload,
   CreatePdfPayload,
+  UpdatePdfPayload,
   CreateVideoPayload,
+  UpdateVideoPayload,
   CreateQuizPayload,
+  UpdateQuizPayload,
 } from "../types/curriculum.types"
 
 export const useCurriculumSubjects = (
@@ -180,11 +189,19 @@ export const useCreateLesson = (subjectId?: string) => {
 }
 
 // ======================== PDF Hooks ========================
-export const useLessonPdfs = (lessonId: string) => {
+export const useLessonPdfs = (lessonId?: string) => {
   return useQuery({
     queryKey: ["curriculum-pdfs", lessonId],
-    queryFn: () => getPdfs(lessonId),
+    queryFn: () => (lessonId ? getPdfs(lessonId) : Promise.resolve([])),
     enabled: !!lessonId,
+  })
+}
+
+export const usePdfById = (pdfId?: string) => {
+  return useQuery({
+    queryKey: ["curriculum-pdf", pdfId],
+    queryFn: () => (pdfId ? getPdfById(pdfId) : Promise.resolve(null)),
+    enabled: !!pdfId,
   })
 }
 
@@ -195,6 +212,34 @@ export const useUploadPdf = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["curriculum-pdfs", variables.lessonId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-lesson"],
+      })
+    },
+  })
+}
+
+export const useUpdatePdf = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      pdfId,
+      lessonId,
+      data,
+    }: {
+      pdfId: string
+      lessonId?: string
+      data: UpdatePdfPayload
+    }) => updatePdf(pdfId, data),
+    onSuccess: (_, variables) => {
+      if (variables.lessonId) {
+        queryClient.invalidateQueries({
+          queryKey: ["curriculum-pdfs", variables.lessonId],
+        })
+      }
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-pdf", variables.pdfId],
       })
       queryClient.invalidateQueries({
         queryKey: ["curriculum-lesson"],
@@ -220,11 +265,19 @@ export const useDeletePdf = () => {
 }
 
 // ======================== Video Hooks ========================
-export const useLessonVideos = (lessonId: string) => {
+export const useLessonVideos = (lessonId?: string) => {
   return useQuery({
     queryKey: ["curriculum-videos", lessonId],
-    queryFn: () => getVideos(lessonId),
+    queryFn: () => (lessonId ? getVideos(lessonId) : Promise.resolve([])),
     enabled: !!lessonId,
+  })
+}
+
+export const useVideoById = (videoId?: string) => {
+  return useQuery({
+    queryKey: ["curriculum-video", videoId],
+    queryFn: () => (videoId ? getVideoById(videoId) : Promise.resolve(null)),
+    enabled: !!videoId,
   })
 }
 
@@ -235,6 +288,34 @@ export const useUploadVideo = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["curriculum-videos", variables.lessonId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-lesson"],
+      })
+    },
+  })
+}
+
+export const useUpdateVideo = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      videoId,
+      lessonId,
+      data,
+    }: {
+      videoId: string
+      lessonId?: string
+      data: UpdateVideoPayload
+    }) => updateVideo(videoId, data),
+    onSuccess: (_, variables) => {
+      if (variables.lessonId) {
+        queryClient.invalidateQueries({
+          queryKey: ["curriculum-videos", variables.lessonId],
+        })
+      }
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-video", variables.videoId],
       })
       queryClient.invalidateQueries({
         queryKey: ["curriculum-lesson"],
@@ -260,11 +341,19 @@ export const useDeleteVideo = () => {
 }
 
 // ======================== Quiz Hooks ========================
-export const useLessonQuizzes = (lessonId: string) => {
+export const useLessonQuizzes = (lessonId?: string) => {
   return useQuery({
     queryKey: ["curriculum-quizzes", lessonId],
-    queryFn: () => getQuizzes(lessonId),
+    queryFn: () => (lessonId ? getQuizzes(lessonId) : Promise.resolve([])),
     enabled: !!lessonId,
+  })
+}
+
+export const useQuizById = (quizId?: string) => {
+  return useQuery({
+    queryKey: ["curriculum-quiz", quizId],
+    queryFn: () => (quizId ? getQuizById(quizId) : Promise.resolve(null)),
+    enabled: !!quizId,
   })
 }
 
@@ -275,6 +364,34 @@ export const useCreateQuiz = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["curriculum-quizzes", variables.request.lessonId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-lesson"],
+      })
+    },
+  })
+}
+
+export const useUpdateQuiz = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      quizId,
+      lessonId,
+      data,
+    }: {
+      quizId: string
+      lessonId?: string
+      data: UpdateQuizPayload
+    }) => updateQuiz(quizId, data),
+    onSuccess: (_, variables) => {
+      if (variables.lessonId) {
+        queryClient.invalidateQueries({
+          queryKey: ["curriculum-quizzes", variables.lessonId],
+        })
+      }
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-quiz", variables.quizId],
       })
       queryClient.invalidateQueries({
         queryKey: ["curriculum-lesson"],
