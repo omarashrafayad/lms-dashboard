@@ -5,47 +5,53 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   ChevronLeft,
-  XCircle,
+  Trash2,
   Pencil,
   ArrowUpRight,
-  Loader2,
 } from "lucide-react"
-import { useSessionDetail, useCancelSession } from "../hooks/useSessions"
+import { useSessionDetail, useDeleteSession } from "../hooks/useSessions"
 import { SessionActivityTimeline } from "../components/detail/SessionActivityTimeline"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 import { toast } from "sonner"
 
 export interface SessionDetailPageProps {
   sessionId: string
 }
 
-export default function SessionDetailPage({ sessionId }: SessionDetailPageProps) {
+export default function SessionDetailPage({
+  sessionId,
+}: SessionDetailPageProps) {
   const router = useRouter()
-  const { data: session, isLoading } = useSessionDetail(sessionId)
-  const cancelMutation = useCancelSession()
+  const { data: session, isLoading, isError } = useSessionDetail(sessionId)
+  const deleteMutation = useDeleteSession()
 
-  const handleCancelSession = async () => {
+  const handleDeleteSession = async () => {
     if (!session) return
+    if (!confirm("Are you sure you want to delete this session?")) return
+
     try {
-      await cancelMutation.mutateAsync(session.id)
-      toast.success("Session has been cancelled and refunded successfully.")
-    } catch {
-      toast.error("Failed to cancel session.")
+      await deleteMutation.mutateAsync(session.id)
+      toast.success("Session deleted successfully.")
+      router.push("/sessions")
+    } catch (err) {
+      toast.error(getErrorMessage(err))
     }
   }
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] gap-3">
-        <Loader2 className="size-8 animate-spin text-[#F59E0B]" />
-        <span className="text-xs text-zinc-500 font-medium">Loading session details...</span>
+      <div className="flex-1 p-8">
+        <LoadingSpinner title="loading session details" />
       </div>
     )
   }
 
-  if (!session) {
+  if (isError || !session) {
     return (
-      <div className="p-8 text-center text-zinc-500">
-        Session not found.
+      <div className="flex-1 p-8">
+        <GlobalError />
       </div>
     )
   }
@@ -85,12 +91,109 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
     }
   }
 
-  const statusStyle = getStatusBadge(session.status)
+  const currentStatus = session.status || session.sessionStatus || "Upcoming"
+  const statusStyle = getStatusBadge(currentStatus)
+
+  // Timeline list
+  const timelineItems =
+    session.activityTimeline ||
+    session.timeline ||
+    [
+      {
+        id: "1",
+        title: "Session Scheduled",
+        subtitle: `${session.date || session.formattedDate || "Today"} · ${
+          session.startTime || session.time || "Scheduled"
+        }`,
+        completed: true,
+      },
+    ]
+
+  const sessionNumberText =
+    session.sessionNumber ||
+    session.sessionId ||
+    session.sessionCode ||
+    `#${session.id}`
+
+  const studentNameText =
+    session.studentName || session.student?.name || "Student"
+  const studentGradeText =
+    session.studentGrade ||
+    session.student?.academicYear ||
+    session.student?.academicStage ||
+    session.educationStage ||
+    "Grade 10"
+
+  const teacherNameText =
+    session.teacherName || session.teacher?.name || "Teacher"
+  const teacherSubjectText =
+    session.teacherSubject ||
+    session.teacher?.subject ||
+    session.subject ||
+    "Instructor"
+  const teacherAvailabilityText =
+    session.teacherAvailability ||
+    (session.teacher?.isAvailable !== false ? "Available" : "Busy")
+
+  const subjectOrCourseText =
+    session.subject ||
+    session.subjectOrCourse ||
+    session.courseName ||
+    session.subjectName ||
+    "General"
+
+  const dateText =
+    session.date ||
+    session.formattedDate ||
+    session.formattedDateTime?.split(" ")[0] ||
+    "Today"
+  const startTimeText =
+    session.startTime || session.time || "10:00 AM"
+  const endTimeText =
+    session.endTime || session.sessionInformation?.endTime || "11:00 AM"
+  const durationText =
+    session.duration ||
+    (session.durationMinutes ? `${session.durationMinutes} min` : "60 min")
+
+  const bookingIdText =
+    session.bookingId ||
+    session.bookingInformation?.bookingId ||
+    session.booking?.bookingId ||
+    session.bookingCode ||
+    `BK-${session.id.slice(0, 6)}`
+
+  const bookingRequestedDateText =
+    session.bookingRequestedDate ||
+    session.bookingInformation?.requestedDate ||
+    session.requestedDate ||
+    dateText
+
+  const bookingRequestedTimeText =
+    session.bookingRequestedTime ||
+    session.bookingInformation?.requestedTime ||
+    session.requestedTime ||
+    startTimeText
+
+  const bookingCreatedAtText =
+    session.bookingCreatedAt ||
+    session.bookingInformation?.createdAtFormatted ||
+    session.bookingInformation?.createdAt ||
+    dateText
+
+  const bookingStatusText =
+    session.bookingStatus ||
+    session.bookingInformation?.bookingStatus ||
+    session.bookingInformation?.status ||
+    "Confirmed"
+
+  const paymentStatusText =
+    session.paymentStatus ||
+    session.payment ||
+    (session.isPaid ? "Paid" : "Unpaid")
 
   return (
     <div className="flex flex-col min-h-full">
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1300px] w-full mx-auto pb-20 animate-in fade-in duration-200">
-        {/* Top Back Link matching Image 2 */}
         <div>
           <Link
             href="/sessions"
@@ -101,37 +204,36 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
           </Link>
         </div>
 
-        {/* Header Row matching Image 2 */}
+        {/* Header Row */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
-                Session {session.sessionNumber}
+                Session {sessionNumberText}
               </h1>
               <span
                 className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold border ${statusStyle.badge} shadow-2xs`}
               >
                 <span className={`size-1.5 rounded-full ${statusStyle.dot}`} />
-                {session.status}
+                {currentStatus}
               </span>
             </div>
             <p className="text-xs text-zinc-500 font-normal">
-              {session.subject} · {session.date} · {session.startTime}
+              {subjectOrCourseText} · {dateText} · {startTimeText}
             </p>
           </div>
 
-          {/* Action Buttons: Cancel Session & Edit Session */}
+          {/* Action Buttons: Delete & Edit */}
           <div className="flex items-center gap-2.5">
-            {session.status !== "Cancelled" && (
-              <button
-                type="button"
-                onClick={handleCancelSession}
-                className="h-9 px-4 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
-              >
-                <XCircle className="size-3.5 text-rose-500" />
-                <span>Cancel Session</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleDeleteSession}
+              disabled={deleteMutation.isPending}
+              className="h-9 px-4 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98] disabled:opacity-50"
+            >
+              <Trash2 className="size-3.5 text-rose-500" />
+              <span>Delete Session</span>
+            </button>
 
             <button
               type="button"
@@ -144,7 +246,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
           </div>
         </div>
 
-        {/* 2-Column Content Grid matching Image 2 */}
+        {/* 2-Column Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Left Column (Span 2) */}
           <div className="lg:col-span-2 flex flex-col gap-6">
@@ -160,7 +262,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     SESSION ID
                   </span>
                   <span className="font-semibold text-zinc-900">
-                    Session {session.sessionNumber}
+                    Session {sessionNumberText}
                   </span>
                 </div>
 
@@ -169,7 +271,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     SESSION TYPE
                   </span>
                   <span className="font-semibold text-zinc-900">
-                    {session.sessionType}
+                    {session.sessionType || "Private 1:1"}
                   </span>
                 </div>
 
@@ -178,7 +280,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     DATE
                   </span>
                   <span className="font-semibold text-zinc-900">
-                    {session.date}
+                    {dateText}
                   </span>
                 </div>
 
@@ -187,7 +289,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     START TIME
                   </span>
                   <span className="font-semibold text-zinc-900">
-                    {session.startTime}
+                    {startTimeText}
                   </span>
                 </div>
 
@@ -196,7 +298,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     END TIME
                   </span>
                   <span className="font-semibold text-zinc-900">
-                    {session.endTime}
+                    {endTimeText}
                   </span>
                 </div>
 
@@ -205,7 +307,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     DURATION
                   </span>
                   <span className="font-semibold text-zinc-900">
-                    {session.duration}
+                    {durationText}
                   </span>
                 </div>
 
@@ -218,10 +320,21 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusStyle.badge}`}
                     >
                       <span className={`size-1.5 rounded-full ${statusStyle.dot}`} />
-                      {session.status}
+                      {currentStatus}
                     </span>
                   </div>
                 </div>
+
+                {session.notes && (
+                  <div className="flex flex-col gap-1 sm:col-span-2">
+                    <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
+                      NOTES
+                    </span>
+                    <span className="text-zinc-700 bg-zinc-50 p-3 rounded-xl border border-zinc-100">
+                      {session.notes}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -244,18 +357,18 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
 
                 <div className="flex flex-col gap-2 mt-1">
                   <h4 className="text-sm font-bold text-zinc-900">
-                    {session.studentName}
+                    {studentNameText}
                   </h4>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-zinc-400">Academic Year</span>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#F3E8FF] text-[#7E22CE]">
-                      {session.studentGrade}
+                      {studentGradeText}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-zinc-400">Subject / Course</span>
                     <span className="font-semibold text-zinc-800">
-                      {session.subject}
+                      {subjectOrCourseText}
                     </span>
                   </div>
                 </div>
@@ -278,31 +391,31 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
 
                 <div className="flex flex-col gap-2 mt-1">
                   <h4 className="text-sm font-bold text-zinc-900">
-                    {session.teacherName}
+                    {teacherNameText}
                   </h4>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-zinc-400">Subject</span>
                     <span className="font-medium text-zinc-800">
-                      {session.teacherSubject}
+                      {teacherSubjectText}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-zinc-400">Availability</span>
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                        session.teacherAvailability === "Available"
+                        teacherAvailabilityText === "Available"
                           ? "bg-[#DCFCE7] text-[#16A34A]"
                           : "bg-[#FEF3C7] text-[#D97706]"
                       }`}
                     >
                       <span
                         className={`size-1.5 rounded-full ${
-                          session.teacherAvailability === "Available"
+                          teacherAvailabilityText === "Available"
                             ? "bg-[#16A34A]"
                             : "bg-[#D97706]"
                         }`}
                       />
-                      {session.teacherAvailability}
+                      {teacherAvailabilityText}
                     </span>
                   </div>
                 </div>
@@ -321,7 +434,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     BOOKING ID
                   </span>
                   <span className="font-semibold text-zinc-900">
-                    {session.bookingId}
+                    {bookingIdText}
                   </span>
                 </div>
 
@@ -330,7 +443,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     REQUESTED DATE
                   </span>
                   <span className="font-semibold text-zinc-900">
-                    {session.bookingRequestedDate}
+                    {bookingRequestedDateText}
                   </span>
                 </div>
 
@@ -339,7 +452,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     REQUESTED TIME
                   </span>
                   <span className="font-semibold text-zinc-900">
-                    {session.bookingRequestedTime}
+                    {bookingRequestedTimeText}
                   </span>
                 </div>
 
@@ -348,7 +461,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     CREATED AT
                   </span>
                   <span className="font-semibold text-zinc-900">
-                    {session.bookingCreatedAt}
+                    {bookingCreatedAtText}
                   </span>
                 </div>
 
@@ -359,7 +472,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                   <div>
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]">
                       <span className="size-1.5 rounded-full bg-[#16A34A]" />
-                      {session.bookingStatus}
+                      {bookingStatusText}
                     </span>
                   </div>
                 </div>
@@ -383,21 +496,9 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                     PAYMENT STATUS
                   </span>
                   <div>
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                        session.paymentStatus === "Paid"
-                          ? "bg-[#DCFCE7] text-[#16A34A] border-[#BBF7D0]"
-                          : "bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]"
-                      }`}
-                    >
-                      <span
-                        className={`size-1.5 rounded-full ${
-                          session.paymentStatus === "Paid"
-                            ? "bg-[#16A34A]"
-                            : "bg-[#0284C7]"
-                        }`}
-                      />
-                      {session.paymentStatus}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]">
+                      <span className="size-1.5 rounded-full bg-[#16A34A]" />
+                      {paymentStatusText}
                     </span>
                   </div>
                 </div>
@@ -406,26 +507,8 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
                   <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
                     TOTAL PAYMENT
                   </span>
-                  <span className="font-bold text-zinc-900">
-                    {session.totalPayment}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                    AMOUNT / POINTS
-                  </span>
-                  <span className="font-bold text-zinc-900">
-                    {session.amountPoints}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                    PAYMENT DATE
-                  </span>
                   <span className="font-semibold text-zinc-900">
-                    {session.paymentDate}
+                    {session.totalPayment || "200 EGP"}
                   </span>
                 </div>
               </div>
@@ -434,7 +517,7 @@ export default function SessionDetailPage({ sessionId }: SessionDetailPageProps)
 
           {/* Right Column: Activity Timeline */}
           <div className="lg:col-span-1">
-            <SessionActivityTimeline timeline={session.timeline} />
+            <SessionActivityTimeline timeline={timelineItems} />
           </div>
         </div>
       </main>

@@ -1,42 +1,84 @@
+"use client"
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getSessionList,
   getSessionById,
+  scheduleSession,
   updateSession,
+  deleteSession,
   cancelSession,
-  createSession,
+  getTeacherSlots,
 } from "../api/sessionApi"
 import {
-  SessionFilterState,
-  SessionItem,
   ScheduleSessionPayload,
+  UpdateSessionPayload,
+  SessionFilterState,
 } from "../types/session.types"
 
-export const useSessions = (filters: Partial<SessionFilterState> = {}) => {
+export const useSessions = (
+  filters?: Partial<SessionFilterState>,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: ["sessions", filters],
-    queryFn: () => getSessionList(filters),
-    staleTime: 1000 * 60 * 5,
+    queryFn: () => getSessionList(),
+    ...options,
   })
 }
 
-export const useSessionDetail = (id: string) => {
+export const useSession = (sessionId: string) => {
   return useQuery({
-    queryKey: ["session", id],
-    queryFn: () => getSessionById(id),
-    enabled: Boolean(id),
-    staleTime: 1000 * 60 * 5,
+    queryKey: ["session", sessionId],
+    queryFn: () => getSessionById(sessionId),
+    enabled: !!sessionId,
   })
 }
 
-export const useUpdateSession = (id: string) => {
+export const useSessionDetail = useSession
+
+export const useScheduleSession = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (updatedData: Partial<SessionItem>) =>
-      updateSession(id, updatedData),
+    mutationFn: (payload: ScheduleSessionPayload) => scheduleSession(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] })
-      queryClient.invalidateQueries({ queryKey: ["session", id] })
+    },
+  })
+}
+
+export const useCreateSession = useScheduleSession
+
+export const useUpdateSession = (defaultSessionId?: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      data,
+    }: {
+      sessionId?: string
+      data: UpdateSessionPayload
+    }) => {
+      const id = sessionId || defaultSessionId
+      if (!id) throw new Error("Session ID is required for update")
+      return updateSession(id, data)
+    },
+    onSuccess: (_, variables) => {
+      const id = variables.sessionId || defaultSessionId
+      queryClient.invalidateQueries({ queryKey: ["sessions"] })
+      if (id) {
+        queryClient.invalidateQueries({ queryKey: ["session", id] })
+      }
+    },
+  })
+}
+
+export const useDeleteSession = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (sessionId: string) => deleteSession(sessionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] })
     },
   })
 }
@@ -44,20 +86,22 @@ export const useUpdateSession = (id: string) => {
 export const useCancelSession = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => cancelSession(id),
-    onSuccess: (_, id) => {
+    mutationFn: (sessionId: string) => cancelSession(sessionId),
+    onSuccess: (_, sessionId) => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] })
-      queryClient.invalidateQueries({ queryKey: ["session", id] })
+      queryClient.invalidateQueries({ queryKey: ["session", sessionId] })
     },
   })
 }
 
-export const useCreateSession = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (payload: ScheduleSessionPayload) => createSession(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sessions"] })
-    },
+export const useTeacherSlots = (
+  teacherId: string,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: ["teacher-slots", teacherId],
+    queryFn: () => getTeacherSlots(teacherId),
+    enabled: Boolean(teacherId) && (options?.enabled !== false),
+    staleTime: 1000 * 60 * 2,
   })
 }

@@ -3,96 +3,191 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronLeft, Loader2, Save } from "lucide-react"
-import { useSessionDetail, useUpdateSession } from "../hooks/useSessions"
-import { mockTeachersList } from "../data/mockSessions"
-import { SessionType } from "../types/session.types"
 import { toast } from "sonner"
+import { Form } from "@/components/ui/form"
+import { UniInput } from "@/components/shared/UniInput"
+import { UniSelect } from "@/components/shared/UniSelect"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  updateSessionSchema,
+  UpdateSessionFormData,
+} from "../schema/session.schema"
+import { useSessionDetail, useUpdateSession } from "../hooks/useSessions"
+import {
+  useTeachers,
+  useTeacherSubjects,
+} from "@/features/dashboard/teacher/hooks/useTeachers"
+import { useCourses } from "@/features/dashboard/course/hooks/useCourses"
+import { UpdateSessionPayload } from "../types/session.types"
 
 export interface SessionEditPageProps {
   sessionId: string
 }
 
-const AVAILABLE_TIME_SLOTS = [
-  "9:00 AM",
-  "10:00 AM",
-  "11:00 AM",
-  "4:00 PM",
-  "5:00 PM",
-  "6:00 PM",
-  "7:00 PM",
-  "8:00 PM",
+const DURATION_OPTIONS = [
+  { label: "30 min", value: "30" },
+  { label: "45 min", value: "45" },
+  { label: "60 min", value: "60" },
+  { label: "90 min", value: "90" },
+]
+
+const SESSION_TYPE_OPTIONS = [
+  { label: "Private 1:1", value: "Private 1:1" },
+  { label: "Group", value: "Group" },
+]
+
+const TARGET_TYPE_OPTIONS = [
+  { label: "Subject", value: "subject" },
+  { label: "Course", value: "course" },
 ]
 
 export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
   const router = useRouter()
-  const { data: session, isLoading } = useSessionDetail(sessionId)
+  const { data: session, isLoading, isError } = useSessionDetail(sessionId)
   const updateMutation = useUpdateSession(sessionId)
 
-  const [teacherName, setTeacherName] = React.useState("")
-  const [date, setDate] = React.useState("")
-  const [startTime, setStartTime] = React.useState("")
-  const [subject, setSubject] = React.useState("")
-  const [duration, setDuration] = React.useState("60 min")
-  const [sessionType, setSessionType] = React.useState<SessionType>("Private 1:1")
-  const [notes, setNotes] = React.useState("")
+  const { data: teachers = [], isLoading: isLoadingTeachers } = useTeachers()
+  const { data: subjects = [], isLoading: isLoadingSubjects } =
+    useTeacherSubjects()
+  const { data: courses = [], isLoading: isLoadingCourses } = useCourses()
+
+  const form = useForm<UpdateSessionFormData>({
+    resolver: zodResolver(updateSessionSchema),
+    mode: "all",
+    defaultValues: {
+      teacherId: "",
+      teacherName: "",
+      date: "",
+      startTime: "",
+      durationMinutes: "60",
+      sessionType: "Private 1:1",
+      targetType: "subject",
+      subjectId: "",
+      subjectName: "",
+      courseId: "",
+      courseName: "",
+      notes: "",
+      status: "Upcoming",
+    },
+  })
+
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { isSubmitting },
+  } = form
+
+  const selectedTargetType = watch("targetType")
 
   React.useEffect(() => {
     if (session) {
-      setTeacherName(session.teacherName || "Sara Mohamed")
-      setDate(session.date || "Sep 23, 2026")
-      setStartTime(session.startTime || "11:00 AM")
-      setSubject(session.subject || "Physics")
-      setDuration(session.duration || "60 min")
-      setSessionType(session.sessionType || "Private 1:1")
-      setNotes(session.notes || "Focus on kinematics revision.")
+      const isCourse = Boolean(session.courseId || session.courseName)
+      reset({
+        teacherId: session.teacherId || session.teacher?.id || "",
+        teacherName: session.teacherName || session.teacher?.name || "",
+        date: session.date || session.formattedDate || "",
+        startTime: session.startTime || session.time || "",
+        durationMinutes: String(session.durationMinutes || "60"),
+        sessionType: session.sessionType || "Private 1:1",
+        targetType: isCourse ? "course" : "subject",
+        subjectId: session.subjectId || "",
+        subjectName: session.subjectName || session.subject || "",
+        courseId: session.courseId || "",
+        courseName: session.courseName || "",
+        notes: session.notes || "",
+        status: session.status || session.sessionStatus || "Upcoming",
+      })
     }
-  }, [session])
+  }, [session, reset])
 
-  const handleSave = async () => {
-    if (!subject.trim()) {
-      toast.error("Please enter a subject")
-      return
-    }
+  const teacherOptions = React.useMemo(() => {
+    return teachers.map((t) => ({
+      label: t.fullName || t.email,
+      value: t.id,
+    }))
+  }, [teachers])
 
+  const subjectOptions = React.useMemo(() => {
+    return subjects.map((s) => ({
+      label: s.name,
+      value: s.id,
+    }))
+  }, [subjects])
+
+  const courseOptions = React.useMemo(() => {
+    return courses.map((c) => ({
+      label: c.title || c.name || "Course",
+      value: c.id,
+    }))
+  }, [courses])
+
+  const onSubmit = async (data: UpdateSessionFormData) => {
     try {
+      const payload: UpdateSessionPayload = {
+        teacherId: data.teacherId,
+        teacherName:
+          teachers.find((t) => t.id === data.teacherId)?.fullName ||
+          data.teacherName,
+        date: data.date,
+        startTime: data.startTime,
+        durationMinutes: Number(data.durationMinutes),
+        sessionType: data.sessionType,
+        notes: data.notes || "",
+        status: data.status,
+      }
+
+      if (data.targetType === "subject") {
+        payload.subjectId = data.subjectId
+        payload.subjectName =
+          subjects.find((s) => s.id === data.subjectId)?.name || data.subjectName
+      } else {
+        payload.courseId = data.courseId
+        const foundCourse = courses.find((c) => c.id === data.courseId)
+        payload.courseName =
+          foundCourse?.title || foundCourse?.name || data.courseName
+      }
+
       await updateMutation.mutateAsync({
-        teacherName,
-        date,
-        startTime,
-        subject,
-        duration,
-        sessionType,
-        notes,
+        sessionId,
+        data: payload,
       })
 
       toast.success("Session updated successfully!")
       router.push(`/sessions/${sessionId}`)
-    } catch {
-      toast.error("Failed to update session.")
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
     }
   }
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] gap-3">
-        <Loader2 className="size-8 animate-spin text-[#F59E0B]" />
-        <span className="text-xs text-zinc-500 font-medium">Loading session...</span>
+      <div className="flex-1 p-8">
+        <LoadingSpinner title="loading session details" />
       </div>
     )
   }
 
+  if (isError || !session) {
+    return (
+      <div className="flex-1 p-8">
+        <GlobalError />
+      </div>
+    )
+  }
+
+  const isFormLoading = isSubmitting || updateMutation.isPending
+
   return (
     <div className="flex flex-col min-h-full">
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1300px] w-full mx-auto pb-24 animate-in fade-in duration-200">
-        {/* Top Back Link matching Image 3 */}
         <div>
           <Link
             href="/sessions"
@@ -103,188 +198,171 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
           </Link>
         </div>
 
-        {/* Page Title Header matching Image 3 */}
         <div className="flex flex-col gap-0.5">
           <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
             Edit Session
           </h1>
           <p className="text-xs text-zinc-500 font-normal">
-            Session {session?.sessionNumber || `#${sessionId}`}
+            Session {session.sessionNumber || session.sessionId || `#${sessionId}`}
           </p>
         </div>
 
-        {/* Edit Form Card matching Image 3 */}
-        <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-8 flex flex-col gap-6">
-          {/* TEACHER */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
-              TEACHER
-            </label>
-            <Select value={teacherName} onValueChange={(val) => val && setTeacherName(val)}>
-              <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-900 bg-white shadow-2xs">
-                <SelectValue placeholder="Select teacher" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-zinc-200">
-                {mockTeachersList.map((t) => (
-                  <SelectItem key={t.id} value={t.name} className="text-xs">
-                    {t.name} ({t.subject})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
+            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-8 flex flex-col gap-6">
+              {/* Teacher Select */}
+              <UniSelect
+                control={control as any}
+                name="teacherId"
+                label="Teacher"
+                placeholder={isLoadingTeachers ? "Loading..." : "Select teacher"}
+                options={teacherOptions}
+                isLoading={isLoadingTeachers}
+                required
+                labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
+                onChangeCallback={(val) => {
+                  const found = teachers.find((t) => t.id === val)
+                  if (found) setValue("teacherName", found.fullName)
+                }}
+              />
 
-          {/* DATE */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase flex items-center gap-1.5">
-              <span>DATE</span>
-              <span className="text-zinc-400 font-normal normal-case">
-                · upcoming dates only
-              </span>
-            </label>
-            <input
-              type="text"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              placeholder="e.g. Sep 23, 2026"
-              className="w-full h-10 px-3.5 rounded-xl border border-zinc-200 text-xs text-zinc-900 bg-white placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
-            />
-          </div>
+              {/* Target Type & Dependent Selector */}
+              <div className="space-y-4 p-4 rounded-xl border border-zinc-100 bg-zinc-50/50">
+                <UniSelect
+                  control={control as any}
+                  name="targetType"
+                  label="Curriculum Target (Course or Subject)"
+                  options={TARGET_TYPE_OPTIONS}
+                  required
+                  labelClassName="text-xs font-bold text-zinc-700 uppercase tracking-wider"
+                  onChangeCallback={(val) => {
+                    if (val === "subject") {
+                      setValue("courseId", "")
+                      setValue("courseName", "")
+                    } else {
+                      setValue("subjectId", "")
+                      setValue("subjectName", "")
+                    }
+                  }}
+                />
 
-          {/* START TIME: 8 Slot Buttons in 2 Rows matching Image 3 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
-              START TIME
-            </label>
+                {selectedTargetType === "subject" ? (
+                  <UniSelect
+                    control={control as any}
+                    name="subjectId"
+                    label="Select Subject"
+                    placeholder={
+                      isLoadingSubjects
+                        ? "Loading subjects..."
+                        : "Choose a subject"
+                    }
+                    options={subjectOptions}
+                    isLoading={isLoadingSubjects}
+                    required
+                    labelClassName="text-xs font-bold text-zinc-700 uppercase tracking-wider"
+                    onChangeCallback={(val) => {
+                      const found = subjects.find((s) => s.id === val)
+                      if (found) setValue("subjectName", found.name)
+                    }}
+                  />
+                ) : (
+                  <UniSelect
+                    control={control as any}
+                    name="courseId"
+                    label="Select Course"
+                    placeholder={
+                      isLoadingCourses ? "Loading courses..." : "Choose a course"
+                    }
+                    options={courseOptions}
+                    isLoading={isLoadingCourses}
+                    required
+                    labelClassName="text-xs font-bold text-zinc-700 uppercase tracking-wider"
+                    onChangeCallback={(val) => {
+                      const found = courses.find((c) => c.id === val)
+                      if (found)
+                        setValue("courseName", found.title || found.name || "")
+                    }}
+                  />
+                )}
+              </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {AVAILABLE_TIME_SLOTS.map((slot) => {
-                const isSelected = startTime === slot
-                return (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => setStartTime(slot)}
-                    className={`h-10 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
-                      isSelected
-                        ? "border-[#F59E0B] bg-[#FFF9F2] text-zinc-900 font-bold shadow-2xs"
-                        : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-                    }`}
-                  >
-                    {slot}
-                  </button>
-                )
-              })}
+              {/* Date & Start Time */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <UniInput
+                  control={control as any}
+                  name="date"
+                  label="Date"
+                  placeholder="e.g. Sep 23, 2026"
+                  labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
+                  inputClassName="h-10 text-xs rounded-xl"
+                />
+
+                <UniInput
+                  control={control as any}
+                  name="startTime"
+                  label="Start Time"
+                  placeholder="e.g. 11:00 AM"
+                  labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
+                  inputClassName="h-10 text-xs rounded-xl"
+                />
+              </div>
+
+              {/* Duration & Session Type */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <UniSelect
+                  control={control as any}
+                  name="durationMinutes"
+                  label="Duration"
+                  options={DURATION_OPTIONS}
+                  required
+                  labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
+                />
+
+                <UniSelect
+                  control={control as any}
+                  name="sessionType"
+                  label="Session Type"
+                  options={SESSION_TYPE_OPTIONS}
+                  required
+                  labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
+                />
+              </div>
+
+              {/* Notes */}
+              <UniInput
+                control={control as any}
+                name="notes"
+                label="Notes"
+                placeholder="Add any notes for this session."
+                labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
+                inputClassName="h-10 text-xs rounded-xl"
+              />
             </div>
-          </div>
 
-          {/* SUBJECT / COURSE * */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
-              SUBJECT / COURSE *
-            </label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="e.g. Physics"
-              className="w-full h-10 px-3.5 rounded-xl border border-zinc-200 text-xs text-zinc-900 bg-white placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
-            />
-          </div>
-
-          {/* 2-Column Row: DURATION * & SESSION TYPE */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* DURATION * */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
-                DURATION *
-              </label>
-              <Select value={duration} onValueChange={(val) => val && setDuration(val)}>
-                <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-900 bg-white shadow-2xs">
-                  <SelectValue placeholder="Select duration" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-zinc-200">
-                  <SelectItem value="30 min" className="text-xs">
-                    30 min
-                  </SelectItem>
-                  <SelectItem value="45 min" className="text-xs">
-                    45 min
-                  </SelectItem>
-                  <SelectItem value="60 min" className="text-xs">
-                    60 min
-                  </SelectItem>
-                  <SelectItem value="90 min" className="text-xs">
-                    90 min
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* SESSION TYPE */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
-                SESSION TYPE
-              </label>
-              <Select
-                value={sessionType}
-                onValueChange={(val: any) => setSessionType(val)}
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-2">
+              <Link
+                href={`/sessions/${sessionId}`}
+                className="h-10 px-5 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
               >
-                <SelectTrigger className="h-10 px-3.5 rounded-xl border-zinc-200 text-xs text-zinc-900 bg-white shadow-2xs">
-                  <SelectValue placeholder="Select session type" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-zinc-200">
-                  <SelectItem value="Private 1:1" className="text-xs">
-                    Private 1:1
-                  </SelectItem>
-                  <SelectItem value="Group" className="text-xs">
-                    Group
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                Cancel
+              </Link>
+
+              <button
+                type="submit"
+                disabled={isFormLoading}
+                className="h-10 px-6 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-50"
+              >
+                {isFormLoading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Save className="size-3.5" />
+                )}
+                <span>Save Changes</span>
+              </button>
             </div>
-          </div>
-
-          {/* NOTES · optional */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase flex items-center gap-1.5">
-              <span>NOTES</span>
-              <span className="text-zinc-400 font-normal normal-case">
-                · optional
-              </span>
-            </label>
-            <textarea
-              rows={4}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any specific session goals, agenda, or reminders..."
-              className="w-full p-3.5 rounded-xl border border-zinc-200 text-xs text-zinc-900 bg-white placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs resize-none"
-            />
-          </div>
-        </div>
-
-        {/* Footer Actions Bar matching Image 3 */}
-        <div className="flex items-center justify-between pt-2">
-          <Link
-            href={`/sessions/${sessionId}`}
-            className="h-10 px-5 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
-          >
-            Cancel
-          </Link>
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={updateMutation.isPending}
-            className="h-10 px-6 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-50"
-          >
-            {updateMutation.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Save className="size-4" />
-            )}
-            <span>Save Changes</span>
-          </button>
-        </div>
+          </form>
+        </Form>
       </main>
     </div>
   )

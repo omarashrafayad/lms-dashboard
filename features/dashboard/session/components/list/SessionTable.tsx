@@ -13,7 +13,7 @@ export interface SessionTableProps {
 export function SessionTable({ sessions, isLoading = false }: SessionTableProps) {
   const router = useRouter()
 
-  const getStatusBadge = (status: SessionStatus) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "In Progress":
         return {
@@ -48,7 +48,7 @@ export function SessionTable({ sessions, isLoading = false }: SessionTableProps)
     }
   }
 
-  const getPaymentBadge = (payment: PaymentStatus) => {
+  const getPaymentBadge = (payment: string) => {
     switch (payment) {
       case "Paid":
         return {
@@ -100,8 +100,20 @@ export function SessionTable({ sessions, isLoading = false }: SessionTableProps)
               </tr>
             ) : (
               sessions.map((session) => {
-                const statusStyle = getStatusBadge(session.status)
-                const paymentStyle = getPaymentBadge(session.paymentStatus)
+                const currentStatus = session.status || session.sessionStatus || "Upcoming"
+                const currentPayment = session.paymentStatus || session.payment || (session.isPaid ? "Paid" : "Unpaid")
+
+                const statusStyle = getStatusBadge(currentStatus)
+                const paymentStyle = getPaymentBadge(currentPayment)
+
+                const sessionTitle = session.sessionNumber
+                  ? (session.sessionNumber.startsWith("Session") ? session.sessionNumber : `Session #${session.sessionNumber}`)
+                  : (session.sessionCode || session.sessionId || `#${session.id.slice(0, 6)}`)
+
+                const subjectText = session.subject || session.subjectOrCourse || session.courseName || session.subjectName || "—"
+                const dateText = session.date || session.formattedDateTime || session.dateAndTime || "—"
+                const timeText = session.time || session.startTime || ""
+                const durationText = session.duration || (session.durationMinutes ? `${session.durationMinutes} min` : "—")
 
                 return (
                   <tr
@@ -113,44 +125,46 @@ export function SessionTable({ sessions, isLoading = false }: SessionTableProps)
                     <td className="py-4 px-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="font-bold text-zinc-900 group-hover:text-amber-600 transition-colors">
-                          Session {session.sessionNumber}
+                          {sessionTitle}
                         </span>
                         <span className="text-[11px] text-zinc-400 font-normal">
-                          {session.sessionType}
+                          {session.sessionType || "Private 1:1"}
                         </span>
                       </div>
                     </td>
 
                     {/* Student */}
                     <td className="py-4 px-4 whitespace-nowrap font-medium text-zinc-900">
-                      {session.studentName}
+                      {session.studentName || session.student?.name || "—"}
                     </td>
 
                     {/* Teacher */}
                     <td className="py-4 px-4 whitespace-nowrap font-medium text-zinc-800">
-                      {session.teacherName}
+                      {session.teacherName || session.teacher?.name || "—"}
                     </td>
 
                     {/* Subject / Course */}
                     <td className="py-4 px-4 whitespace-nowrap text-zinc-600">
-                      {session.subject}
+                      {subjectText}
                     </td>
 
                     {/* Date & Time */}
                     <td className="py-4 px-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="font-medium text-zinc-800">
-                          {session.date}
+                          {dateText}
                         </span>
-                        <span className="text-[11px] text-zinc-400 font-normal">
-                          {session.startTime}
-                        </span>
+                        {timeText && (
+                          <span className="text-[11px] text-zinc-400 font-normal">
+                            {timeText}
+                          </span>
+                        )}
                       </div>
                     </td>
 
                     {/* Duration */}
                     <td className="py-4 px-4 whitespace-nowrap text-zinc-600">
-                      {session.duration}
+                      {durationText}
                     </td>
 
                     {/* Session Status */}
@@ -159,7 +173,7 @@ export function SessionTable({ sessions, isLoading = false }: SessionTableProps)
                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusStyle.badge}`}
                       >
                         <span className={`size-1.5 rounded-full ${statusStyle.dot}`} />
-                        {session.status}
+                        {currentStatus}
                       </span>
                     </td>
 
@@ -169,7 +183,7 @@ export function SessionTable({ sessions, isLoading = false }: SessionTableProps)
                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${paymentStyle.badge}`}
                       >
                         <span className={`size-1.5 rounded-full ${paymentStyle.dot}`} />
-                        {session.paymentStatus}
+                        {currentPayment}
                       </span>
                     </td>
 

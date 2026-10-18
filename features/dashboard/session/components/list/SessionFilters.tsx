@@ -10,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { mockTeachersList, mockStudentsList } from "../../data/mockSessions"
+import { useTeachers } from "@/features/dashboard/teacher/hooks/useTeachers"
+import { useStudents } from "@/features/dashboard/student/hooks/useStudents"
 
 export interface SessionFiltersProps {
   filters: SessionFilterState
@@ -23,6 +24,9 @@ export function SessionFilters({
   onChange,
   onReset,
 }: SessionFiltersProps) {
+  const { data: teachers = [] } = useTeachers()
+  const { data: students = [] } = useStudents()
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2.5">
@@ -104,9 +108,9 @@ export function SessionFilters({
             <SelectItem value="all" className="text-xs">
               All Teachers
             </SelectItem>
-            {mockTeachersList.map((t) => (
-              <SelectItem key={t.id} value={t.name} className="text-xs">
-                {t.name}
+            {teachers.map((t) => (
+              <SelectItem key={t.id} value={t.fullName || t.email} className="text-xs">
+                {t.fullName || t.email}
               </SelectItem>
             ))}
           </SelectContent>
@@ -124,15 +128,15 @@ export function SessionFilters({
             <SelectItem value="all" className="text-xs">
               All Students
             </SelectItem>
-            {mockStudentsList.slice(0, 6).map((s) => (
-              <SelectItem key={s.id} value={s.name} className="text-xs">
-                {s.name}
+            {students.slice(0, 15).map((s) => (
+              <SelectItem key={s.id} value={s.fullName || s.email} className="text-xs">
+                {s.fullName || s.email}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* More Filters button matching Image 1 */}
+        {/* More Filters button */}
         <button
           type="button"
           onClick={() => {}}

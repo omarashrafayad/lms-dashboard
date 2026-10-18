@@ -2,10 +2,11 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { MoreHorizontal, Eye, Pencil, XCircle } from "lucide-react"
+import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react"
 import { SessionItem } from "../../types/session.types"
-import { useCancelSession } from "../../hooks/useSessions"
+import { useDeleteSession } from "../../hooks/useSessions"
 import { toast } from "sonner"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 export interface SessionRowActionsProps {
   session: SessionItem
@@ -15,7 +16,7 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
   const menuRef = React.useRef<HTMLDivElement>(null)
-  const cancelMutation = useCancelSession()
+  const deleteMutation = useDeleteSession()
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -31,13 +32,16 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
     }
   }, [open])
 
-  const handleCancel = async () => {
+  const handleDelete = async () => {
     setOpen(false)
+    if (!confirm("Are you sure you want to delete this session?")) return
     try {
-      await cancelMutation.mutateAsync(session.id)
-      toast.success(`Session ${session.sessionNumber} has been cancelled and refunded.`)
-    } catch {
-      toast.error("Failed to cancel session.")
+      await deleteMutation.mutateAsync(session.id)
+      toast.success(
+        `Session ${session.sessionNumber || session.sessionId || session.id} deleted successfully.`
+      )
+    } catch (err) {
+      toast.error(getErrorMessage(err))
     }
   }
 
@@ -81,19 +85,17 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
             <span>Edit Session</span>
           </button>
 
-          {session.status !== "Cancelled" && (
-            <>
-              <div className="my-1 border-t border-zinc-100" />
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
-              >
-                <XCircle className="size-3.5 text-rose-500" />
-                <span>Cancel Session</span>
-              </button>
-            </>
-          )}
+          <div className="my-1 border-t border-zinc-100" />
+
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+          >
+            <Trash2 className="size-3.5 text-rose-500" />
+            <span>Delete Session</span>
+          </button>
         </div>
       )}
     </div>
