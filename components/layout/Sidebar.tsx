@@ -38,6 +38,7 @@ export function Sidebar() {
   const isReferenceDataActive = pathname.startsWith("/reference-data")
   const isSubscriptionsRoute = pathname.startsWith("/subscriptions")
   const isSupportActive = pathname.startsWith("/support")
+  const isSettingsActive = pathname.startsWith("/settings")
 
   const [usersExpanded, setUsersExpanded] = React.useState<boolean>(isUsersActive)
   const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || false)
@@ -592,7 +593,7 @@ export function Sidebar() {
             </div>
 
             {/* Content */}
-            <Link
+            {/* <Link
               href="/content"
               className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
             >
@@ -600,10 +601,10 @@ export function Sidebar() {
                 <FileText className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
                 <span>Content</span>
               </div>
-            </Link>
+            </Link> */}
 
             {/* Analytics */}
-            <Link
+            {/* <Link
               href="/analytics"
               className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
             >
@@ -611,7 +612,7 @@ export function Sidebar() {
                 <TrendingUp className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
                 <span>Analytics</span>
               </div>
-            </Link>
+            </Link> */}
 
             {/* Support */}
             <Link
@@ -643,9 +644,21 @@ export function Sidebar() {
       <div className="flex flex-col gap-3 pt-4 border-t border-zinc-100">
         <Link
           href="/settings"
-          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+            isSettingsActive
+              ? "bg-zinc-100/80 text-zinc-900 font-semibold"
+              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+          )}
         >
-          <Settings className="size-[18px] text-zinc-400" />
+          <Settings
+            className={cn(
+              "size-[18px] transition-colors",
+              isSettingsActive
+                ? "text-brand-orange"
+                : "text-zinc-400 group-hover:text-zinc-600"
+            )}
+          />
           <span>Settings</span>
         </Link>
       </div>
