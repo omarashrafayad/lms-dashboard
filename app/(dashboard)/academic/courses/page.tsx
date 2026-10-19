@@ -1,7 +1,7 @@
 import CourseListPage from "@/features/dashboard/course/template/courseListPage"
 
 export const metadata = {
-  title: "Courses | Scholar Admin Console",
+  title: "Courses",
   description: "Manage learning programs, organize course content, and control student access.",
 }
 
