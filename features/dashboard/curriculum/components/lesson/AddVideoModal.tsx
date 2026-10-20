@@ -528,10 +528,10 @@ export function AddVideoModal({
                 {isUploading ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    <span>
+                    <span className="">
                       {uploadProgress.status === "processing"
                         ? "Processing video..."
-                        : `Uploading ${uploadProgress.percentage}% (${100 - uploadProgress.percentage}% remaining)...`}
+                        : `Uploading ${uploadProgress.percentage}%`}
                     </span>
                   </>
                 ) : isSuccess ? (

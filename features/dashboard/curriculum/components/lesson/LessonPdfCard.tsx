@@ -166,54 +166,6 @@ export function LessonPdfCard({
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-2">
-                  {(pdfItem.filePath || pdfItem.pdfUrl) && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        window.open(pdfItem.filePath || pdfItem.pdfUrl, "_blank")
-                      }
-                      className="h-8 px-3 rounded-xl border-zinc-200/80 bg-white text-zinc-700 text-xs font-medium hover:bg-zinc-50 shadow-2xs gap-1.5 cursor-pointer"
-                    >
-                      <Eye className="size-3.5 text-zinc-500" />
-                      <span>Preview</span>
-                    </Button>
-                  )}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(pdfItem)}
-                    className="h-8 px-3 rounded-xl border-zinc-200/80 bg-white text-zinc-700 text-xs font-medium hover:bg-zinc-50 shadow-2xs gap-1.5 cursor-pointer"
-                  >
-                    <Download className="size-3.5 text-zinc-500" />
-                    <span>Download</span>
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPdfToEdit(pdfItem)}
-                    className="h-8 px-3 rounded-xl border-zinc-200/80 bg-white text-zinc-700 text-xs font-medium hover:bg-zinc-50 shadow-2xs gap-1.5 cursor-pointer"
-                  >
-                    <Pencil className="size-3.5 text-zinc-500" />
-                    <span>Edit</span>
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="h-8 px-3 rounded-xl border-zinc-200/80 bg-white text-zinc-700 text-xs font-medium hover:bg-zinc-50 shadow-2xs gap-1.5 cursor-pointer"
-                  >
-                    <RotateCcw className="size-3.5 text-zinc-500" />
-                    <span>Replace</span>
-                  </Button>
-
                   <Button
                     type="button"
                     variant="ghost"

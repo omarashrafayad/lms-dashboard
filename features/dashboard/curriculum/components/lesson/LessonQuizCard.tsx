@@ -7,7 +7,6 @@ import {
   Clock,
   Pencil,
   Trash2,
-  Eye,
   Plus,
   Loader2,
 } from "lucide-react"
@@ -17,6 +16,7 @@ import { AddQuizModal } from "./AddQuizModal"
 import { EditQuizModal } from "./EditQuizModal"
 import { useLessonQuizzes, useDeleteQuiz } from "../../hooks/useCurriculum"
 import { toast } from "sonner"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 export interface LessonQuizCardProps {
   lessonId?: string
@@ -47,8 +47,8 @@ export function LessonQuizCard({
       try {
         await deleteQuizMutation.mutateAsync({ quizId: currentQuiz.id, lessonId })
         toast.success("Quiz removed successfully!")
-      } catch (err: any) {
-        toast.error(err?.response?.data?.message || "Failed to remove quiz")
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err))
       }
     }
     onRemoveQuiz?.()

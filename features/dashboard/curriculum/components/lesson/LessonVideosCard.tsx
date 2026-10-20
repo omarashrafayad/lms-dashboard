@@ -23,11 +23,7 @@ import { useLessonVideos, useDeleteVideo } from "../../hooks/useCurriculum"
 import { toast } from "sonner"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
-export interface LessonVideosProps {
-  lessonId?: string
-  videos?: LessonVideo[]
-  onVideosChange?: (videos: LessonVideo[]) => void
-}
+export interface LessonVideosProps {lessonId?: string}
 
 export function LessonVideosCard({
   lessonId,
@@ -231,7 +227,7 @@ export function LessonVideosCard({
 
               {/* Right: Actions (Preview, Edit, ...) */}
               <div className="flex items-center gap-2 shrink-0">
-                {video.filePath && (
+                {/* {video.filePath && (
                   <Button
                     type="button"
                     variant="outline"
@@ -242,7 +238,7 @@ export function LessonVideosCard({
                     <Eye className="size-3.5 text-zinc-500" />
                     <span>Preview</span>
                   </Button>
-                )}
+                )} */}
 
                 <Button
                   type="button"
