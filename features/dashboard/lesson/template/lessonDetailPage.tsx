@@ -164,18 +164,20 @@ export default function LessonDetailPage({ lessonId }: LessonDetailPageProps) {
             />
 
             <LessonVideosCard
+              lessonId={lessonId}
               videos={currentVideos}
               onVideosChange={setCurrentVideos}
             />
 
             <LessonPdfCard
+              lessonId={lessonId}
               pdf={currentPdf}
               initialOfflineAvailability={activeLesson.pdfOfflineAvailability}
               onPdfChange={setCurrentPdf}
               onRemovePdf={() => setCurrentPdf(null)}
             />
 
-            <LessonQuizCard quiz={activeLesson.quiz} />
+            <LessonQuizCard lessonId={lessonId} quiz={activeLesson.quiz} />
 
             <LessonActivityHistoryCard history={activeLesson.history} />
           </div>

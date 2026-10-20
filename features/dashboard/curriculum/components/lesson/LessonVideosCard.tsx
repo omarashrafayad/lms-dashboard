@@ -23,10 +23,16 @@ import { useLessonVideos, useDeleteVideo } from "../../hooks/useCurriculum"
 import { toast } from "sonner"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
-export interface LessonVideosProps {lessonId?: string}
+export interface LessonVideosProps {
+  lessonId?: string
+  videos?: LessonVideo[]
+  onVideosChange?: ((videos: LessonVideo[]) => void) | React.Dispatch<React.SetStateAction<any>>
+}
 
 export function LessonVideosCard({
   lessonId,
+  videos: initialVideos,
+  onVideosChange,
 }: LessonVideosProps) {
   const { data: serverVideos = [], isLoading } = useLessonVideos(lessonId)
   const [videoToEdit, setVideoToEdit] = React.useState<any | null>(null)
@@ -44,9 +50,9 @@ export function LessonVideosCard({
   const deleteVideoMutation = useDeleteVideo()
 
   // Use server videos if available, otherwise fallback to prop
-  const rawVideos = (serverVideos && serverVideos.length > 0) ? serverVideos : ([])
+  const rawVideos = (serverVideos && serverVideos.length > 0) ? serverVideos : (initialVideos || [])
 
-  const displayVideos = rawVideos.map((v: any, index: number) => {
+  const displayVideos: LessonVideo[] = rawVideos.map((v: any, index: number): LessonVideo => {
     const durationStr =
       typeof v.duration === "number"
         ? `${Math.floor(v.duration / 60)}:${String(v.duration % 60).padStart(2, "0")}`
@@ -55,11 +61,13 @@ export function LessonVideosCard({
     const offlineAvail = v.offlineAvailable ?? v.isOfflineAvailable ?? true
 
     return {
-      ...v,
+      id: v.id || `v-${index + 1}`,
       order: v.order ?? index + 1,
+      title: v.title || "Untitled Video",
       duration: durationStr,
       access: accessStr,
       offlineAvailable: offlineAvail,
+      thumbnailUrl: v.thumbnailUrl,
     }
   })
 
@@ -86,6 +94,31 @@ export function LessonVideosCard({
     }
   }
 
+  const handleAddVideo = (newVideoData: {
+    title: string
+    duration: string
+    offlineAvailable: boolean
+  }) => {
+    const nextOrder = displayVideos.length + 1
+    const newVideo: LessonVideo = {
+      id: `v-${Date.now()}`,
+      order: nextOrder,
+      title: newVideoData.title,
+      duration: newVideoData.duration || "00:00",
+      access: nextOrder === 1 ? "Free" : "Premium",
+      offlineAvailable: newVideoData.offlineAvailable,
+    }
+    const updated = [...displayVideos, newVideo]
+    onVideosChange?.(updated)
+  }
+
+  const handleEditVideo = (videoId: string, newTitle: string) => {
+    const updated = displayVideos.map((v) =>
+      v.id === videoId ? { ...v, title: newTitle } : v
+    )
+    onVideosChange?.(updated)
+  }
+
   const handleDeleteVideo = async (videoId: string) => {
     if (lessonId) {
       try {
@@ -95,6 +128,7 @@ export function LessonVideosCard({
         toast.error(getErrorMessage(err))
       }
     }
+    onVideosChange?.(displayVideos.filter((v) => v.id !== videoId))
   }
 
   return (
@@ -287,6 +321,7 @@ export function LessonVideosCard({
         onOpenChange={setIsAddOpen}
         lessonId={lessonId}
         defaultOrder={displayVideos.length + 1}
+        onAddVideo={handleAddVideo}
         onUploadProgressChange={handleUploadProgressChange}
       />
 
@@ -296,6 +331,7 @@ export function LessonVideosCard({
         onOpenChange={(open) => !open && setVideoToEdit(null)}
         video={videoToEdit}
         lessonId={lessonId}
+        onSave={handleEditVideo}
       />
     </div>
   )
