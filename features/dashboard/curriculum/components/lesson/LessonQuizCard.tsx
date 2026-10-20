@@ -46,7 +46,7 @@ export function LessonQuizCard({
     if (currentQuiz?.id && lessonId) {
       try {
         await deleteQuizMutation.mutateAsync({ quizId: currentQuiz.id, lessonId })
-        toast.success("Quiz removed successfully!")
+        toast.success("Quiz removed successfully!!")
       } catch (err: unknown) {
         toast.error(getErrorMessage(err))
       }
