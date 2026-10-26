@@ -42,6 +42,7 @@ export function ExamStudentsTab({ exam }: ExamStudentsTabProps) {
                 COMPLETION TIME
               </th>
             </tr>
+            
           </thead>
           <tbody className="divide-y divide-zinc-100">
             {students.length === 0 ? (
