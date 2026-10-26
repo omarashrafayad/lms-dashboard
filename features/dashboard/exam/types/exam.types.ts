@@ -159,3 +159,15 @@ export interface ExamFilterState {
   questions: string
   duration: string
 }
+
+export interface ExamQueryParams {
+  search?: string
+  page?: number
+  pageSize?: number
+  examType?: string
+  level?: string
+  status?: string
+  subject?: string
+  month?: string
+  academicYear?: string
+}

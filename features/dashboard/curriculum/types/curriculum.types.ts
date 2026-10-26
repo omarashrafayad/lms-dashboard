@@ -167,6 +167,17 @@ export interface SubjectFilterState {
   subject: string
 }
 
+export interface CurriculumSubjectQueryParams {
+  search?: string
+  page?: number
+  pageSize?: number
+  stage?: string
+  year?: string
+  system?: string
+  term?: string
+  subject?: string
+}
+
 export interface CreateSubjectPayload {
   name: string
   educationStageId: string

@@ -7,6 +7,7 @@ import { TeacherFilters } from "../components/TeacherFilters"
 import { TeacherTable } from "../components/TeacherTable"
 import { TeacherFilterState } from "../types/teacher.types"
 import { useTeachers } from "../hooks/useTeachers"
+import { useDebounce } from "@/hooks/useDebounce"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 
@@ -20,76 +21,39 @@ const initialFilters: TeacherFilterState = {
 
 export default function TeacherListPage() {
   const [filters, setFilters] = React.useState<TeacherFilterState>(initialFilters)
-
-  const { data: apiTeachers, isLoading, error: isError } = useTeachers()
+  const [page, setPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState(10)
+  const debouncedSearch = useDebounce(filters.search, 400)
 
   const handleFilterChange = (updated: Partial<TeacherFilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))
+    setPage(1)
   }
 
   const handleReset = () => {
     setFilters(initialFilters)
+    setPage(1)
   }
 
-  const filteredTeachers = React.useMemo(() => {
-    if (!apiTeachers || !Array.isArray(apiTeachers)) return []
-    return apiTeachers.filter((teacher) => {
-      // Search term filter
-      if (filters.search.trim()) {
-        const query = filters.search.toLowerCase()
-        const matchesName = teacher.fullName?.toLowerCase().includes(query)
-        const matchesEmail = teacher.email?.toLowerCase().includes(query)
-        const matchesPhone = teacher.phoneNumber?.toLowerCase().includes(query)
-        const subjects = teacher.specializations
-          ? (teacher.specializations.map((s) => s.subjectName).filter(Boolean) as string[])
-          : []
-        const matchesSubject = subjects.some((s) => s.toLowerCase().includes(query))
-        if (!matchesName && !matchesEmail && !matchesPhone && !matchesSubject) {
-          return false
-        }
-      }
+  const { data: response, isLoading, error: isError } = useTeachers({
+    page,
+    pageSize,
+    search: debouncedSearch,
+    subject: filters.subject,
+    status: filters.status,
+    availability: filters.availability,
+  })
 
-      // Subject filter
-      if (filters.subject !== "all") {
-        const subjects = teacher.specializations
-          ? (teacher.specializations.map((s) => s.subjectName).filter(Boolean) as string[])
-          : []
-        if (!subjects.some((s) => s.toLowerCase() === filters.subject.toLowerCase())) {
-          return false
-        }
-      }
-
-      // Status filter
-      if (filters.status !== "all") {
-        const status = teacher.isActive ? "Active" : "Inactive"
-        if (status !== filters.status) {
-          return false
-        }
-      }
-
-      // Availability filter
-      if (filters.availability !== "all") {
-        let availability = "Available"
-        if (teacher.isAvailable === false) {
-          availability = "Unavailable"
-        } else if (!teacher.isActive) {
-          availability = "Offline"
-        }
-        if (availability !== filters.availability) {
-          return false
-        }
-      }
-
-      return true
-    })
-  }, [apiTeachers, filters])
+  const teachers = response?.items || []
+  const totalCount = response?.totalCount ?? 0
+  const totalPages = response?.totalPages ?? 1
 
   const statsCounts = React.useMemo(() => {
-    const active = filteredTeachers.filter((t) => t.isActive).length
-    const available = filteredTeachers.filter((t) => t.isAvailable !== false && t.isActive).length
-    const upcoming = filteredTeachers.reduce((acc, t) => acc + (t.availabilitySlots?.length || 0), 0)
+    const active = teachers.filter((t) => t.isActive).length
+    const available = teachers.filter((t) => t.isAvailable !== false && t.isActive).length
+    const upcoming = teachers.reduce((acc, t) => acc + (t.availabilitySlots?.length || 0), 0)
     return { active, available, upcoming }
-  }, [filteredTeachers])
+  }, [teachers])
 
   return (
     <div className="flex flex-col min-h-full">
@@ -101,7 +65,7 @@ export default function TeacherListPage() {
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto">
         {/* Top Stats Section */}
         <TeacherStats
-          totalCount={filteredTeachers.length}
+          totalCount={totalCount}
           activeCount={statsCounts.active}
           availableCount={statsCounts.available}
           upcomingSessionsCount={statsCounts.upcoming}
@@ -120,7 +84,21 @@ export default function TeacherListPage() {
         ) : isError ? (
           <GlobalError />
         ) : (
-          <TeacherTable data={filteredTeachers} />
+          <TeacherTable
+            data={teachers}
+            pageSize={pageSize}
+            serverPagination={{
+              currentPage: page,
+              totalPages,
+              totalItems: totalCount,
+              onPageChange: (newPage) => setPage(newPage),
+              pageSizeOptions: [10, 20, 50],
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize)
+                setPage(1)
+              },
+            }}
+          />
         )}
       </main>
     </div>

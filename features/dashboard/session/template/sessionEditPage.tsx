@@ -51,10 +51,12 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
   const { data: session, isLoading, isError } = useSessionDetail(sessionId)
   const updateMutation = useUpdateSession(sessionId)
 
-  const { data: teachers = [], isLoading: isLoadingTeachers } = useTeachers()
+  const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers({ pageSize: 100 })
+  const teachers = Array.isArray(teachersData) ? teachersData : teachersData?.items || []
   const { data: subjects = [], isLoading: isLoadingSubjects } =
     useTeacherSubjects()
-  const { data: courses = [], isLoading: isLoadingCourses } = useCourses()
+  const { data: coursesData, isLoading: isLoadingCourses } = useCourses({ pageSize: 100 })
+  const courses = Array.isArray(coursesData) ? coursesData : coursesData?.items || []
 
   const form = useForm<UpdateSessionFormData>({
     resolver: zodResolver(updateSessionSchema),

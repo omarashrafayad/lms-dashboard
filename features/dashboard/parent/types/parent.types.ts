@@ -26,6 +26,13 @@ export interface ParentFilterState {
   registrationDate: string
 }
 
+export interface ParentQueryParams {
+  search?: string
+  page?: number
+  pageSize?: number
+  status?: string
+}
+
 export interface ApiParentLinkedStudent {
   id?: string
   fullName?: string

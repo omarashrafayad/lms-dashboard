@@ -36,8 +36,8 @@ export function OverviewRecentLists() {
   const { data: apiStudents } = useStudents()
   const { data: apiTeachers } = useTeachers()
 
-  const studentsList = Array.isArray(apiStudents) ? apiStudents : []
-  const teachersList = Array.isArray(apiTeachers) ? apiTeachers : []
+  const studentsList = Array.isArray(apiStudents) ? apiStudents : apiStudents?.items || []
+  const teachersList = Array.isArray(apiTeachers) ? apiTeachers : apiTeachers?.items || []
 
   const recentStudents = studentsList.slice(0, 5)
   const recentTeachers = teachersList.slice(0, 4)
@@ -171,7 +171,7 @@ export function OverviewRecentLists() {
                 const initials = getAvatarInitials(teacher.fullName, "TC")
                 const colorClass = getAvatarColor(teacher.id || teacher.fullName || "")
                 const subjectList = teacher.specializations
-                  ? (teacher.specializations.map((s) => s.subjectName).filter(Boolean) as string[])
+                  ? (teacher.specializations.map((s: any) => s.subjectName).filter(Boolean) as string[])
                   : []
                 const subjects = subjectList.length > 0 ? subjectList.join(", ") : "General"
                 const upcoming = teacher.availabilitySlots?.length ?? 0

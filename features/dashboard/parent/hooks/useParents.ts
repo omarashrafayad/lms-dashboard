@@ -11,9 +11,10 @@ import {
 import {
   CreateParentPayload,
   UpdateParentPayload,
+  ParentQueryParams,
 } from "../types/parent.types"
 
-export const useParents = (params: { search?: string } = {}) => {
+export const useParents = (params: ParentQueryParams = {}) => {
   return useQuery({
     queryKey: ["parents", params],
     queryFn: () => getParents(params),

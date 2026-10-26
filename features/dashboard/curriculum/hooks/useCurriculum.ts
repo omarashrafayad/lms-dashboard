@@ -42,10 +42,11 @@ import {
   UpdateVideoPayload,
   CreateQuizPayload,
   UpdateQuizPayload,
+  CurriculumSubjectQueryParams,
 } from "../types/curriculum.types"
 
 export const useCurriculumSubjects = (
-  params: { search?: string; stage?: string; year?: string; system?: string; term?: string } = {}
+  params: CurriculumSubjectQueryParams = {}
 ) => {
   return useQuery({
     queryKey: ["curriculum-subjects", params],

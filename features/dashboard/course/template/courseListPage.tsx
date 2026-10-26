@@ -10,6 +10,7 @@ import { CourseFilters } from "../components/list/CourseFilters"
 import { CourseTable } from "../components/list/CourseTable"
 import { useCourses } from "../hooks/useCourses"
 import { CourseFilterState } from "../types/course.types"
+import { useDebounce } from "@/hooks/useDebounce"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 
@@ -22,60 +23,39 @@ const initialFilters: CourseFilterState = {
 }
 
 export default function CourseListPage() {
-  const router = useRouter()
   const [filters, setFilters] = React.useState<CourseFilterState>(initialFilters)
-
-  const { data: apiCourses, isLoading, isError } = useCourses()
+  const [page, setPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState(10)
+  const debouncedSearch = useDebounce(filters.search, 400)
 
   const handleFilterChange = (key: keyof CourseFilterState, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
+    setPage(1)
   }
 
   const handleResetFilters = () => {
     setFilters(initialFilters)
+    setPage(1)
   }
 
-  const filteredCourses = React.useMemo(() => {
-    if (!apiCourses || !Array.isArray(apiCourses)) return []
-    return apiCourses.filter((course) => {
-      if (filters.search.trim()) {
-        const query = filters.search.toLowerCase()
-        const name = (course.name || course.title || "").toLowerCase()
-        const instructor = (course.leadInstructor || course.instructor || "").toLowerCase()
-        const category = (course.category || "").toLowerCase()
-        if (!name.includes(query) && !instructor.includes(query) && !category.includes(query)) {
-          return false
-        }
-      }
+  const { data: response, isLoading, isError } = useCourses({
+    page,
+    pageSize,
+    search: debouncedSearch,
+    category: filters.category,
+    level: filters.level,
+    status: filters.status,
+  })
 
-      if (filters.category !== "all" && course.category?.toLowerCase() !== filters.category.toLowerCase()) {
-        return false
-      }
+  const courses = response?.items || []
+  const totalCount = response?.totalCount ?? 0
+  const totalPages = response?.totalPages ?? 1
 
-      if (filters.level !== "all") {
-        const level = (course.difficultyLevel || course.level || "").toLowerCase()
-        if (level !== filters.level.toLowerCase()) {
-          return false
-        }
-      }
-
-      if (filters.status !== "all") {
-        const status = (course.status || "").toLowerCase()
-        if (status !== filters.status.toLowerCase()) {
-          return false
-        }
-      }
-
-      return true
-    })
-  }, [apiCourses, filters])
-
-  const totalCount = filteredCourses.length
-  const publishedCount = filteredCourses.filter(
+  const publishedCount = courses.filter(
     (c) => c.status?.toLowerCase() === "published" || c.status?.toLowerCase() === "active"
   ).length
-  const draftCount = filteredCourses.filter((c) => c.status?.toLowerCase() === "draft").length
-  const archivedCount = filteredCourses.filter(
+  const draftCount = courses.filter((c) => c.status?.toLowerCase() === "draft").length
+  const archivedCount = courses.filter(
     (c) => c.status?.toLowerCase() === "archived" || c.status?.toLowerCase() === "inactive"
   ).length
 
@@ -89,7 +69,8 @@ export default function CourseListPage() {
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1300px] w-full mx-auto pb-20">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-zinc-500">
-            Showing <strong className="font-bold text-zinc-800">{totalCount}</strong> courses
+            Showing <strong className="font-bold text-zinc-800">{courses.length}</strong> of{" "}
+            <strong className="font-bold text-zinc-800">{totalCount}</strong> courses
           </span>
 
           <Link
@@ -119,7 +100,21 @@ export default function CourseListPage() {
         ) : isError ? (
           <GlobalError />
         ) : (
-          <CourseTable courses={filteredCourses} />
+          <CourseTable
+            courses={courses}
+            pageSize={pageSize}
+            serverPagination={{
+              currentPage: page,
+              totalPages,
+              totalItems: totalCount,
+              onPageChange: (newPage) => setPage(newPage),
+              pageSizeOptions: [10, 20, 50],
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize)
+                setPage(1)
+              },
+            }}
+          />
         )}
       </main>
     </div>

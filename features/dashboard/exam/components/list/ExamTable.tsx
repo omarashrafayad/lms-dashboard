@@ -17,6 +17,15 @@ import { cn } from "@/lib/utils"
 export interface ExamTableProps {
   exams: ApiExam[]
   onEdit?: (exam: ApiExam) => void
+  serverPagination?: {
+    currentPage: number
+    totalPages: number
+    totalItems: number
+    onPageChange: (page: number) => void
+    pageSizeOptions?: number[]
+    onPageSizeChange?: (pageSize: number) => void
+  }
+  pageSize?: number
 }
 
 const AVATAR_COLORS = [
@@ -59,7 +68,7 @@ function formatDate(dateStr?: string): string {
   return "Recently"
 }
 
-export function ExamTable({ exams, onEdit }: ExamTableProps) {
+export function ExamTable({ exams, onEdit, serverPagination, pageSize }: ExamTableProps) {
   const columns = React.useMemo<UniTableColumn<ApiExam>[]>(
     () => [
       {
@@ -211,6 +220,9 @@ export function ExamTable({ exams, onEdit }: ExamTableProps) {
         data={exams}
         columns={columns}
         enablePagination={false}
+        serverPagination={serverPagination}
+        pageSize={pageSize}
+        itemLabel="exams"
         emptyMessage={
           <EmptyState
             icon={GraduationCap}

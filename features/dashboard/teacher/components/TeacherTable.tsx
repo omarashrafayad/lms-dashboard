@@ -9,6 +9,15 @@ import { TeacherRowActions } from "./TeacherRowActions"
 
 export interface TeacherTableProps {
   data: ApiTeacher[]
+  serverPagination?: {
+    currentPage: number
+    totalPages: number
+    totalItems: number
+    onPageChange: (page: number) => void
+    pageSizeOptions?: number[]
+    onPageSizeChange?: (pageSize: number) => void
+  }
+  pageSize?: number
 }
 
 const AVATAR_COLORS = [
@@ -50,7 +59,7 @@ function formatDate(dateStr?: string): string {
   return "Recently"
 }
 
-export function TeacherTable({ data }: TeacherTableProps) {
+export function TeacherTable({ data, serverPagination, pageSize }: TeacherTableProps) {
   const columns = React.useMemo<UniTableColumn<ApiTeacher>[]>(
     () => [
       {
@@ -209,6 +218,9 @@ export function TeacherTable({ data }: TeacherTableProps) {
         data={data}
         columns={columns}
         enablePagination={false}
+        serverPagination={serverPagination}
+        pageSize={pageSize}
+        itemLabel="teachers"
         emptyMessage="No teachers found matching your filters"
         className="rounded-2xl border-zinc-200/80 shadow-2xs"
       />

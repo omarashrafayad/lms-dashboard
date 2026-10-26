@@ -18,22 +18,29 @@ import {
   CreateQuizPayload,
   UpdateQuizPayload,
   ContentQuizResponse,
+  CurriculumSubjectQueryParams,
 } from "../types/curriculum.types"
+import { PaginatedResponse, normalizePaginatedResponse } from "@/types/pagination"
 
 // ======================== Subjects API ========================
 export const getCurriculumSubjects = async (
-  params: { search?: string; stage?: string; year?: string; system?: string; term?: string } = {}
-): Promise<CurriculumSubject[]> => {
+  params: CurriculumSubjectQueryParams = {}
+): Promise<PaginatedResponse<CurriculumSubject>> => {
+  const queryParams: Record<string, any> = {}
+  if (params.page !== undefined) queryParams.page = params.page
+  if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize
+  if (params.search && params.search.trim()) queryParams.search = params.search.trim()
+  if (params.stage && params.stage !== "all") queryParams.stage = params.stage
+  if (params.year && params.year !== "all") queryParams.year = params.year
+  if (params.system && params.system !== "all") queryParams.system = params.system
+  if (params.term && params.term !== "all") queryParams.term = params.term
+  if (params.subject && params.subject !== "all") queryParams.subject = params.subject
+
   const res = await clientAxios.get("/curriculum/subjects", {
-    params: Object.keys(params).length > 0 ? params : undefined,
+    params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
   })
-  if (Array.isArray(res.data)) {
-    return res.data
-  }
-  if (res.data && Array.isArray(res.data.data)) {
-    return res.data.data
-  }
-  return []
+
+  return normalizePaginatedResponse<CurriculumSubject>(res.data, params.page, params.pageSize)
 }
 
 export const getCurriculumSubjectStructure = async (
