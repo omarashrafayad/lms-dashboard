@@ -11,6 +11,15 @@ import { User2 } from "lucide-react"
 
 export interface StudentTableProps {
   data: ApiStudent[]
+  serverPagination?: {
+    currentPage: number
+    totalPages: number
+    totalItems: number
+    onPageChange: (page: number) => void
+    pageSizeOptions?: number[]
+    onPageSizeChange?: (pageSize: number) => void
+  }
+  pageSize?: number
 }
 
 const AVATAR_COLORS = [
@@ -52,7 +61,7 @@ function formatDate(dateStr?: string): string {
   return "Recently"
 }
 
-export function StudentTable({ data }: StudentTableProps) {
+export function StudentTable({ data, serverPagination, pageSize }: StudentTableProps) {
   const columns = React.useMemo<UniTableColumn<ApiStudent>[]>(
     () => [
       {
@@ -185,6 +194,9 @@ export function StudentTable({ data }: StudentTableProps) {
         data={data}
         columns={columns}
         enablePagination={false}
+        serverPagination={serverPagination}
+        pageSize={pageSize}
+        itemLabel="students"
         emptyMessage={
           <EmptyState
             icon={User2}

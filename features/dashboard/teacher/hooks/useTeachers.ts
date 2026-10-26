@@ -10,8 +10,9 @@ import {
   getSubjects,
   getTeachingLevels,
 } from "../api/teacherApi"
+import { TeacherQueryParams } from "../types/teacher.types"
 
-export const useTeachers = (params: { search?: string } = {}) => {
+export const useTeachers = (params: TeacherQueryParams = {}) => {
   return useQuery({
     queryKey: ["teachers", params],
     queryFn: () => getTeachers(params),

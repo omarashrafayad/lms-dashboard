@@ -4,21 +4,13 @@ import {
   CreateExamPayload,
   UpdateExamPayload,
   ApiExamQuestion,
+  ExamQueryParams,
 } from "../types/exam.types"
+import { PaginatedResponse, normalizePaginatedResponse } from "@/types/pagination"
 
 export const getExams = async (
-  params: {
-    page?: number
-    pageSize?: number
-    search?: string
-    examType?: string
-    level?: string
-    status?: string
-    subject?: string
-    month?: string
-    academicYear?: string
-  } = {}
-): Promise<ApiExam[]> => {
+  params: ExamQueryParams = {}
+): Promise<PaginatedResponse<ApiExam>> => {
   const queryParams: Record<string, any> = {}
   if (params.page !== undefined) queryParams.page = params.page
   if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize
@@ -34,19 +26,7 @@ export const getExams = async (
     params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
   })
 
-  if (Array.isArray(res.data)) {
-    return res.data
-  }
-  if (res.data?.items && Array.isArray(res.data.items)) {
-    return res.data.items
-  }
-  if (res.data?.value && Array.isArray(res.data.value)) {
-    return res.data.value
-  }
-  if (res.data?.data && Array.isArray(res.data.data)) {
-    return res.data.data
-  }
-  return []
+  return normalizePaginatedResponse<ApiExam>(res.data, params.page, params.pageSize)
 }
 
 export const getExamById = async (examId: string): Promise<ApiExam> => {

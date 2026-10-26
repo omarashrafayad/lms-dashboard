@@ -52,6 +52,8 @@ export interface UniTableProps<TData> {
         totalPages: number
         totalItems: number
         onPageChange: (page: number) => void
+        pageSizeOptions?: number[]
+        onPageSizeChange?: (pageSize: number) => void
     }
 }
 
@@ -380,6 +382,8 @@ function UniTable<TData>({
                     pageSize={pageSize}
                     onPageChange={serverPagination?.onPageChange ?? ((page) => table.setPageIndex(page - 1))}
                     itemLabel={itemLabel}
+                    pageSizeOptions={serverPagination?.pageSizeOptions}
+                    onPageSizeChange={serverPagination?.onPageSizeChange}
                 />
             )}
         </div>

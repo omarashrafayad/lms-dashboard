@@ -11,14 +11,12 @@ import { ExamFormModal } from "../components/modal/ExamFormModal"
 import { ExamPreviewModal } from "../components/modal/ExamPreviewModal"
 import { useExams, useUpdateExam } from "../hooks/useExams"
 import { ExamFilterState, ApiExam } from "../types/exam.types"
+import { useDebounce } from "@/hooks/useDebounce"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 export default function ExamListPage() {
-  const { data: apiExams, isLoading, isError } = useExams()
-  const updateExamMutation = useUpdateExam()
-
   const [filters, setFilters] = React.useState<ExamFilterState>({
     tab: "all",
     search: "",
@@ -27,6 +25,30 @@ export default function ExamListPage() {
     questions: "all",
     duration: "all",
   })
+  const [page, setPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState(10)
+  const debouncedSearch = useDebounce(filters.search, 400)
+
+  const selectedExamType =
+    filters.tab !== "all"
+      ? filters.tab === "monthly"
+        ? "Monthly"
+        : filters.tab === "subject"
+        ? "Subject"
+        : "Course"
+      : filters.type !== "all"
+      ? filters.type
+      : undefined
+
+  const { data: response, isLoading, isError } = useExams({
+    page,
+    pageSize,
+    search: debouncedSearch,
+    examType: selectedExamType,
+    level: filters.level,
+  })
+
+  const updateExamMutation = useUpdateExam()
 
   // Modal states
   const [editingExam, setEditingExam] = React.useState<ApiExam | null>(null)
@@ -34,6 +56,7 @@ export default function ExamListPage() {
 
   const handleFilterChange = (key: keyof ExamFilterState, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
+    setPage(1)
   }
 
   const handleResetFilters = () => {
@@ -45,41 +68,17 @@ export default function ExamListPage() {
       questions: "all",
       duration: "all",
     })
+    setPage(1)
     toast.info("Filters reset to default")
   }
 
-  const allExams = React.useMemo(() => {
-    return Array.isArray(apiExams) ? apiExams : []
-  }, [apiExams])
+  const exams = response?.items || []
+  const totalCount = response?.totalCount ?? 0
+  const totalPages = response?.totalPages ?? 1
 
-  // Filter logic
+  // Filter logic for extra filters (questions count & duration)
   const filteredExams = React.useMemo(() => {
-    return allExams.filter((exam) => {
-      const examType = exam.examType || exam.type || "Monthly"
-
-      // Tab filter
-      if (filters.tab === "monthly" && examType !== "Monthly") return false
-      if (filters.tab === "subject" && examType !== "Subject") return false
-      if (filters.tab === "course" && examType !== "Course") return false
-
-      // Search query
-      if (filters.search.trim()) {
-        const q = filters.search.toLowerCase()
-        const matchTitle = (exam.title || "").toLowerCase().includes(q)
-        const matchSubject =
-          (exam.subjects && exam.subjects.join(" ").toLowerCase().includes(q)) ||
-          (exam.subject || "").toLowerCase().includes(q)
-        const matchCourse = (exam.courseName || "").toLowerCase().includes(q)
-        const matchYear = (exam.academicYear || "").toLowerCase().includes(q)
-        if (!matchTitle && !matchSubject && !matchCourse && !matchYear) return false
-      }
-
-      // Type filter
-      if (filters.type !== "all" && examType !== filters.type) return false
-
-      // Level filter
-      if (filters.level !== "all" && exam.level !== filters.level) return false
-
+    return exams.filter((exam) => {
       // Questions count filter
       const qCount =
         exam.questionCount !== undefined
@@ -101,17 +100,17 @@ export default function ExamListPage() {
 
       return true
     })
-  }, [allExams, filters])
+  }, [exams, filters.questions, filters.duration])
 
   // Tab counts
   const counts = React.useMemo(() => {
     return {
-      all: allExams.length,
-      monthly: allExams.filter((e) => (e.examType || e.type) === "Monthly").length,
-      subject: allExams.filter((e) => (e.examType || e.type) === "Subject").length,
-      course: allExams.filter((e) => (e.examType || e.type) === "Course").length,
+      all: totalCount,
+      monthly: totalCount,
+      subject: totalCount,
+      course: totalCount,
     }
-  }, [allExams])
+  }, [totalCount])
 
   // Action handlers
   const handleSaveExam = async (examData: Partial<ApiExam>) => {
@@ -161,6 +160,10 @@ export default function ExamListPage() {
             <strong className="font-bold text-zinc-900">
               {filteredExams.length}
             </strong>{" "}
+            of{" "}
+            <strong className="font-bold text-zinc-900">
+              {totalCount}
+            </strong>{" "}
             exams
           </span>
 
@@ -187,6 +190,18 @@ export default function ExamListPage() {
         ) : (
           <ExamTable
             exams={filteredExams}
+            pageSize={pageSize}
+            serverPagination={{
+              currentPage: page,
+              totalPages,
+              totalItems: totalCount,
+              onPageChange: (newPage) => setPage(newPage),
+              pageSizeOptions: [10, 20, 50],
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize)
+                setPage(1)
+              },
+            }}
             onEdit={(exam) => setEditingExam(exam)}
           />
         )}

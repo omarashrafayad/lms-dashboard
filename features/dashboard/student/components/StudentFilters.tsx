@@ -64,25 +64,6 @@ export function StudentFilters({
             </SelectContent>
           </Select>
 
-          {/* Grade Filter */}
-          <Select
-            value={filters.grade}
-            onValueChange={(val) => onFilterChange({ grade: val || "all" })}
-          >
-            <SelectTrigger className="h-9 px-3 min-w-[130px] rounded-xl border-zinc-200/80 bg-white text-xs font-medium text-zinc-600 shadow-2xs hover:bg-zinc-50">
-              <SelectValue placeholder="All Grades" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Grades</SelectItem>
-              <SelectItem value="Grade 5">Grade 5</SelectItem>
-              <SelectItem value="Grade 6">Grade 6</SelectItem>
-              <SelectItem value="Grade 7">Grade 7</SelectItem>
-              <SelectItem value="Grade 8">Grade 8</SelectItem>
-              <SelectItem value="Grade 10">Grade 10</SelectItem>
-              <SelectItem value="Grade 11">Grade 11</SelectItem>
-              <SelectItem value="Grade 12">Grade 12</SelectItem>
-            </SelectContent>
-          </Select>
 
           {/* System Filter */}
           <Select
@@ -94,9 +75,8 @@ export function StudentFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Systems</SelectItem>
+              <SelectItem value="International">International</SelectItem>
               <SelectItem value="National">National</SelectItem>
-              <SelectItem value="American">American</SelectItem>
-              <SelectItem value="IGCSE">IGCSE</SelectItem>
             </SelectContent>
           </Select>
 

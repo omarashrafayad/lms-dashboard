@@ -19,6 +19,7 @@ import {
   CreateSubjectPayload,
 } from "../types/curriculum.types"
 import { toast } from "sonner"
+import { useDebounce } from "@/hooks/useDebounce"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
@@ -33,20 +34,40 @@ const initialFilters: SubjectFilterState = {
 
 export default function CurriculumListPage() {
   const [filters, setFilters] = React.useState<SubjectFilterState>(initialFilters)
+  const [page, setPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState(10)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [subjectToEdit, setSubjectToEdit] = React.useState<CurriculumSubject | null>(null)
 
-  const { data: subjects = [], isLoading } = useCurriculumSubjects(filters)
+  const debouncedSearch = useDebounce(filters.search, 400)
+
+  const { data: response, isLoading } = useCurriculumSubjects({
+    page,
+    pageSize,
+    search: debouncedSearch,
+    stage: filters.stage,
+    year: filters.year,
+    system: filters.system,
+    term: filters.term,
+    subject: filters.subject,
+  })
+
+  const subjects = response?.items || []
+  const totalCount = response?.totalCount ?? 0
+  const totalPages = response?.totalPages ?? 1
+
   const createMutation = useCreateCurriculumSubject()
   const updateMutation = useUpdateCurriculumSubject()
   const deleteMutation = useDeleteCurriculumSubject()
 
   const handleFilterChange = (updated: Partial<SubjectFilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }))
+    setPage(1)
   }
 
   const handleResetFilters = () => {
     setFilters(initialFilters)
+    setPage(1)
   }
 
   const handleOpenAddModal = () => {
@@ -158,7 +179,7 @@ export default function CurriculumListPage() {
               Subjects
             </h2>
             <span className="text-xs text-zinc-400 font-normal">
-              {filteredSubjects.length} of {subjects.length} subjects shown
+              Showing {subjects.length} of {totalCount} subjects
             </span>
           </div>
 
@@ -182,9 +203,21 @@ export default function CurriculumListPage() {
         {/* Table / Loading */}
         {isLoading ? (
           <LoadingSpinner title="Loading Subjects" />
-        ) :  (
+        ) : (
           <CurriculumTable
-            data={filteredSubjects}
+            data={subjects}
+            pageSize={pageSize}
+            serverPagination={{
+              currentPage: page,
+              totalPages,
+              totalItems: totalCount,
+              onPageChange: (newPage) => setPage(newPage),
+              pageSizeOptions: [10, 20, 50],
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize)
+                setPage(1)
+              },
+            }}
             onEditSubject={handleOpenEditModal}
             onDeleteSubject={handleDeleteSubject}
           />

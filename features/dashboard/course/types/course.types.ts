@@ -145,6 +145,15 @@ export interface CourseFilterState {
   status: string
 }
 
+export interface CourseQueryParams {
+  search?: string
+  page?: number
+  pageSize?: number
+  category?: string
+  level?: string
+  status?: string
+}
+
 export interface CreateCourseLessonPayload {
   title: string
   type: CourseLessonType

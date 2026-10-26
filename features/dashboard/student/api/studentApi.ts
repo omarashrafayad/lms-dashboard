@@ -3,26 +3,27 @@ import {
   ApiStudent,
   CreateStudentPayload,
   UpdateStudentPayload,
+  StudentQueryParams,
 } from "../types/student.types";
+import { PaginatedResponse, normalizePaginatedResponse } from "@/types/pagination";
 
 export const getStudents = async (
-  params: { page?: number; limit?: number; search?: string } = {}
-): Promise<ApiStudent[]> => {
+  params: StudentQueryParams = {}
+): Promise<PaginatedResponse<ApiStudent>> => {
   const queryParams: Record<string, any> = {};
   if (params.page !== undefined) queryParams.page = params.page;
-  if (params.limit !== undefined) queryParams.limit = params.limit;
+  if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize;
   if (params.search && params.search.trim()) queryParams.search = params.search.trim();
+  if (params.stage && params.stage !== "all") queryParams.stage = params.stage;
+  if (params.grade && params.grade !== "all") queryParams.grade = params.grade;
+  if (params.system && params.system !== "all") queryParams.system = params.system;
+  if (params.status && params.status !== "all") queryParams.status = params.status;
 
   const res = await clientAxios.get("/students", {
     params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
   });
-  if (Array.isArray(res.data)) {
-    return res.data;
-  }
-  if (res.data && Array.isArray(res.data.data)) {
-    return res.data.data;
-  }
-  return [];
+
+  return normalizePaginatedResponse<ApiStudent>(res.data, params.page, params.pageSize);
 };
 
 export const createStudent = async (data: CreateStudentPayload) => {

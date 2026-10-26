@@ -24,8 +24,10 @@ export function SessionFilters({
   onChange,
   onReset,
 }: SessionFiltersProps) {
-  const { data: teachers = [] } = useTeachers()
-  const { data: students = [] } = useStudents()
+  const { data: teachersData } = useTeachers({ pageSize: 100 })
+  const teachers = Array.isArray(teachersData) ? teachersData : teachersData?.items || []
+  const { data: studentsData } = useStudents({ pageSize: 100 })
+  const students = Array.isArray(studentsData) ? studentsData : studentsData?.items || []
 
   return (
     <div className="flex flex-col gap-3">

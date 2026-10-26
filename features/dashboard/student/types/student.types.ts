@@ -1,6 +1,16 @@
 export type EducationStage = "Primary" | "Preparatory" | "Secondary"
 export type StudentStatus = "Active" | "Inactive"
 
+export interface StudentQueryParams {
+  search?: string
+  page?: number
+  pageSize?: number
+  stage?: string
+  grade?: string
+  system?: string
+  status?: string
+}
+
 export interface ApiStudent {
   id: string
   email: string

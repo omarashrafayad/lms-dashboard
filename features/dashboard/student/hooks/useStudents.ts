@@ -8,10 +8,14 @@ import {
   updateStudent,
   deleteStudent,
 } from "../api/studentApi";
-import { CreateStudentPayload, UpdateStudentPayload } from "../types/student.types";
+import {
+  CreateStudentPayload,
+  UpdateStudentPayload,
+  StudentQueryParams,
+} from "../types/student.types";
 
 export const useStudents = (
-  params: { page?: number; limit?: number; search?: string } = {},
+  params: StudentQueryParams = {},
   options?: { enabled?: boolean }
 ) => {
   return useQuery({

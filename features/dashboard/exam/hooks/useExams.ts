@@ -10,20 +10,10 @@ import {
   duplicateExamApi,
   getExamQuestions,
 } from "../api/examApi"
-import { CreateExamPayload, UpdateExamPayload } from "../types/exam.types"
+import { CreateExamPayload, UpdateExamPayload, ExamQueryParams } from "../types/exam.types"
 
 export const useExams = (
-  params: {
-    page?: number
-    pageSize?: number
-    search?: string
-    examType?: string
-    level?: string
-    status?: string
-    subject?: string
-    month?: string
-    academicYear?: string
-  } = {},
+  params: ExamQueryParams = {},
   options?: { enabled?: boolean }
 ) => {
   return useQuery({

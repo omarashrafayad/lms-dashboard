@@ -11,10 +11,11 @@ import {
 import {
   CreateCoursePayload,
   UpdateCoursePayload,
+  CourseQueryParams,
 } from "../types/course.types"
 
 export const useCourses = (
-  params: { page?: number; limit?: number; search?: string } = {},
+  params: CourseQueryParams = {},
   options?: { enabled?: boolean }
 ) => {
   return useQuery({

@@ -100,7 +100,8 @@ export default function ExamAddPage() {
   const [currentStep, setCurrentStep] = React.useState<number>(1)
 
   // 1. Fetch dynamic courses
-  const { data: courses = [], isLoading: isLoadingCourses } = useCourses()
+  const { data: coursesData, isLoading: isLoadingCourses } = useCourses({ pageSize: 100 })
+  const courses = Array.isArray(coursesData) ? coursesData : coursesData?.items || []
   const courseOptions = React.useMemo(() => {
     if (!Array.isArray(courses)) return []
     return courses.map((c: any) => ({
@@ -126,7 +127,8 @@ export default function ExamAddPage() {
   }, [academicStages])
 
   // 3. Fetch dynamic curriculum subjects
-  const { data: curriculumSubjects = [], isLoading: isLoadingSubjects } = useCurriculumSubjects()
+  const { data: curriculumSubjectsData, isLoading: isLoadingSubjects } = useCurriculumSubjects({ pageSize: 100 })
+  const curriculumSubjects = Array.isArray(curriculumSubjectsData) ? curriculumSubjectsData : curriculumSubjectsData?.items || []
 
   // Question drafts state
   const [questions, setQuestions] = React.useState<QuestionDraft[]>([

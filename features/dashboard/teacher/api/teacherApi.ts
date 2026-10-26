@@ -3,19 +3,26 @@ import {
   ApiTeacher,
   ApiSubject,
   ApiTeachingLevel,
+  TeacherQueryParams,
 } from "../types/teacher.types"
+import { PaginatedResponse, normalizePaginatedResponse } from "@/types/pagination"
 
 export const getTeachers = async (
-  params: { search?: string } = {}
-): Promise<ApiTeacher[]> => {
-  const res = await clientAxios.get("/teachers", { params })
-  if (Array.isArray(res.data)) {
-    return res.data
-  }
-  if (res.data && Array.isArray(res.data.data)) {
-    return res.data.data
-  }
-  return []
+  params: TeacherQueryParams = {}
+): Promise<PaginatedResponse<ApiTeacher>> => {
+  const queryParams: Record<string, any> = {}
+  if (params.page !== undefined) queryParams.page = params.page
+  if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize
+  if (params.search && params.search.trim()) queryParams.search = params.search.trim()
+  if (params.subject && params.subject !== "all") queryParams.subject = params.subject
+  if (params.status && params.status !== "all") queryParams.status = params.status
+  if (params.availability && params.availability !== "all") queryParams.availability = params.availability
+
+  const res = await clientAxios.get("/teachers", {
+    params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+  })
+
+  return normalizePaginatedResponse<ApiTeacher>(res.data, params.page, params.pageSize)
 }
 
 export const getTeacherById = async (teacherId: string): Promise<ApiTeacher> => {

@@ -3,29 +3,26 @@ import {
   ApiCourse,
   CreateCoursePayload,
   UpdateCoursePayload,
+  CourseQueryParams,
 } from "../types/course.types"
+import { PaginatedResponse, normalizePaginatedResponse } from "@/types/pagination"
 
 export const getCourses = async (
-  params: { page?: number; limit?: number; search?: string } = {}
-): Promise<ApiCourse[]> => {
+  params: CourseQueryParams = {}
+): Promise<PaginatedResponse<ApiCourse>> => {
   const queryParams: Record<string, any> = {}
   if (params.page !== undefined) queryParams.page = params.page
-  if (params.limit !== undefined) queryParams.limit = params.limit
+  if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize
   if (params.search && params.search.trim()) queryParams.search = params.search.trim()
+  if (params.category && params.category !== "all") queryParams.category = params.category
+  if (params.level && params.level !== "all") queryParams.level = params.level
+  if (params.status && params.status !== "all") queryParams.status = params.status
 
   const res = await clientAxios.get("/curriculum/courses", {
     params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
   })
-  if (Array.isArray(res.data)) {
-    return res.data
-  }
-  if (res.data && Array.isArray(res.data.data)) {
-    return res.data.data
-  }
-  if (res.data && Array.isArray(res.data.value)) {
-    return res.data.value
-  }
-  return []
+
+  return normalizePaginatedResponse<ApiCourse>(res.data, params.page, params.pageSize)
 }
 
 export const createCourse = async (

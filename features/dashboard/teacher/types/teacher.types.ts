@@ -11,6 +11,15 @@ export interface TeacherFilterState {
   time: string
 }
 
+export interface TeacherQueryParams {
+  search?: string
+  page?: number
+  pageSize?: number
+  subject?: string
+  status?: string
+  availability?: string
+}
+
 export interface ApiTeacherSpecialization {
   subjectId: string
   subjectName?: string | null

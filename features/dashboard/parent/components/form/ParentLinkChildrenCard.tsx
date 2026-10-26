@@ -37,8 +37,9 @@ export function ParentLinkChildrenCard({
   const [isSearching, setIsSearching] = React.useState(false)
   const searchContainerRef = React.useRef<HTMLDivElement>(null)
 
-  // Fetch all students without search param (client-side filtering)
-  const { data: apiStudents = [], isLoading: isLoadingStudents } = useStudents()
+  // Fetch students for linking (pageSize: 100 for dropdown)
+  const { data: studentsResponse, isLoading: isLoadingStudents } = useStudents({ pageSize: 100 })
+  const apiStudents = Array.isArray(studentsResponse) ? studentsResponse : studentsResponse?.items || []
 
   // Close dropdown on click outside
   React.useEffect(() => {
@@ -149,7 +150,7 @@ export function ParentLinkChildrenCard({
                     .trim()
                     .split(/\s+/)
                     .slice(0, 2)
-                    .map((n) => n[0]?.toUpperCase())
+                    .map((n: string) => n[0]?.toUpperCase())
                     .join("") || "ST"
 
                 const colorClass = COLOR_VARIANTS[idx % COLOR_VARIANTS.length]

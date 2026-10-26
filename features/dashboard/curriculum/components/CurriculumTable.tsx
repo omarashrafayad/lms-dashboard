@@ -12,12 +12,23 @@ export interface CurriculumTableProps {
   data: CurriculumSubject[]
   onEditSubject: (subject: CurriculumSubject) => void
   onDeleteSubject: (id: string) => void
+  serverPagination?: {
+    currentPage: number
+    totalPages: number
+    totalItems: number
+    onPageChange: (page: number) => void
+    pageSizeOptions?: number[]
+    onPageSizeChange?: (pageSize: number) => void
+  }
+  pageSize?: number
 }
 
 export function CurriculumTable({
   data,
   onEditSubject,
   onDeleteSubject,
+  serverPagination,
+  pageSize,
 }: CurriculumTableProps) {
   const columns = React.useMemo<UniTableColumn<CurriculumSubject>[]>(
     () => [
@@ -169,6 +180,9 @@ export function CurriculumTable({
         data={data}
         columns={columns}
         enablePagination={false}
+        serverPagination={serverPagination}
+        pageSize={pageSize}
+        itemLabel="subjects"
         emptyMessage={
           <EmptyState 
             title="No subjects found"

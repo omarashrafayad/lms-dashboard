@@ -61,18 +61,23 @@ export default function SessionSchedulePage() {
 
   // Queries for real entities
   const {
-    data: students = [],
+    data: studentsData,
     isLoading: isLoadingStudents,
     isError: isStudentsError,
-  } = useStudents()
+  } = useStudents({ pageSize: 100 })
+  const students = Array.isArray(studentsData) ? studentsData : studentsData?.items || []
+
   const {
-    data: teachers = [],
+    data: teachersData,
     isLoading: isLoadingTeachers,
     isError: isTeachersError,
-  } = useTeachers()
+  } = useTeachers({ pageSize: 100 })
+  const teachers = Array.isArray(teachersData) ? teachersData : teachersData?.items || []
+
   const { data: subjects = [], isLoading: isLoadingSubjects } =
     useTeacherSubjects()
-  const { data: courses = [], isLoading: isLoadingCourses } = useCourses()
+  const { data: coursesData, isLoading: isLoadingCourses } = useCourses({ pageSize: 100 })
+  const courses = Array.isArray(coursesData) ? coursesData : coursesData?.items || []
 
   // Search filters for steps
   const [studentSearch, setStudentSearch] = React.useState("")

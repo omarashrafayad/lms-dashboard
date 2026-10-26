@@ -12,6 +12,15 @@ import { BookOpen } from "lucide-react"
 export interface CourseTableProps {
   courses: ApiCourse[]
   isLoading?: boolean
+  serverPagination?: {
+    currentPage: number
+    totalPages: number
+    totalItems: number
+    onPageChange: (page: number) => void
+    pageSizeOptions?: number[]
+    onPageSizeChange?: (pageSize: number) => void
+  }
+  pageSize?: number
 }
 
 const AVATAR_COLORS = [
@@ -54,7 +63,7 @@ function formatDate(dateStr?: string): string {
   return "Recently"
 }
 
-export function CourseTable({ courses }: CourseTableProps) {
+export function CourseTable({ courses, serverPagination, pageSize }: CourseTableProps) {
   const getLevelBadge = (level?: string) => {
     switch (level?.toLowerCase()) {
       case "beginner":
@@ -232,6 +241,9 @@ export function CourseTable({ courses }: CourseTableProps) {
         data={courses}
         columns={columns}
         enablePagination={false}
+        serverPagination={serverPagination}
+        pageSize={pageSize}
+        itemLabel="courses"
         emptyMessage={
           <EmptyState
             icon={BookOpen}
