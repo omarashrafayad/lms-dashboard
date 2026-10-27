@@ -4,13 +4,28 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { SessionItem, SessionStatus, PaymentStatus } from "../../types/session.types"
 import { SessionRowActions } from "./SessionRowActions"
+import { Pagination } from "@/components/shared/Pagination"
 
 export interface SessionTableProps {
   sessions: SessionItem[]
   isLoading?: boolean
+  serverPagination?: {
+    currentPage: number
+    totalPages: number
+    totalItems: number
+    onPageChange: (page: number) => void
+    pageSizeOptions?: number[]
+    onPageSizeChange?: (pageSize: number) => void
+  }
+  pageSize?: number
 }
 
-export function SessionTable({ sessions, isLoading = false }: SessionTableProps) {
+export function SessionTable({
+  sessions,
+  isLoading = false,
+  serverPagination,
+  pageSize = 10,
+}: SessionTableProps) {
   const router = useRouter()
 
   const getStatusBadge = (status: string) => {
@@ -201,6 +216,21 @@ export function SessionTable({ sessions, isLoading = false }: SessionTableProps)
           </tbody>
         </table>
       </div>
+
+      {serverPagination && (
+        <div className="border-t border-zinc-200/80 p-4">
+          <Pagination
+            currentPage={serverPagination.currentPage}
+            totalPages={serverPagination.totalPages}
+            totalItems={serverPagination.totalItems}
+            pageSize={pageSize}
+            onPageChange={serverPagination.onPageChange}
+            itemLabel="sessions"
+            pageSizeOptions={serverPagination.pageSizeOptions}
+            onPageSizeChange={serverPagination.onPageSizeChange}
+          />
+        </div>
+      )}
     </div>
   )
 }

@@ -7,9 +7,7 @@ import {
   Mail,
   UserCheck,
   Clock,
-  CheckCircle2,
   Copy,
-  ExternalLink,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"

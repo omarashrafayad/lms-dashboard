@@ -20,17 +20,6 @@ export interface TeacherFiltersProps {
   onReset: () => void
 }
 
-const FALLBACK_SUBJECTS = [
-  "Mathematics",
-  "English",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "Computer Science",
-  "Arabic",
-  "History",
-]
-
 export function TeacherFilters({
   filters,
   onFilterChange,
@@ -40,9 +29,9 @@ export function TeacherFilters({
 
   const subjectsList = React.useMemo(() => {
     if (subjectsData && Array.isArray(subjectsData) && subjectsData.length > 0) {
-      return subjectsData.map((s) => s.name)
+      return Array.from(new Set(subjectsData.map((s) => s.name).filter(Boolean)))
     }
-    return FALLBACK_SUBJECTS
+    return []
   }, [subjectsData])
 
   return (
@@ -106,25 +95,7 @@ export function TeacherFilters({
             <SelectContent>
               <SelectItem value="all">All Availability</SelectItem>
               <SelectItem value="Available">Available</SelectItem>
-              <SelectItem value="Busy">Busy</SelectItem>
-              <SelectItem value="Offline">Offline</SelectItem>
               <SelectItem value="Unavailable">Unavailable</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Time Filter */}
-          <Select
-            value={filters.time}
-            onValueChange={(val) => onFilterChange({ time: val || "all" })}
-          >
-            <SelectTrigger className="h-9 px-3 min-w-[130px] rounded-xl border-zinc-200/80 bg-white text-xs font-medium text-zinc-600 shadow-2xs hover:bg-zinc-50">
-              <SelectValue placeholder="Any Time" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any Time</SelectItem>
-              <SelectItem value="Morning">Morning</SelectItem>
-              <SelectItem value="Afternoon">Afternoon</SelectItem>
-              <SelectItem value="Evening">Evening</SelectItem>
             </SelectContent>
           </Select>
         </div>

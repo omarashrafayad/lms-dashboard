@@ -11,6 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  useAcademicStages,
+  useEducationSystems,
+} from "@/features/dashboard/reference-data/hooks/useReferenceData"
 
 export interface FilterState {
   search: string
@@ -31,6 +35,9 @@ export function StudentFilters({
   onFilterChange,
   onReset,
 }: StudentFiltersProps) {
+  const { data: stages = [] } = useAcademicStages()
+  const { data: systems = [] } = useEducationSystems()
+
   return (
     <div className="p-4 rounded-2xl bg-white border border-zinc-200/80 shadow-2xs flex flex-col gap-3">
       {/* Top: Full width Search Input with Icon */}
@@ -58,12 +65,13 @@ export function StudentFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Stages</SelectItem>
-              <SelectItem value="Primary">Primary</SelectItem>
-              <SelectItem value="Preparatory">Preparatory</SelectItem>
-              <SelectItem value="Secondary">Secondary</SelectItem>
+              {stages.map((st) => (
+                <SelectItem key={st.id} value={st.name}>
+                  {st.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-
 
           {/* System Filter */}
           <Select
@@ -75,8 +83,11 @@ export function StudentFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Systems</SelectItem>
-              <SelectItem value="International">International</SelectItem>
-              <SelectItem value="National">National</SelectItem>
+              {systems.map((sys) => (
+                <SelectItem key={sys.id} value={sys.name}>
+                  {sys.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 

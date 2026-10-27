@@ -36,8 +36,10 @@ export function normalizePaginatedResponse<T>(
 
   // Raw array response fallback
   if (Array.isArray(resData)) {
+    const startIndex = (defaultPage - 1) * defaultPageSize
+    const items = resData.slice(startIndex, startIndex + defaultPageSize)
     return {
-      items: resData,
+      items,
       totalCount: resData.length,
       page: defaultPage,
       pageSize: defaultPageSize,

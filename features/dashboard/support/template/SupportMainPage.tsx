@@ -3,7 +3,7 @@
 import * as React from "react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { Button } from "@/components/ui/button"
-import { Plus, LifeBuoy, RefreshCw } from "lucide-react"
+import { Plus } from "lucide-react"
 import { SupportStatsCards } from "../components/SupportStatsCards"
 import { SupportNavTabs } from "../components/SupportNavTabs"
 import { SupportTicketsTable } from "../components/Tickets/SupportTicketsTable"

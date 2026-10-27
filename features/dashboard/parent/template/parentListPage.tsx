@@ -15,10 +15,6 @@ import GlobalError from "@/components/shared/globalerror"
 
 const initialFilters: ParentFilterState = {
   search: "",
-  status: "all",
-  hasLinkedChildren: "all",
-  subscriptionStatus: "all",
-  registrationDate: "all",
 }
 
 export default function ParentListPage() {
@@ -42,7 +38,6 @@ export default function ParentListPage() {
     page,
     pageSize,
     search: debouncedSearch,
-    status: filters.status,
   })
 
   const apiParents = response?.items || []

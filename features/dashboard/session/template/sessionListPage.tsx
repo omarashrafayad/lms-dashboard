@@ -10,6 +10,7 @@ import { SessionFilters } from "../components/list/SessionFilters"
 import { SessionTable } from "../components/list/SessionTable"
 import { useSessions } from "../hooks/useSessions"
 import { SessionFilterState } from "../types/session.types"
+import { useDebounce } from "@/hooks/useDebounce"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 
@@ -22,11 +23,13 @@ export default function SessionListPage() {
     teacher: "all",
     student: "all",
   })
-
-  const { data: rawSessions = [], isLoading, isError } = useSessions()
+  const [page, setPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState(10)
+  const debouncedSearch = useDebounce(filters.search, 400)
 
   const handleFilterChange = (key: keyof SessionFilterState, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
+    setPage(1)
   }
 
   const handleResetFilters = () => {
@@ -38,73 +41,32 @@ export default function SessionListPage() {
       teacher: "all",
       student: "all",
     })
+    setPage(1)
   }
 
-  const filteredSessions = React.useMemo(() => {
-    if (!Array.isArray(rawSessions)) return []
+  const { data: response, isLoading, isError } = useSessions({
+    page,
+    pageSize,
+    search: debouncedSearch,
+    status: filters.status !== "all" ? filters.status : undefined,
+    date: filters.date !== "all" ? filters.date : undefined,
+    teacher: filters.teacher !== "all" ? filters.teacher : undefined,
+    student: filters.student !== "all" ? filters.student : undefined,
+    statusTab: filters.statusTab !== "All" ? filters.statusTab : undefined,
+  })
 
-    return rawSessions.filter((session) => {
-      // Search
-      if (filters.search.trim()) {
-        const q = filters.search.toLowerCase()
-        const matchesStudent = session.studentName?.toLowerCase().includes(q)
-        const matchesTeacher = session.teacherName?.toLowerCase().includes(q)
-        const matchesSubject = (session.subject || session.subjectOrCourse)?.toLowerCase().includes(q)
-        const matchesNum = (session.sessionNumber || session.sessionId || session.sessionCode || session.id)?.toLowerCase().includes(q)
-        if (!matchesStudent && !matchesTeacher && !matchesSubject && !matchesNum) {
-          return false
-        }
-      }
-
-      // Status Tab
-      if (filters.statusTab && filters.statusTab !== "All") {
-        const sessionStatus = (session.status || session.sessionStatus || "").toLowerCase()
-        if (filters.statusTab === "Today") {
-          const todayStr = new Date().toDateString()
-          const sessionDateStr = session.date ? new Date(session.date).toDateString() : ""
-          if (sessionDateStr !== todayStr && !session.date?.toLowerCase().includes("today")) {
-            return false
-          }
-        } else if (sessionStatus !== filters.statusTab.toLowerCase()) {
-          return false
-        }
-      }
-
-      // Status dropdown
-      if (filters.status !== "all") {
-        const sessionStatus = (session.status || session.sessionStatus || "").toLowerCase()
-        if (sessionStatus !== filters.status.toLowerCase()) {
-          return false
-        }
-      }
-
-      // Teacher dropdown
-      if (filters.teacher !== "all") {
-        if (session.teacherName?.toLowerCase() !== filters.teacher.toLowerCase()) {
-          return false
-        }
-      }
-
-      // Student dropdown
-      if (filters.student !== "all") {
-        if (session.studentName?.toLowerCase() !== filters.student.toLowerCase()) {
-          return false
-        }
-      }
-
-      return true
-    })
-  }, [rawSessions, filters])
+  const sessions = response?.items || []
+  const totalCount = response?.totalCount ?? 0
+  const totalPages = response?.totalPages ?? 1
 
   // Calculate metrics based on total data
-  const totalCount = filteredSessions.length
-  const upcomingCount = filteredSessions.filter(
+  const upcomingCount = sessions.filter(
     (s) => (s.status || s.sessionStatus) === "Upcoming"
   ).length
-  const inProgressCount = filteredSessions.filter(
+  const inProgressCount = sessions.filter(
     (s) => (s.status || s.sessionStatus) === "In Progress"
   ).length
-  const completedCount = filteredSessions.filter(
+  const completedCount = sessions.filter(
     (s) => (s.status || s.sessionStatus) === "Completed"
   ).length
 
@@ -153,7 +115,22 @@ export default function SessionListPage() {
         ) : isError ? (
           <GlobalError />
         ) : (
-          <SessionTable sessions={filteredSessions} isLoading={false} />
+          <SessionTable
+            sessions={sessions}
+            isLoading={false}
+            pageSize={pageSize}
+            serverPagination={{
+              currentPage: page,
+              totalPages,
+              totalItems: totalCount,
+              onPageChange: (newPage) => setPage(newPage),
+              pageSizeOptions: [10, 20, 50],
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize)
+                setPage(1)
+              },
+            }}
+          />
         )}
       </main>
     </div>

@@ -164,7 +164,7 @@ export interface SubjectFilterState {
   year: string
   system: string
   term: string
-  subject: string
+  subject?: string
 }
 
 export interface CurriculumSubjectQueryParams {

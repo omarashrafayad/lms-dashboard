@@ -52,19 +52,25 @@ export const getSubjects = async (): Promise<ApiSubject[]> => {
   if (Array.isArray(res.data)) {
     return res.data
   }
+  if (res.data && Array.isArray(res.data.items)) {
+    return res.data.items
+  }
   if (res.data && Array.isArray(res.data.data)) {
     return res.data.data
+  }
+  if (res.data && Array.isArray(res.data.value)) {
+    return res.data.value
   }
   return []
 }
 
 export const getTeachingLevels = async (): Promise<ApiTeachingLevel[]> => {
   const res = await clientAxios.get("/teaching-levels")
-  if (Array.isArray(res.data)) {
-    return res.data
+  if (Array.isArray(res.data.items)) {
+    return res.data.items
   }
-  if (res.data && Array.isArray(res.data.data)) {
-    return res.data.data
+  if (res.data && Array.isArray(res.data.items)) {
+    return res.data.items
   }
   return []
 }

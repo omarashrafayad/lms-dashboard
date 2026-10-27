@@ -13,10 +13,9 @@ import GlobalError from "@/components/shared/globalerror"
 
 const initialFilters: TeacherFilterState = {
   search: "",
-  subject: "all",
-  status: "all",
-  availability: "all",
-  time: "all",
+  subject: "",
+  status: "",
+  availability: "",
 }
 
 export default function TeacherListPage() {

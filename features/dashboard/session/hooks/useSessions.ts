@@ -14,15 +14,16 @@ import {
   ScheduleSessionPayload,
   UpdateSessionPayload,
   SessionFilterState,
+  SessionQueryParams,
 } from "../types/session.types"
 
 export const useSessions = (
-  filters?: Partial<SessionFilterState>,
+  params: SessionQueryParams = {},
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ["sessions", filters],
-    queryFn: () => getSessionList(),
+    queryKey: ["sessions", params],
+    queryFn: () => getSessionList(params),
     ...options,
   })
 }
