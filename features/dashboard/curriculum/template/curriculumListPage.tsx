@@ -25,11 +25,10 @@ import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 const initialFilters: SubjectFilterState = {
   search: "",
-  stage: "all",
-  year: "all",
-  system: "all",
-  term: "all",
-  subject: "all",
+  stage: "",
+  year: "",
+  system: "",
+  term: "",
 }
 
 export default function CurriculumListPage() {
@@ -49,7 +48,6 @@ export default function CurriculumListPage() {
     year: filters.year,
     system: filters.system,
     term: filters.term,
-    subject: filters.subject,
   })
 
   const subjects = response?.items || []
@@ -103,65 +101,6 @@ export default function CurriculumListPage() {
       toast.error(getErrorMessage(error))
     }
   }
-
-  const filteredSubjects = React.useMemo(() => {
-    if (!subjects) return []
-    return subjects.filter((subject) => {
-      const stageName = subject.educationStageName || subject.stage || ""
-      const gradeName = subject.gradeName || subject.year || ""
-      const systemName = subject.educationSystemName || subject.system || ""
-      const termName = subject.term || ""
-      const subjectName = subject.name || ""
-
-      if (filters.search.trim()) {
-        const query = filters.search.toLowerCase()
-        const matchName = subjectName.toLowerCase().includes(query)
-        const matchStage = stageName.toLowerCase().includes(query)
-        const matchYear = gradeName.toLowerCase().includes(query)
-        const matchSystem = systemName.toLowerCase().includes(query)
-        if (!matchName && !matchStage && !matchYear && !matchSystem) {
-          return false
-        }
-      }
-
-      if (
-        filters.stage !== "all" &&
-        stageName.toLowerCase() !== filters.stage.toLowerCase()
-      ) {
-        return false
-      }
-
-      if (
-        filters.year !== "all" &&
-        gradeName.toLowerCase() !== filters.year.toLowerCase()
-      ) {
-        return false
-      }
-
-      if (
-        filters.system !== "all" &&
-        systemName.toLowerCase() !== filters.system.toLowerCase()
-      ) {
-        return false
-      }
-
-      if (
-        filters.term !== "all" &&
-        termName.toLowerCase() !== filters.term.toLowerCase()
-      ) {
-        return false
-      }
-
-      if (
-        filters.subject !== "all" &&
-        subjectName.toLowerCase() !== filters.subject.toLowerCase()
-      ) {
-        return false
-      }
-
-      return true
-    })
-  }, [subjects, filters])
 
   return (
     <div className="flex flex-col min-h-full">

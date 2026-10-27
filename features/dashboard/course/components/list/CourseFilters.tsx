@@ -29,9 +29,9 @@ export function CourseFilters({ filters, onChange, onReset }: CourseFiltersProps
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div className="flex flex-col gap-3">
         {/* Search input */}
-        <div className="relative sm:col-span-2 md:col-span-1 lg:col-span-2">
+        <div className="relative w-full">
           <input
             type="text"
             value={filters.search}
@@ -41,6 +41,8 @@ export function CourseFilters({ filters, onChange, onReset }: CourseFiltersProps
           />
         </div>
 
+      <div className="flex justify-between items-center gap-2"> 
+        <div className="flex gap-3">
         {/* Category Filter */}
         <Select
           value={filters.category}
@@ -94,23 +96,17 @@ export function CourseFilters({ filters, onChange, onReset }: CourseFiltersProps
 
       {/* Active Filter Indicators & Reset */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs text-zinc-400">
-          {(filters.search ||
-            filters.category !== "all" ||
-            filters.level !== "all" ||
-            filters.status !== "all") && (
-            <span>Filtered results active</span>
-          )}
-        </div>
 
         <button
           type="button"
           onClick={onReset}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900 rounded-xl hover:bg-zinc-100 transition-colors cursor-pointer self-end"
-        >
+          >
           <RotateCcw className="size-3" />
           <span>Reset filters</span>
         </button>
+          </div>
+      </div>
       </div>
     </div>
   )

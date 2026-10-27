@@ -8,7 +8,6 @@ export interface TeacherFilterState {
   subject: string
   status: string
   availability: string
-  time: string
 }
 
 export interface TeacherQueryParams {

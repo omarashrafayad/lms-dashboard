@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { CourseMetricsCards } from "../components/list/CourseMetricsCards"
@@ -16,10 +15,10 @@ import GlobalError from "@/components/shared/globalerror"
 
 const initialFilters: CourseFilterState = {
   search: "",
-  category: "all",
-  level: "all",
-  duration: "all",
-  status: "all",
+  category: "",
+  level: "",
+  duration: "",
+  status: "",
 }
 
 export default function CourseListPage() {

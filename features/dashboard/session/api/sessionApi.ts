@@ -4,20 +4,27 @@ import {
   ScheduleSessionPayload,
   UpdateSessionPayload,
   TeacherSlotItem,
+  SessionQueryParams,
 } from "../types/session.types"
+import { PaginatedResponse, normalizePaginatedResponse } from "@/types/pagination"
 
-export const getSessionList = async (): Promise<SessionItem[]> => {
-  const res = await clientAxios.get("/curriculum/sessions/getall")
-  if (Array.isArray(res.data)) {
-    return res.data
-  }
-  if (res.data && Array.isArray(res.data.data)) {
-    return res.data.data
-  }
-  if (res.data && Array.isArray(res.data.value)) {
-    return res.data.value
-  }
-  return []
+export const getSessionList = async (
+  params: SessionQueryParams = {}
+): Promise<PaginatedResponse<SessionItem>> => {
+  const queryParams: Record<string, any> = {}
+  if (params.page !== undefined) queryParams.page = params.page
+  if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize
+  if (params.search && params.search.trim()) queryParams.search = params.search.trim()
+  if (params.status && params.status !== "all") queryParams.status = params.status
+  if (params.date && params.date !== "all") queryParams.date = params.date
+  if (params.teacher && params.teacher !== "all") queryParams.teacher = params.teacher
+  if (params.student && params.student !== "all") queryParams.student = params.student
+
+  const res = await clientAxios.get("/curriculum/sessions/getall", {
+    params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+  })
+
+  return normalizePaginatedResponse<SessionItem>(res.data, params.page, params.pageSize)
 }
 
 export const getSessions = getSessionList

@@ -148,6 +148,17 @@ export interface SessionFilterState {
   student: string
 }
 
+export interface SessionQueryParams {
+  search?: string
+  page?: number
+  pageSize?: number
+  status?: string
+  date?: string
+  teacher?: string
+  student?: string
+  statusTab?: string
+}
+
 export interface ScheduleSessionPayload {
   studentId: string
   studentName?: string

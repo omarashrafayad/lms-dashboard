@@ -20,10 +20,10 @@ export interface Parent {
 
 export interface ParentFilterState {
   search: string
-  status: string
-  hasLinkedChildren: string
-  subscriptionStatus: string
-  registrationDate: string
+  status?: string
+  hasLinkedChildren?: string
+  subscriptionStatus?: string
+  registrationDate?: string
 }
 
 export interface ParentQueryParams {
