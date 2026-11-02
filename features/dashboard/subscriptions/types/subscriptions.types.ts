@@ -1,6 +1,6 @@
-export type PlanTier = "Starter" | "Standard" | "Premium" | "VIP"
-export type BillingCycle = "monthly" | "quarterly" | "annual" | "term"
-export type Currency = "EGP" | "USD"
+export type PlanTier = "Starter" | "Standard" | "Premium" | "VIP" | string
+export type BillingCycle = "Monthly" | "Annual" | "Quarterly" | "monthly" | "annually" | string
+export type Currency = "EGP" | "USD" | string
 export type SubscriptionStatus =
   | "Active"
   | "Trial"
@@ -8,6 +8,8 @@ export type SubscriptionStatus =
   | "Expired"
   | "Canceled"
   | "Paused"
+  | string
+
 export type PaymentMethod =
   | "Visa / Mastercard"
   | "Vodafone Cash"
@@ -15,89 +17,10 @@ export type PaymentMethod =
   | "Fawry"
   | "Bank Transfer"
   | "Cash / Front Desk"
-export type TransactionStatus = "Paid" | "Pending" | "Failed" | "Refunded"
-export type PaymentRequestStatus = "Pending" | "Approved" | "Rejected"
+  | string
 
-export interface PlanFeature {
-  text: string
-  included: boolean
-  highlight?: boolean
-}
-
-export interface SubscriptionPlan {
-  id: string
-  name: string
-  slug: string
-  tagline: string
-  description: string
-  tier: PlanTier
-  badge?: string
-  priceMonthly: number
-  priceAnnually: number
-  currency: Currency
-  billingCycle: BillingCycle
-  targetGrade: string
-  features: PlanFeature[]
-  limits: {
-    liveSessionsPerMonth: number
-    recordedCoursesAccess: "None" | "Standard" | "Unlimited"
-    practiceExamsAccess: "None" | "Limited" | "Unlimited"
-    supportPriority: "Standard" | "Priority" | "24/7 Dedicated"
-    parentReports: boolean
-  }
-  isPopular?: boolean
-  isActive: boolean
-  subscribersCount: number
-  totalRevenueFormatted: string
-}
-
-export interface SubscriberItem {
-  id: string
-  subscriptionCode: string
-  studentId: string
-  studentName: string
-  studentCode: string
-  studentGrade: string
-  studentAvatarColor: string
-  parentName: string
-  parentPhone: string
-  planId: string
-  planName: string
-  planTier: PlanTier
-  billingCycle: "Monthly" | "Quarterly" | "Annual"
-  status: SubscriptionStatus
-  startDate: string
-  renewalDate: string
-  amount: number
-  currency: Currency
-  paymentMethod: PaymentMethod
-  autoRenew: boolean
-  remainingDays: number
-}
-
-export interface TransactionItem {
-  id: string
-  transactionId: string
-  invoiceNumber: string
-  payerName: string
-  payerRole: "Parent" | "Student"
-  payerEmail: string
-  payerPhone: string
-  studentName: string
-  studentGrade: string
-  planOrItem: string
-  type: "Subscription" | "Session Booking" | "Course Pack" | "Exam Pass"
-  amount: number
-  discount: number
-  fee: number
-  netAmount: number
-  currency: Currency
-  paymentMethod: PaymentMethod
-  gatewayReference: string
-  status: TransactionStatus
-  date: string
-  notes?: string
-}
+export type TransactionStatus = "Paid" | "Pending" | "Failed" | "Refunded" | string
+export type PaymentRequestStatus = "Pending" | "Approved" | "Rejected" | string
 
 export interface PaymentRequestItem {
   id: string
@@ -108,7 +31,7 @@ export interface PaymentRequestItem {
   studentGrade: string
   planName: string
   planId: string
-  method: "Vodafone Cash" | "InstaPay" | "Bank Transfer"
+  method: string
   transferReference: string
   amount: number
   currency: Currency
@@ -119,27 +42,244 @@ export interface PaymentRequestItem {
   reviewedBy?: string
 }
 
-export interface SubscriptionsFinancialStats {
-  mrr: number
-  mrrFormatted: string
-  mrrGrowth: string
-  totalRevenue: number
-  totalRevenueFormatted: string
-  activeSubscribers: number
-  activeSubscribersGrowth: string
-  expiringIn7Days: number
-  pendingRequestsCount: number
-  successRate: string
-  avgRevenuePerUser: string
-  currency: Currency
+// --- Backend Plan Feature ---
+export interface ApiPlanFeature {
+  id?: string
+  label?: string
+  isIncluded?: boolean
+  order?: number
+  // frontend compatibility
+  text?: string
+  included?: boolean
+  highlight?: boolean
 }
 
+// --- Backend Plan Response (Billing_PlanResponse) ---
+export interface ApiPlan {
+  id: string
+  name: string
+  tier: string
+  tagline?: string
+  targetGradeLevel?: string
+  gradeScope?: string
+  gradeLabel?: string
+  monthlyPrice: number
+  annualPrice: number
+  badgeLabel?: string
+  liveSessionsPerMonth: number
+  examAccess?: string
+  supportLevel?: string
+  isActive?: boolean
+  order?: number
+  features?: ApiPlanFeature[]
+  activeSubscribers?: number
+  monthlyRecurringRevenue?: number
+
+  // Compatibility helpers
+  slug?: string
+  description?: string
+  badge?: string
+  priceMonthly?: number
+  priceAnnually?: number
+  currency?: Currency
+  billingCycle?: BillingCycle
+  targetGrade?: string
+  subscribersCount?: number
+  totalRevenueFormatted?: string
+  limits?: {
+    liveSessionsPerMonth: number
+    recordedCoursesAccess: string
+    practiceExamsAccess: string
+    supportPriority: string
+    parentReports: boolean
+  }
+}
+
+export type SubscriptionPlan = ApiPlan
+
+// --- Backend Plan Creation / Update Payloads ---
+export interface CreatePlanPayload {
+  name: string
+  tier: string
+  tagline?: string
+  targetGradeLevel?: string
+  gradeScope?: string
+  monthlyPrice: number
+  annualPrice: number
+  badgeLabel?: string
+  liveSessionsPerMonth: number
+  examAccess?: string
+  supportLevel?: string
+  features?: string[]
+}
+
+export interface UpdatePlanPayload extends Partial<CreatePlanPayload> {
+  isActive?: boolean
+  order?: number
+}
+
+// --- Backend Subscription Response (Billing_SubscriptionResponse) ---
+export interface ApiSubscription {
+  id: string
+  studentId: string
+  studentName?: string
+  studentGrade?: string
+  parentId?: string
+  parentName?: string
+  parentPhone?: string
+  planId: string
+  planName?: string
+  tier?: string
+  billingCycle?: string
+  status?: string
+  startsAt: string
+  expiresAt: string
+  daysRemaining: number
+  amountCharged: number
+  autoRenew: boolean
+  notes?: string
+
+  // Compatibility aliases
+  subscriptionCode?: string
+  studentCode?: string
+  studentAvatarColor?: string
+  planTier?: PlanTier
+  startDate?: string
+  renewalDate?: string
+  amount?: number
+  currency?: Currency
+  paymentMethod?: PaymentMethod
+  remainingDays?: number
+}
+
+export type SubscriberItem = ApiSubscription
+
+// --- Backend Assign Plan Payload ---
+export interface AssignPlanPayload {
+  studentId: string
+  studentName?: string
+  planId: string
+  billingCycle: string
+  studentGrade?: string
+  // parentId?: string
+  parentName?: string
+  parentPhone?: string
+  autoRenew: boolean
+  notes?: string
+}
+
+// --- Backend Payment Response (Billing_PaymentResponse) ---
+export interface ApiPayment {
+  id: string
+  invoiceNumber?: string
+  reference?: string
+  subscriptionId?: string
+  planId?: string
+  planName?: string
+  studentId?: string
+  studentName?: string
+  studentGrade?: string
+  payerName?: string
+  itemDescription?: string
+  itemKind?: string
+  amount: number
+  discountAmount?: number
+  couponCode?: string
+  method?: string
+  methodDisplay?: string
+  status?: string
+  gatewayReference?: string
+  paidAt: string
+  reviewedAt?: string
+  reviewedBy?: string
+  reviewNote?: string
+
+  // Compatibility aliases
+  transactionId?: string
+  payerRole?: "Parent" | "Student"
+  payerEmail?: string
+  payerPhone?: string
+  planOrItem?: string
+  type?: string
+  discount?: number
+  fee?: number
+  netAmount?: number
+  currency?: Currency
+  paymentMethod?: PaymentMethod
+  date?: string
+  notes?: string
+}
+
+export type TransactionItem = ApiPayment
+
+export interface PaginatedPaymentsResponse {
+  items: ApiPayment[]
+  page: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+}
+
+export interface RecordPaymentPayload {
+  subscriptionId?: string
+  planId?: string
+  studentId?: string
+  studentName?: string
+  studentGrade?: string
+  payerName?: string
+  itemDescription?: string
+  itemKind?: string
+  amount: number
+  discountAmount?: number
+  couponCode?: string
+  method?: string
+  gatewayReference?: string
+  paidAt?: string
+}
+
+export interface ReviewPaymentPayload {
+  approve: boolean
+  note?: string
+}
+
+// --- Backend Summary Response (Billing_BillingSummaryResponse) ---
+export interface BillingSummaryResponse {
+  monthlyRecurringRevenue: number
+  monthlyRecurringRevenueThirtyDaysAgo: number
+  monthlyRecurringRevenueChangePercent: number
+  activePaidStudents: number
+  newSubscriptionsThisMonth: number
+  expiringSoonStudents: number
+  totalProcessedVolume: number
+  paymentSuccessRatePercent: number
+  awaitingReviewCount: number
+  awaitingReviewAmount: number
+  awaitingReviewMethods?: string[]
+
+  // Compatibility aliases
+  mrr?: number
+  mrrFormatted?: string
+  mrrGrowth?: string
+  totalRevenue?: number
+  totalRevenueFormatted?: string
+  activeSubscribers?: number
+  activeSubscribersGrowth?: string
+  expiringIn7Days?: number
+  pendingRequestsCount?: number
+  successRate?: string
+  avgRevenuePerUser?: string
+  currency?: Currency
+}
+
+export type SubscriptionsFinancialStats = BillingSummaryResponse
+
+// --- Filters ---
 export interface SubscribersFilterState {
   search: string
   status: "all" | SubscriptionStatus
   planId: "all" | string
   grade: "all" | string
-  renewal: "all" | "next7days" | "thisMonth"
+  expiringWithinDays?: number
 }
 
 export interface TransactionsFilterState {
@@ -147,11 +287,9 @@ export interface TransactionsFilterState {
   status: "all" | TransactionStatus
   paymentMethod: "all" | PaymentMethod
   type: "all" | string
-  dateRange: "all" | "today" | "week" | "month"
 }
 
-export interface PaymentRequestsFilterState {
-  search: string
-  method: "all" | string
-  status: "all" | PaymentRequestStatus
+export interface PlansFilterState {
+  tier?: string
+  includeInactive?: boolean
 }

@@ -1,16 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Search, RotateCcw } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Search, SlidersHorizontal, RotateCcw } from "lucide-react"
+import { FilterDropdown, FilterOption } from "@/components/shared/FilterDropdown"
 import { TeacherFilterState } from "../types/teacher.types"
 import { useTeacherSubjects } from "../hooks/useTeachers"
 
@@ -25,6 +17,7 @@ export function TeacherFilters({
   onFilterChange,
   onReset,
 }: TeacherFiltersProps) {
+  const [openDropdown, setOpenDropdown] = React.useState<string | null>(null)
   const { data: subjectsData } = useTeacherSubjects()
 
   const subjectsList = React.useMemo(() => {
@@ -34,83 +27,96 @@ export function TeacherFilters({
     return []
   }, [subjectsData])
 
+  const subjectOptions: FilterOption[] = React.useMemo(() => {
+    return [
+      { label: "All Subjects", value: "all" },
+      ...subjectsList.map((subjectName) => ({
+        label: subjectName,
+        value: subjectName,
+      })),
+    ]
+  }, [subjectsList])
+
+  const statusOptions: FilterOption[] = [
+    { label: "All Status", value: "all" },
+    { label: "Active", value: "Active" },
+    { label: "Inactive", value: "Inactive" },
+  ]
+
+  const availabilityOptions: FilterOption[] = [
+    { label: "All Availability", value: "all" },
+    { label: "Available", value: "Available" },
+    { label: "Unavailable", value: "Unavailable" },
+  ]
+
   return (
-    <div className="p-4 rounded-2xl bg-white border border-zinc-200/80 shadow-2xs flex flex-col gap-3">
-      {/* Top: Full width Search Input with Icon */}
-      <div className="relative w-full">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
-        <Input
-          type="text"
-          value={filters.search}
-          onChange={(e) => onFilterChange({ search: e.target.value })}
-          placeholder="Search by teacher name, email, or subject..."
-          className="h-10 pl-10 pr-4 rounded-xl border-zinc-200/80 bg-zinc-50/50 text-sm placeholder:text-zinc-400 focus-visible:ring-brand-orange/20 focus-visible:border-brand-orange transition-all"
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Left: Search input + dropdowns */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Search Teachers input */}
+        <div className="relative w-64 md:w-72">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
+          <input
+            type="text"
+            value={filters.search}
+            onChange={(e) => onFilterChange({ search: e.target.value })}
+            placeholder="Search teachers..."
+            className="w-full h-10 pl-9 pr-3 text-xs bg-white border border-zinc-200/90 rounded-xl text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors shadow-2xs"
+          />
+        </div>
+
+        {/* Subjects Dropdown */}
+        <FilterDropdown
+          id="subject"
+          label="Subject"
+          value={filters.subject}
+          options={subjectOptions}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
+          onSelect={(val) => onFilterChange({ subject: val === "all" ? "" : val })}
+          minWidth="min-w-[120px]"
+          dropdownWidth="w-48"
+        />
+
+        {/* Status Dropdown */}
+        <FilterDropdown
+          id="status"
+          label="Status"
+          value={filters.status}
+          options={statusOptions}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
+          onSelect={(val) => onFilterChange({ status: val === "all" ? "" : val })}
+          minWidth="min-w-[105px]"
+          dropdownWidth="w-36"
+        />
+
+        {/* Availability Dropdown */}
+        <FilterDropdown
+          id="availability"
+          label="Availability"
+          value={filters.availability}
+          options={availabilityOptions}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
+          onSelect={(val) =>
+            onFilterChange({ availability: val === "all" ? "" : val })
+          }
+          minWidth="min-w-[125px]"
+          dropdownWidth="w-40"
         />
       </div>
 
-      {/* Bottom: Row of Dropdowns & Reset Button */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
-          {/* Subjects Filter */}
-          <Select
-            value={filters.subject}
-            onValueChange={(val) => onFilterChange({ subject: val || "all" })}
-          >
-            <SelectTrigger className="h-9 px-3 min-w-[140px] rounded-xl border-zinc-200/80 bg-white text-xs font-medium text-zinc-600 shadow-2xs hover:bg-zinc-50">
-              <SelectValue placeholder="All Subjects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Subjects</SelectItem>
-              {subjectsList.map((subjectName) => (
-                <SelectItem key={subjectName} value={subjectName}>
-                  {subjectName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Status Filter */}
-          <Select
-            value={filters.status}
-            onValueChange={(val) => onFilterChange({ status: val || "all" })}
-          >
-            <SelectTrigger className="h-9 px-3 min-w-[130px] rounded-xl border-zinc-200/80 bg-white text-xs font-medium text-zinc-600 shadow-2xs hover:bg-zinc-50">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Active">Active</SelectItem>
-              <SelectItem value="Inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Availability Filter */}
-          <Select
-            value={filters.availability}
-            onValueChange={(val) => onFilterChange({ availability: val || "all" })}
-          >
-            <SelectTrigger className="h-9 px-3 min-w-[150px] rounded-xl border-zinc-200/80 bg-white text-xs font-medium text-zinc-600 shadow-2xs hover:bg-zinc-50">
-              <SelectValue placeholder="All Availability" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Availability</SelectItem>
-              <SelectItem value="Available">Available</SelectItem>
-              <SelectItem value="Unavailable">Unavailable</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Reset Filters */}
-        <Button
+      {/* Right: More Filters & Reset Buttons matching Exam */}
+      <div className="flex items-center gap-2">
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
           onClick={onReset}
-          className="text-xs text-zinc-500 hover:text-zinc-900 gap-1.5 px-2.5 h-9 rounded-xl hover:bg-zinc-100 cursor-pointer"
+          className="h-10 px-3 bg-white border border-zinc-200/90 rounded-xl text-xs font-medium text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50 flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
         >
           <RotateCcw className="size-3.5" />
-          <span>Reset Filters</span>
-        </Button>
+          <span>Reset</span>
+        </button>
       </div>
     </div>
   )

@@ -1,77 +1,68 @@
+"use client"
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getSubscriptionStats,
   getSubscriptionPlans,
+  getSubscriptionPlanById,
   createSubscriptionPlan,
   updateSubscriptionPlan,
   deleteSubscriptionPlan,
   getSubscribersList,
   assignSubscriber,
-  updateSubscriberStatus,
-  getTransactionsList,
-  refundTransaction,
-  getPaymentRequestsList,
-  reviewPaymentRequest,
+  cancelSubscription,
+  renewSubscription,
+  getPaymentsList,
+  recordPayment,
+  refundPayment,
 } from "../api/subscriptionsApi"
 import {
-  SubscribersFilterState,
-  TransactionsFilterState,
-  PaymentRequestsFilterState,
-  SubscriptionPlan,
-  SubscriberItem,
+  CreatePlanPayload,
+  UpdatePlanPayload,
+  AssignPlanPayload,
+  RecordPaymentPayload,
 } from "../types/subscriptions.types"
-import { toast } from "sonner"
 
-export const useSubscriptionStats = () => {
+// ==========================================
+// Financial Stats Hook
+// ==========================================
+export const useSubscriptionStats = (expiringWithinDays: number = 7) => {
   return useQuery({
-    queryKey: ["subscriptions-stats"],
-    queryFn: getSubscriptionStats,
+    queryKey: ["subscription-stats", expiringWithinDays],
+    queryFn: () => getSubscriptionStats(expiringWithinDays),
     staleTime: 1000 * 60 * 2,
   })
 }
 
-export const useSubscriptionPlans = () => {
+// ==========================================
+// Plans Hooks
+// ==========================================
+export const useSubscriptionPlans = (params?: {
+  tier?: string
+  includeInactive?: boolean
+}) => {
   return useQuery({
-    queryKey: ["subscriptions-plans"],
-    queryFn: getSubscriptionPlans,
+    queryKey: ["subscription-plans", params],
+    queryFn: () => getSubscriptionPlans(params),
     staleTime: 1000 * 60 * 5,
   })
 }
 
-export const useSubscribers = (filters: Partial<SubscribersFilterState> = {}) => {
+export const useSubscriptionPlan = (id: string) => {
   return useQuery({
-    queryKey: ["subscribers", filters],
-    queryFn: () => getSubscribersList(filters),
-    staleTime: 1000 * 60 * 2,
-  })
-}
-
-export const useTransactions = (filters: Partial<TransactionsFilterState> = {}) => {
-  return useQuery({
-    queryKey: ["transactions", filters],
-    queryFn: () => getTransactionsList(filters),
-    staleTime: 1000 * 60 * 2,
-  })
-}
-
-export const usePaymentRequests = (filters: Partial<PaymentRequestsFilterState> = {}) => {
-  return useQuery({
-    queryKey: ["payment-requests", filters],
-    queryFn: () => getPaymentRequestsList(filters),
-    staleTime: 1000 * 60 * 2,
+    queryKey: ["subscription-plan", id],
+    queryFn: () => getSubscriptionPlanById(id),
+    enabled: Boolean(id),
   })
 }
 
 export const useCreatePlan = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: createSubscriptionPlan,
+    mutationFn: (data: CreatePlanPayload) => createSubscriptionPlan(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscriptions-plans"] })
-      toast.success("Subscription plan created successfully")
-    },
-    onError: () => {
-      toast.error("Failed to create subscription plan")
+      queryClient.invalidateQueries({ queryKey: ["subscription-plans"] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
     },
   })
 }
@@ -79,14 +70,12 @@ export const useCreatePlan = () => {
 export const useUpdatePlan = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<SubscriptionPlan> }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdatePlanPayload }) =>
       updateSubscriptionPlan(id, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscriptions-plans"] })
-      toast.success("Subscription plan updated successfully")
-    },
-    onError: () => {
-      toast.error("Failed to update subscription plan")
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["subscription-plans"] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-plan", variables.id] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
     },
   })
 }
@@ -94,29 +83,63 @@ export const useUpdatePlan = () => {
 export const useDeletePlan = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: deleteSubscriptionPlan,
+    mutationFn: (id: string) => deleteSubscriptionPlan(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscriptions-plans"] })
-      toast.success("Plan deleted successfully")
+      queryClient.invalidateQueries({ queryKey: ["subscription-plans"] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
     },
-    onError: () => {
-      toast.error("Failed to delete plan")
-    },
+  })
+}
+
+// ==========================================
+// Subscribers Hooks
+// ==========================================
+export const useSubscribers = (params?: {
+  status?: string
+  planId?: string
+  search?: string
+  expiringWithinDays?: number
+}) => {
+  return useQuery({
+    queryKey: ["subscribers", params],
+    queryFn: () => getSubscribersList(params),
+    staleTime: 1000 * 60 * 2,
   })
 }
 
 export const useAssignSubscriber = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: assignSubscriber,
+    mutationFn: (data: AssignPlanPayload) => assignSubscriber(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscribers"] })
-      queryClient.invalidateQueries({ queryKey: ["transactions"] })
-      queryClient.invalidateQueries({ queryKey: ["subscriptions-stats"] })
-      toast.success("Subscription assigned and activated successfully!")
+      queryClient.invalidateQueries({ queryKey: ["subscription-plans"] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
+      queryClient.invalidateQueries({ queryKey: ["payments"] })
     },
-    onError: () => {
-      toast.error("Failed to assign subscription")
+  })
+}
+
+export const useCancelSubscription = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      cancelSubscription(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscribers"] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
+    },
+  })
+}
+
+export const useRenewSubscription = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, billingCycle }: { id: string; billingCycle?: string }) =>
+      renewSubscription(id, billingCycle),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscribers"] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
     },
   })
 }
@@ -124,47 +147,68 @@ export const useAssignSubscriber = () => {
 export const useUpdateSubscriberStatus = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: SubscriberItem["status"] }) =>
-      updateSubscriberStatus(id, status),
+    mutationFn: ({ id, status }: { id: string; status: string }) => {
+      if (status === "Canceled" || status === "Expired") {
+        return cancelSubscription(id, `Status set to ${status}`)
+      }
+      return renewSubscription(id)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscribers"] })
-      queryClient.invalidateQueries({ queryKey: ["subscriptions-stats"] })
-      toast.success("Subscriber status updated")
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
     },
   })
 }
 
-export const useRefundTransaction = () => {
+// ==========================================
+// Payments / Transactions Hooks
+// ==========================================
+export const usePayments = (params?: { page?: number; pageSize?: number }) => {
+  return useQuery({
+    queryKey: ["payments", params],
+    queryFn: () => getPaymentsList(params),
+    staleTime: 1000 * 60 * 2,
+  })
+}
+
+export const useTransactions = usePayments
+
+export const useRecordPayment = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: RecordPaymentPayload) => recordPayment(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
+    },
+  })
+}
+
+export const useRefundPayment = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      refundTransaction(id, reason),
+      refundPayment(id, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] })
-      queryClient.invalidateQueries({ queryKey: ["subscriptions-stats"] })
-      toast.success("Transaction refunded successfully")
+      queryClient.invalidateQueries({ queryKey: ["payments"] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
     },
-    onError: () => {
-      toast.error("Refund failed")
-    },
+  })
+}
+
+export const useRefundTransaction = useRefundPayment
+
+// Compatibility placeholder for paymentRequests
+export const usePaymentRequests = () => {
+  return useQuery({
+    queryKey: ["payment-requests"],
+    queryFn: async () => [],
+    staleTime: 1000 * 60 * 10,
   })
 }
 
 export const useReviewPaymentRequest = () => {
-  const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: "Approved" | "Rejected" }) =>
-      reviewPaymentRequest(id, status),
-    onSuccess: (_, { status }) => {
-      queryClient.invalidateQueries({ queryKey: ["payment-requests"] })
-      queryClient.invalidateQueries({ queryKey: ["subscribers"] })
-      queryClient.invalidateQueries({ queryKey: ["transactions"] })
-      queryClient.invalidateQueries({ queryKey: ["subscriptions-stats"] })
-      if (status === "Approved") {
-        toast.success("Payment verified! Student subscription has been activated.")
-      } else {
-        toast.info("Payment request rejected")
-      }
-    },
+    mutationFn: async () => {},
   })
 }
