@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { useUploadPdf } from "../../hooks/useCurriculum"
 import { toast } from "sonner"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 export interface AddPdfModalProps {
   open: boolean
@@ -31,9 +32,10 @@ export function AddPdfModal({
 }: AddPdfModalProps) {
   const [title, setTitle] = React.useState("")
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
+  const [bookImage, setBookImage] = React.useState<File | null>(null)
   const [isOfflineAvailable, setIsOfflineAvailable] = React.useState(true)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
-
+  const bookImageInputRef = React.useRef<HTMLInputElement>(null)
   const uploadPdfMutation = useUploadPdf()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,6 +47,30 @@ export function AddPdfModal({
       }
     }
   }
+  const handleBookImageChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0]
+
+    if (!file) return
+
+    // Validate image type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image")
+      e.target.value = ""
+      return
+    }
+
+    // Validate image size (5 MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must not exceed 5 MB")
+      e.target.value = ""
+      return
+    }
+
+    setBookImage(file)
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,6 +89,7 @@ export function AddPdfModal({
           lessonId,
           title: title.trim(),
           fileSize: selectedFile.size,
+          bookImage,
           isOfflineAvailable,
           file: selectedFile,
         })
@@ -78,13 +105,8 @@ export function AddPdfModal({
       setTitle("")
       setSelectedFile(null)
       onOpenChange(false)
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.title ||
-        err?.message ||
-        "Failed to upload PDF"
-      toast.error(msg)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err))
     }
   }
 
@@ -141,6 +163,42 @@ export function AddPdfModal({
                 {selectedFile
                   ? `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`
                   : "PDF up to 50MB"}
+              </span>
+            </div>
+          </div>
+
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-zinc-800">
+              Book Image <span className="text-red-500">*</span>
+            </label>
+
+            <input
+              type="file"
+              ref={bookImageInputRef}
+              onChange={handleBookImageChange}
+              accept="image/*"
+              className="hidden"
+            />
+
+            <div
+              onClick={() => bookImageInputRef.current?.click()}
+              className="rounded-2xl border border-dashed border-zinc-300 hover:border-brand-orange/60 bg-zinc-50/30 hover:bg-amber-50/20 p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors text-center"
+            >
+              <div className="size-10 rounded-full bg-amber-50 text-brand-orange flex items-center justify-center">
+                <Upload className="size-5" />
+              </div>
+
+              <div className="text-xs font-medium text-zinc-700">
+                {bookImage
+                  ? bookImage.name
+                  : "Click to upload book image"}
+              </div>
+
+              <span className="text-[11px] text-zinc-400">
+                {bookImage
+                  ? `${(bookImage.size / (1024 * 1024)).toFixed(2)} MB`
+                  : "PNG, JPG, WEBP (up to 5MB)"}
               </span>
             </div>
           </div>

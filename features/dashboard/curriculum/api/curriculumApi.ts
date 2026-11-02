@@ -154,6 +154,7 @@ export const uploadPdf = async (
   formData.append("FileSize", payload.fileSize.toString())
   formData.append("IsOfflineAvailable", payload.isOfflineAvailable.toString())
   formData.append("file", payload.file)
+  formData.append("bookImage", payload.bookImage)
 
   const res = await clientAxios.post("/content/pdfs", formData, {
     headers: {

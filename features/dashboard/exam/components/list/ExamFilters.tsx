@@ -68,73 +68,6 @@ export function ExamFilters({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Category Tabs matching Image 1 */}
-      <div className="flex items-center gap-8 border-b border-zinc-200/80 -mb-1">
-        <button
-          type="button"
-          onClick={() => onChange("tab", "all")}
-          className={cn(
-            "pb-3 text-sm font-semibold transition-all relative cursor-pointer",
-            filters.tab === "all"
-              ? "text-zinc-900"
-              : "text-zinc-500 hover:text-zinc-800 font-medium"
-          )}
-        >
-          All Exams
-          {filters.tab === "all" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F59E0B] rounded-full" />
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onChange("tab", "monthly")}
-          className={cn(
-            "pb-3 text-sm transition-all relative cursor-pointer",
-            filters.tab === "monthly"
-              ? "text-zinc-900 font-semibold"
-              : "text-zinc-500 hover:text-zinc-800 font-medium"
-          )}
-        >
-          Monthly
-          {filters.tab === "monthly" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F59E0B] rounded-full" />
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onChange("tab", "subject")}
-          className={cn(
-            "pb-3 text-sm transition-all relative cursor-pointer",
-            filters.tab === "subject"
-              ? "text-zinc-900 font-semibold"
-              : "text-zinc-500 hover:text-zinc-800 font-medium"
-          )}
-        >
-          Subject
-          {filters.tab === "subject" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F59E0B] rounded-full" />
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onChange("tab", "course")}
-          className={cn(
-            "pb-3 text-sm transition-all relative cursor-pointer",
-            filters.tab === "course"
-              ? "text-zinc-900 font-semibold"
-              : "text-zinc-500 hover:text-zinc-800 font-medium"
-          )}
-        >
-          Course
-          {filters.tab === "course" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F59E0B] rounded-full" />
-          )}
-        </button>
-      </div>
-
       {/* Filter Row matching Image 1 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Left: Search input + dropdowns */}
@@ -347,14 +280,6 @@ export function ExamFilters({
 
         {/* Right: More Filters & Reset Buttons matching Image 1 */}
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="h-10 px-3.5 bg-white border border-zinc-200/90 rounded-xl text-xs font-medium text-zinc-700 hover:bg-zinc-50 flex items-center gap-2 shadow-2xs cursor-pointer transition-colors"
-          >
-            <SlidersHorizontal className="size-3.5 text-zinc-500" />
-            <span>More Filters</span>
-          </button>
-
           <button
             type="button"
             onClick={onReset}

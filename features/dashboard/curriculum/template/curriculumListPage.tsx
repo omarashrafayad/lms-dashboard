@@ -22,7 +22,6 @@ import { toast } from "sonner"
 import { useDebounce } from "@/hooks/useDebounce"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
-
 const initialFilters: SubjectFilterState = {
   search: "",
   stage: "",

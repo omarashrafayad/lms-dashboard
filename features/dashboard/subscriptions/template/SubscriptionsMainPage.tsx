@@ -8,8 +8,6 @@ import {
   Download,
   Plus,
   UserPlus,
-  RefreshCw,
-  Sparkles,
 } from "lucide-react"
 import { SubscriptionsHeaderStats } from "../components/SubscriptionsHeaderStats"
 import { SubscriptionsNavTabs, SubscriptionsTabKey } from "../components/SubscriptionsNavTabs"
@@ -21,27 +19,28 @@ import { AssignSubscriptionModal } from "../components/Subscribers/AssignSubscri
 import { TransactionsTable } from "../components/Transactions/TransactionsTable"
 import { InvoiceReceiptModal } from "../components/Transactions/InvoiceReceiptModal"
 import { RefundModal } from "../components/Transactions/RefundModal"
-import { PaymentRequestsView } from "../components/Requests/PaymentRequestsView"
 import {
   useSubscriptionStats,
   useSubscriptionPlans,
   useSubscribers,
-  useTransactions,
-  usePaymentRequests,
+  usePayments,
   useCreatePlan,
   useUpdatePlan,
   useDeletePlan,
   useAssignSubscriber,
   useUpdateSubscriberStatus,
-  useRefundTransaction,
-  useReviewPaymentRequest,
+  useRefundPayment,
 } from "../hooks/useSubscriptions"
 import {
   SubscriptionPlan,
   TransactionItem,
-  SubscriberItem,
+  CreatePlanPayload,
+  AssignPlanPayload,
 } from "../types/subscriptions.types"
+import { exportPaymentsLedger } from "../api/subscriptionsApi"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 import { toast } from "sonner"
 
 interface SubscriptionsMainPageProps {
@@ -68,11 +67,31 @@ export function SubscriptionsMainPage({
   const [refundingTxn, setRefundingTxn] = React.useState<TransactionItem | null>(null)
 
   // API Hooks
-  const { data: stats } = useSubscriptionStats()
-  const { data: plans = [], isLoading: isPlansLoading } = useSubscriptionPlans()
-  const { data: subscribers = [], isLoading: isSubsLoading } = useSubscribers()
-  const { data: transactions = [], isLoading: isTxnsLoading } = useTransactions()
-  const { data: paymentRequests = [], isLoading: isReqsLoading } = usePaymentRequests()
+  const {
+    data: stats,
+    isLoading: isStatsLoading,
+    isError: isStatsError,
+  } = useSubscriptionStats()
+
+  const {
+    data: plans = [],
+    isLoading: isPlansLoading,
+    isError: isPlansError,
+  } = useSubscriptionPlans()
+
+  const {
+    data: subscribers = [],
+    isLoading: isSubsLoading,
+    isError: isSubsError,
+  } = useSubscribers()
+
+  const {
+    data: paymentsResponse,
+    isLoading: isTxnsLoading,
+    isError: isTxnsError,
+  } = usePayments()
+
+  const transactions = paymentsResponse?.items || []
 
   // Mutation Hooks
   const createPlanMutation = useCreatePlan()
@@ -80,24 +99,80 @@ export function SubscriptionsMainPage({
   const deletePlanMutation = useDeletePlan()
   const assignSubscriberMutation = useAssignSubscriber()
   const updateSubscriberStatusMutation = useUpdateSubscriberStatus()
-  const refundTransactionMutation = useRefundTransaction()
-  const reviewPaymentRequestMutation = useReviewPaymentRequest()
+  const refundPaymentMutation = useRefundPayment()
 
   const handleTabChange = (tab: SubscriptionsTabKey) => {
     setActiveTab(tab)
   }
 
-  const handleCreateOrEditPlan = (planData: any) => {
-    if (editingPlan) {
-      updatePlanMutation.mutate({ id: editingPlan.id, payload: planData })
-    } else {
-      createPlanMutation.mutate(planData)
+  const handleCreateOrEditPlan = async (planData: CreatePlanPayload) => {
+    try {
+      if (editingPlan) {
+        await updatePlanMutation.mutateAsync({ id: editingPlan.id, payload: planData })
+        toast.success(`Plan "${planData.name}" updated successfully!`)
+      } else {
+        await createPlanMutation.mutateAsync(planData)
+        toast.success(`Plan "${planData.name}" created successfully!`)
+      }
+      setIsCreatePlanOpen(false)
+      setEditingPlan(null)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
     }
   }
 
-  const handleExportReport = () => {
-    toast.success("Financial statement for current term exported successfully!")
+  const handleDeletePlan = async (id: string) => {
+    try {
+      await deletePlanMutation.mutateAsync(id)
+      toast.success("Subscription plan deleted successfully!")
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
   }
+
+  const handleAssignSubscriber = async (payload: AssignPlanPayload) => {
+    try {
+      await assignSubscriberMutation.mutateAsync(payload)
+      toast.success("Student successfully enrolled in plan!")
+      setIsAssignModalOpen(false)
+      setAssigningPlan(null)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
+  const handleStatusChange = async (id: string, status: string) => {
+    try {
+      await updateSubscriberStatusMutation.mutateAsync({ id, status })
+      toast.success(`Subscription status updated to ${status}`)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
+  const handleRefund = async (reason: string) => {
+    if (!refundingTxn) return
+    try {
+      await refundPaymentMutation.mutateAsync({ id: refundingTxn.id, reason })
+      toast.success("Payment refunded successfully!")
+      setRefundingTxn(null)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
+  const handleExportReport = async () => {
+    try {
+      await exportPaymentsLedger()
+      toast.success("Payments ledger export initiated successfully!")
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
+  const isGlobalLoading =
+    activeTab === "overview" && (isStatsLoading || isPlansLoading || isSubsLoading)
+  const isGlobalError = isStatsError || isPlansError
 
   return (
     <div className="flex flex-col min-h-full">
@@ -156,92 +231,98 @@ export function SubscriptionsMainPage({
           onTabChange={handleTabChange}
           subscribersCount={subscribers.length}
           plansCount={plans.length}
-          requestsCount={paymentRequests.filter((r) => r.status === "Pending").length}
         />
 
         {/* Tab Content Display */}
-        {activeTab === "overview" && (
-          <SubscriptionsAnalyticsOverview
-            stats={stats}
-            plans={plans}
-            recentTransactions={transactions}
-            subscribers={subscribers}
-            onSelectTab={handleTabChange}
-            onAssignNew={() => {
-              setAssigningPlan(null)
-              setIsAssignModalOpen(true)
-            }}
-            onAddNewPlan={() => {
-              setEditingPlan(null)
-              setIsCreatePlanOpen(true)
-            }}
-          />
-        )}
+        {isGlobalLoading ? (
+          <LoadingSpinner title="Loading subscription data..." />
+        ) : isGlobalError ? (
+          <GlobalError />
+        ) : (
+          <>
+            {activeTab === "overview" && (
+              <SubscriptionsAnalyticsOverview
+                stats={stats}
+                plans={plans}
+                recentTransactions={transactions}
+                subscribers={subscribers}
+                onSelectTab={handleTabChange}
+                onAssignNew={() => {
+                  setAssigningPlan(null)
+                  setIsAssignModalOpen(true)
+                }}
+                onAddNewPlan={() => {
+                  setEditingPlan(null)
+                  setIsCreatePlanOpen(true)
+                }}
+              />
+            )}
 
-        {activeTab === "plans" && (
-          <PlansGridView
-            plans={plans}
-            onAddNewPlan={() => {
-              setEditingPlan(null)
-              setIsCreatePlanOpen(true)
-            }}
-            onEditPlan={(plan) => {
-              setEditingPlan(plan)
-              setIsCreatePlanOpen(true)
-            }}
-            onDeletePlan={(id) => deletePlanMutation.mutate(id)}
-            onAssignPlan={(plan) => {
-              setAssigningPlan(plan)
-              setIsAssignModalOpen(true)
-            }}
-          />
-        )}
+            {activeTab === "plans" && (
+              isPlansLoading ? (
+                <LoadingSpinner title="Loading pricing plans..." />
+              ) : (
+                <PlansGridView
+                  plans={plans}
+                  onAddNewPlan={() => {
+                    setEditingPlan(null)
+                    setIsCreatePlanOpen(true)
+                  }}
+                  onEditPlan={(plan) => {
+                    setEditingPlan(plan)
+                    setIsCreatePlanOpen(true)
+                  }}
+                  onDeletePlan={handleDeletePlan}
+                  onAssignPlan={(plan) => {
+                    setAssigningPlan(plan)
+                    setIsAssignModalOpen(true)
+                  }}
+                />
+              )
+            )}
 
-        {activeTab === "subscribers" && (
-          <SubscribersTable
-            subscribers={subscribers}
-            isLoading={isSubsLoading}
-            onStatusChange={(id, status) =>
-              updateSubscriberStatusMutation.mutate({ id, status })
-            }
-            onAssignNew={() => {
-              setAssigningPlan(null)
-              setIsAssignModalOpen(true)
-            }}
-          />
-        )}
+            {activeTab === "subscribers" && (
+              <SubscribersTable
+                subscribers={subscribers}
+                isLoading={isSubsLoading}
+                onStatusChange={handleStatusChange}
+                onAssignNew={() => {
+                  setAssigningPlan(null)
+                  setIsAssignModalOpen(true)
+                }}
+              />
+            )}
 
-        {activeTab === "transactions" && (
-          <TransactionsTable
-            transactions={transactions}
-            isLoading={isTxnsLoading}
-            onViewInvoice={(t) => setViewingInvoice(t)}
-            onRefund={(t) => setRefundingTxn(t)}
-          />
+            {activeTab === "transactions" && (
+              <TransactionsTable
+                transactions={transactions}
+                isLoading={isTxnsLoading}
+                onViewInvoice={(t) => setViewingInvoice(t)}
+                onRefund={(t) => setRefundingTxn(t)}
+              />
+            )}
+          </>
         )}
-
-        {/* {activeTab === "requests" && (
-          <PaymentRequestsView
-            requests={paymentRequests}
-            isLoading={isReqsLoading}
-            onApprove={(id) => reviewPaymentRequestMutation.mutate({ id, status: "Approved" })}
-            onReject={(id) => reviewPaymentRequestMutation.mutate({ id, status: "Rejected" })}
-          />
-        )} */}
       </main>
 
       {/* Modals & Dialogs */}
       <CreatePlanModal
         isOpen={isCreatePlanOpen}
-        onClose={() => setIsCreatePlanOpen(false)}
+        onClose={() => {
+          setIsCreatePlanOpen(false)
+          setEditingPlan(null)
+        }}
         onSave={handleCreateOrEditPlan}
         initialPlan={editingPlan}
       />
 
       <AssignSubscriptionModal
         isOpen={isAssignModalOpen}
-        onClose={() => setIsAssignModalOpen(false)}
-        onAssign={(payload) => assignSubscriberMutation.mutate(payload)}
+        onClose={() => {
+          setIsAssignModalOpen(false)
+          setAssigningPlan(null)
+        }}
+        onAssign={handleAssignSubscriber}
         plans={plans}
         initialPlan={assigningPlan}
       />
@@ -255,11 +336,7 @@ export function SubscriptionsMainPage({
       <RefundModal
         isOpen={Boolean(refundingTxn)}
         onClose={() => setRefundingTxn(null)}
-        onConfirm={(reason) => {
-          if (refundingTxn) {
-            refundTransactionMutation.mutate({ id: refundingTxn.id, reason })
-          }
-        }}
+        onConfirm={handleRefund}
         transaction={refundingTxn}
       />
     </div>

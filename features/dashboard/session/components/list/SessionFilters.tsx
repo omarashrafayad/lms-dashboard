@@ -1,15 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Search, RotateCcw, SlidersHorizontal } from "lucide-react"
+import { Search, SlidersHorizontal, RotateCcw } from "lucide-react"
+import { FilterDropdown, FilterOption } from "@/components/shared/FilterDropdown"
 import { SessionFilterState } from "../../types/session.types"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { useTeachers } from "@/features/dashboard/teacher/hooks/useTeachers"
 import { useStudents } from "@/features/dashboard/student/hooks/useStudents"
 
@@ -24,139 +18,126 @@ export function SessionFilters({
   onChange,
   onReset,
 }: SessionFiltersProps) {
+  const [openDropdown, setOpenDropdown] = React.useState<string | null>(null)
+
   const { data: teachersData } = useTeachers({ pageSize: 100 })
   const teachers = Array.isArray(teachersData) ? teachersData : teachersData?.items || []
   const { data: studentsData } = useStudents({ pageSize: 100 })
   const students = Array.isArray(studentsData) ? studentsData : studentsData?.items || []
 
+  const dateOptions: FilterOption[] = [
+    { label: "All Dates", value: "all" },
+    { label: "Today", value: "today" },
+    { label: "This Week", value: "this-week" },
+    { label: "Next Week", value: "next-week" },
+  ]
+
+  const statusOptions: FilterOption[] = [
+    { label: "All Statuses", value: "all" },
+    { label: "In Progress", value: "In Progress" },
+    { label: "Upcoming", value: "Upcoming" },
+    { label: "Completed", value: "Completed" },
+    { label: "Missed", value: "Missed" },
+    { label: "Cancelled", value: "Cancelled" },
+  ]
+
+  const teacherOptions: FilterOption[] = React.useMemo(() => {
+    const unique = Array.from(
+      new Set(teachers.map((t) => t.fullName || t.email).filter(Boolean))
+    )
+    return [
+      { label: "All Teachers", value: "all" },
+      ...unique.map((name) => ({ label: name, value: name })),
+    ]
+  }, [teachers])
+
+  const studentOptions: FilterOption[] = React.useMemo(() => {
+    const unique = Array.from(
+      new Set(students.map((s) => s.fullName || s.email).filter(Boolean))
+    )
+    return [
+      { label: "All Students", value: "all" },
+      ...unique.map((name) => ({ label: name, value: name })),
+    ]
+  }, [students])
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2.5">
-        {/* Search Input */}
-        <div className="relative flex-1 min-w-[240px] max-w-[320px]">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400" />
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Left: Search input + dropdowns */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Search Sessions input */}
+        <div className="relative w-64 md:w-72">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
           <input
             type="text"
             value={filters.search}
             onChange={(e) => onChange("search", e.target.value)}
-            placeholder="Search by student, teacher, or session ID..."
-            className="w-full h-10 pl-9 pr-3.5 rounded-xl border border-zinc-200 bg-white text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
+            placeholder="Search by student, teacher, or session..."
+            className="w-full h-10 pl-9 pr-3 text-xs bg-white border border-zinc-200/90 rounded-xl text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors shadow-2xs"
           />
         </div>
 
-        {/* Date Filter */}
-        <Select
+        {/* Date Dropdown */}
+        <FilterDropdown
+          id="date"
+          label="Date"
           value={filters.date}
-          onValueChange={(val) => onChange("date", val ?? "all")}
-        >
-          <SelectTrigger className="h-10 min-w-[130px] rounded-xl border-zinc-200 bg-white text-xs text-zinc-700 shadow-2xs">
-            <SelectValue placeholder="Date" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl border-zinc-200">
-            <SelectItem value="all" className="text-xs">
-              All Dates
-            </SelectItem>
-            <SelectItem value="today" className="text-xs">
-              Today
-            </SelectItem>
-            <SelectItem value="this-week" className="text-xs">
-              This Week
-            </SelectItem>
-            <SelectItem value="next-week" className="text-xs">
-              Next Week
-            </SelectItem>
-          </SelectContent>
-        </Select>
+          options={dateOptions}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
+          onSelect={(val) => onChange("date", val === "all" ? "" : val)}
+          minWidth="min-w-[105px]"
+          dropdownWidth="w-36"
+        />
 
-        {/* Session Status Filter */}
-        <Select
+        {/* Status Dropdown */}
+        <FilterDropdown
+          id="status"
+          label="Status"
           value={filters.status}
-          onValueChange={(val) => onChange("status", val ?? "all")}
-        >
-          <SelectTrigger className="h-10 min-w-[140px] rounded-xl border-zinc-200 bg-white text-xs text-zinc-700 shadow-2xs">
-            <SelectValue placeholder="Session Status" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl border-zinc-200">
-            <SelectItem value="all" className="text-xs">
-              All Statuses
-            </SelectItem>
-            <SelectItem value="In Progress" className="text-xs">
-              In Progress
-            </SelectItem>
-            <SelectItem value="Upcoming" className="text-xs">
-              Upcoming
-            </SelectItem>
-            <SelectItem value="Completed" className="text-xs">
-              Completed
-            </SelectItem>
-            <SelectItem value="Missed" className="text-xs">
-              Missed
-            </SelectItem>
-            <SelectItem value="Cancelled" className="text-xs">
-              Cancelled
-            </SelectItem>
-          </SelectContent>
-        </Select>
+          options={statusOptions}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
+          onSelect={(val) => onChange("status", val === "all" ? "" : val)}
+          minWidth="min-w-[110px]"
+          dropdownWidth="w-40"
+        />
 
-        {/* Teacher Filter */}
-        <Select
+        {/* Teacher Dropdown */}
+        <FilterDropdown
+          id="teacher"
+          label="Teacher"
           value={filters.teacher}
-          onValueChange={(val) => onChange("teacher", val ?? "all")}
-        >
-          <SelectTrigger className="h-10 min-w-[130px] rounded-xl border-zinc-200 bg-white text-xs text-zinc-700 shadow-2xs">
-            <SelectValue placeholder="Teacher" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl border-zinc-200">
-            <SelectItem value="all" className="text-xs">
-              All Teachers
-            </SelectItem>
-            {teachers.map((t) => (
-              <SelectItem key={t.id} value={t.fullName || t.email} className="text-xs">
-                {t.fullName || t.email}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          options={teacherOptions}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
+          onSelect={(val) => onChange("teacher", val === "all" ? "" : val)}
+          minWidth="min-w-[115px]"
+          dropdownWidth="w-48"
+        />
 
-        {/* Student Filter */}
-        <Select
+        {/* Student Dropdown */}
+        <FilterDropdown
+          id="student"
+          label="Student"
           value={filters.student}
-          onValueChange={(val) => onChange("student", val ?? "all")}
-        >
-          <SelectTrigger className="h-10 min-w-[130px] rounded-xl border-zinc-200 bg-white text-xs text-zinc-700 shadow-2xs">
-            <SelectValue placeholder="Student" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl border-zinc-200">
-            <SelectItem value="all" className="text-xs">
-              All Students
-            </SelectItem>
-            {students.slice(0, 15).map((s) => (
-              <SelectItem key={s.id} value={s.fullName || s.email} className="text-xs">
-                {s.fullName || s.email}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* More Filters button */}
-        <button
-          type="button"
-          onClick={() => {}}
-          className="h-10 px-3.5 rounded-xl border border-zinc-200 bg-white text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
-        >
-          <SlidersHorizontal className="size-3.5 text-zinc-500" />
-          <span>More Filters</span>
-        </button>
+          options={studentOptions}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
+          onSelect={(val) => onChange("student", val === "all" ? "" : val)}
+          minWidth="min-w-[115px]"
+          dropdownWidth="w-48"
+        />
       </div>
 
-      {/* Reset Button */}
-      <div>
+      {/* Right: More Filters & Reset Buttons matching Exam */}
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 transition-colors cursor-pointer"
+          className="h-10 px-3 bg-white border border-zinc-200/90 rounded-xl text-xs font-medium text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50 flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
         >
-          <RotateCcw className="size-3.5 text-zinc-400" />
+          <RotateCcw className="size-3.5" />
           <span>Reset</span>
         </button>
       </div>

@@ -3,7 +3,6 @@
 import * as React from "react"
 import {
   Check,
-  X,
   Sparkles,
   Plus,
   Edit2,
@@ -88,9 +87,26 @@ export function PlansGridView({
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
         {plans.map((plan) => {
           const isAnnual = billingCycle === "annually"
-          const price = isAnnual ? plan.priceAnnually : plan.priceMonthly
+          const price = isAnnual
+            ? (plan.annualPrice ?? plan.priceAnnually ?? 0)
+            : (plan.monthlyPrice ?? plan.priceMonthly ?? 0)
           const intervalLabel = isAnnual ? "/ year" : "/ month"
-          const isPopular = plan.isPopular || plan.tier === "Standard"
+          const badge = plan.badgeLabel || plan.badge
+          const isPopular =
+            (badge && badge.toLowerCase().includes("popular")) ||
+            plan.tier === "Standard"
+
+          const features =
+            plan.features && plan.features.length > 0
+              ? plan.features.map((f) => ({
+                  text: f.label || f.text || "",
+                  included: f.isIncluded ?? f.included ?? true,
+                }))
+              : [
+                  { text: "All Enrolled Term Subjects Included", included: true },
+                  { text: `${plan.liveSessionsPerMonth || 8} Live Sessions / mo`, included: true },
+                  { text: "Unlimited Recorded Video Library", included: true },
+                ]
 
           return (
             <div
@@ -103,11 +119,11 @@ export function PlansGridView({
               )}
             >
               {/* Badge if Popular or Custom */}
-              {plan.badge && (
+              {badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-bold bg-[#F59E0B] text-white shadow-xs">
                     <Sparkles className="size-3" />
-                    {plan.badge}
+                    {badge}
                   </span>
                 </div>
               )}
@@ -116,22 +132,26 @@ export function PlansGridView({
               <div className="flex flex-col">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                    {plan.targetGrade}
+                    {plan.targetGradeLevel || plan.targetGrade || "All Grades"}
                   </span>
                   <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
                       title="Edit Plan"
                       onClick={() => onEditPlan(plan)}
-                      className="size-7 rounded-lg hover:bg-zinc-100 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition-colors"
+                      className="size-7 rounded-lg hover:bg-zinc-100 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer"
                     >
                       <Edit2 className="size-3.5" />
                     </button>
                     <button
                       type="button"
                       title="Delete Plan"
-                      onClick={() => onDeletePlan(plan.id)}
-                      className="size-7 rounded-lg hover:bg-rose-50 flex items-center justify-center text-zinc-400 hover:text-rose-600 transition-colors"
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to delete "${plan.name}"?`)) {
+                          onDeletePlan(plan.id)
+                        }
+                      }}
+                      className="size-7 rounded-lg hover:bg-rose-50 flex items-center justify-center text-zinc-400 hover:text-rose-600 transition-colors cursor-pointer"
                     >
                       <Trash2 className="size-3.5" />
                     </button>
@@ -142,7 +162,7 @@ export function PlansGridView({
                   {plan.name}
                 </h3>
                 <p className="text-xs text-zinc-500 line-clamp-2 mt-1 min-h-[32px]">
-                  {plan.tagline}
+                  {plan.tagline || plan.description || "Academic subscription tier"}
                 </p>
 
                 {/* Price Display */}
@@ -151,7 +171,7 @@ export function PlansGridView({
                     {price.toLocaleString()}
                   </span>
                   <span className="text-xs font-semibold text-zinc-600">
-                    {plan.currency}
+                    {plan.currency || "EGP"}
                   </span>
                   <span className="text-xs text-zinc-400 font-normal">
                     {intervalLabel}
@@ -163,12 +183,12 @@ export function PlansGridView({
                   <div className="flex items-center gap-1.5 text-zinc-600">
                     <Users className="size-3.5 text-zinc-400" />
                     <span className="font-semibold text-zinc-900">
-                      {plan.subscribersCount}
+                      {plan.activeSubscribers ?? plan.subscribersCount ?? 0}
                     </span>{" "}
                     subscribers
                   </div>
                   <span className="text-[11px] text-zinc-500 font-medium">
-                    {plan.totalRevenueFormatted}
+                    {plan.tier || "Standard"}
                   </span>
                 </div>
 
@@ -177,21 +197,21 @@ export function PlansGridView({
                   <div className="flex flex-col items-center text-center p-1.5 rounded-lg bg-zinc-50/70">
                     <Video className="size-3 text-zinc-400 mb-0.5" />
                     <span className="font-bold text-zinc-800">
-                      {plan.limits.liveSessionsPerMonth}x
+                      {plan.liveSessionsPerMonth || plan.limits?.liveSessionsPerMonth || 8}x
                     </span>
                     <span className="text-[10px] text-zinc-400">Live / mo</span>
                   </div>
                   <div className="flex flex-col items-center text-center p-1.5 rounded-lg bg-zinc-50/70">
                     <FileCheck className="size-3 text-zinc-400 mb-0.5" />
                     <span className="font-bold text-zinc-800">
-                      {plan.limits.practiceExamsAccess}
+                      {plan.examAccess || plan.limits?.practiceExamsAccess || "Unlimited"}
                     </span>
                     <span className="text-[10px] text-zinc-400">Exams</span>
                   </div>
                   <div className="flex flex-col items-center text-center p-1.5 rounded-lg bg-zinc-50/70">
                     <Headphones className="size-3 text-zinc-400 mb-0.5" />
                     <span className="font-bold text-zinc-800">
-                      {plan.limits.supportPriority}
+                      {plan.supportLevel || plan.limits?.supportPriority || "Priority"}
                     </span>
                     <span className="text-[10px] text-zinc-400">Support</span>
                   </div>
@@ -202,28 +222,15 @@ export function PlansGridView({
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
                     What's Included:
                   </span>
-                  {plan.features.map((feature, idx) => (
+                  {features.map((feature, idx) => (
                     <div
                       key={idx}
                       className="flex items-start gap-2 text-xs leading-snug"
                     >
-                      {feature.included ? (
-                        <div className="size-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <Check className="size-2.5 stroke-[3]" />
-                        </div>
-                      ) : (
-                        <div className="size-4 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center shrink-0 mt-0.5">
-                          <X className="size-2.5 stroke-[3]" />
-                        </div>
-                      )}
-                      <span
-                        className={cn(
-                          feature.included ? "text-zinc-700" : "text-zinc-400 line-through",
-                          feature.highlight ? "font-semibold text-zinc-900" : ""
-                        )}
-                      >
-                        {feature.text}
-                      </span>
+                      <div className="size-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="size-2.5 stroke-[3]" />
+                      </div>
+                      <span className="text-zinc-700">{feature.text}</span>
                     </div>
                   ))}
                 </div>

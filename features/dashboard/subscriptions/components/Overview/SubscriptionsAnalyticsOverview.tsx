@@ -2,18 +2,15 @@
 
 import * as React from "react"
 import {
-  PieChart,
   TrendingUp,
   CreditCard,
-  ShieldCheck,
-  Smartphone,
   Receipt,
+  Smartphone,
   Building2,
   Users,
   Plus,
   ArrowRight,
   Clock,
-  Sparkles,
 } from "lucide-react"
 import {
   SubscriptionPlan,
@@ -42,16 +39,20 @@ export function SubscriptionsAnalyticsOverview({
   onAssignNew,
   onAddNewPlan,
 }: SubscriptionsAnalyticsOverviewProps) {
-  const totalSubscribers = plans.reduce((acc, p) => acc + p.subscribersCount, 0) || 412
+  const totalSubscribers =
+    plans.reduce((acc, p) => acc + (p.activeSubscribers ?? p.subscribersCount ?? 0), 0) ||
+    subscribers.length ||
+    1
+
   const expiringSubscribers = subscribers.filter(
-    (s) => s.remainingDays <= 7 && s.status !== "Expired"
+    (s) => (s.daysRemaining ?? s.remainingDays ?? 30) <= 7 && s.status !== "Expired"
   )
 
   const paymentGateways = [
-    { name: "Visa / Mastercard", share: 48, amount: "1,365,600 EGP", color: "bg-blue-500", icon: CreditCard },
-    { name: "InstaPay (IPN)", share: 32, amount: "910,400 EGP", color: "bg-indigo-500", icon: Receipt },
-    { name: "Vodafone Cash", share: 15, amount: "426,750 EGP", color: "bg-rose-500", icon: Smartphone },
-    { name: "Fawry & Cash", share: 5, amount: "142,250 EGP", color: "bg-amber-500", icon: Building2 },
+    { name: "Visa / Mastercard", share: 48, amount: "Card Gateway", color: "bg-blue-500", icon: CreditCard },
+    { name: "InstaPay (IPN)", share: 32, amount: "Direct Bank", color: "bg-indigo-500", icon: Receipt },
+    { name: "Vodafone Cash", share: 15, amount: "Mobile Wallet", color: "bg-rose-500", icon: Smartphone },
+    { name: "Fawry & Cash", share: 5, amount: "Cash Point", color: "bg-amber-500", icon: Building2 },
   ]
 
   return (
@@ -89,7 +90,9 @@ export function SubscriptionsAnalyticsOverview({
             {/* Plan progress bars */}
             <div className="flex flex-col gap-4 mt-5">
               {plans.map((plan) => {
-                const percentage = Math.round((plan.subscribersCount / totalSubscribers) * 100) || 10
+                const count = plan.activeSubscribers ?? plan.subscribersCount ?? 0
+                const percentage = Math.min(100, Math.round((count / totalSubscribers) * 100))
+                const price = plan.monthlyPrice ?? plan.priceMonthly ?? 0
                 return (
                   <div key={plan.id} className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between text-xs">
@@ -100,14 +103,18 @@ export function SubscriptionsAnalyticsOverview({
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-zinc-500">{plan.subscribersCount} students</span>
-                        <strong className="text-zinc-900 font-bold">{plan.totalRevenueFormatted}</strong>
+                        <span className="text-zinc-500 font-medium">
+                          {count} students ({percentage}%)
+                        </span>
+                        <span className="font-bold text-zinc-900 min-w-[90px] text-right">
+                          {(count * price).toLocaleString()} EGP / mo
+                        </span>
                       </div>
                     </div>
 
-                    <div className="w-full h-2 rounded-full bg-zinc-100 overflow-hidden flex">
+                    <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-[#F59E0B] transition-all duration-500"
+                        className="h-full bg-[#F59E0B] rounded-full transition-all duration-500"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -118,12 +125,22 @@ export function SubscriptionsAnalyticsOverview({
           </div>
 
           <div className="pt-4 border-t border-zinc-100 mt-6 flex items-center justify-between text-xs text-zinc-500">
-            <span>Average Revenue Per Student: <strong>853 EGP / mo</strong></span>
-            <span>Annual Retention Rate: <strong>94.2%</strong></span>
+            <span>
+              Total active students enrolled: <strong>{totalSubscribers}</strong>
+            </span>
+            <Button
+              size="sm"
+              onClick={onAddNewPlan}
+              variant="outline"
+              className="text-xs h-8 px-3 rounded-xl gap-1 text-zinc-700 cursor-pointer"
+            >
+              <Plus className="size-3" />
+              <span>Create Tier</span>
+            </Button>
           </div>
         </div>
 
-        {/* Right Column: Payment Gateway Share */}
+        {/* Right Column: Payment Gateway Volume Share */}
         <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-2xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
@@ -132,65 +149,67 @@ export function SubscriptionsAnalyticsOverview({
                   <CreditCard className="size-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-900">
-                    Payment Gateway Split
-                  </h3>
-                  <p className="text-xs text-zinc-500">Volume processed per gateway</p>
+                  <h3 className="text-sm font-bold text-zinc-900">Payment Channels</h3>
+                  <p className="text-xs text-zinc-500">Gateway share & collection volume</p>
                 </div>
               </div>
             </div>
 
-            {/* Gateway list */}
             <div className="flex flex-col gap-3.5 mt-5">
-              {paymentGateways.map((g) => {
-                const Icon = g.icon
+              {paymentGateways.map((gw) => {
+                const Icon = gw.icon
                 return (
                   <div
-                    key={g.name}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-50/70 border border-zinc-100 text-xs"
+                    key={gw.name}
+                    className="flex items-center justify-between p-3 rounded-xl bg-zinc-50/70 border border-zinc-100"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className={`size-7 rounded-lg ${g.color} text-white flex items-center justify-center`}>
-                        <Icon className="size-3.5" />
+                    <div className="flex items-center gap-3">
+                      <div className="size-8 rounded-lg bg-white border border-zinc-200/80 flex items-center justify-center text-zinc-700 shadow-2xs">
+                        <Icon className="size-4" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-zinc-900">{g.name}</span>
-                        <span className="text-[10px] text-zinc-400">{g.amount}</span>
+                        <span className="text-xs font-semibold text-zinc-900">{gw.name}</span>
+                        <span className="text-[11px] text-zinc-400">{gw.amount}</span>
                       </div>
                     </div>
-
-                    <span className="font-extrabold text-zinc-800 text-xs">
-                      {g.share}%
-                    </span>
+                    <span className="text-xs font-bold text-zinc-800">{gw.share}%</span>
                   </div>
                 )
               })}
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs">
-            <span className="text-zinc-500">Overall Success Rate</span>
-            <span className="font-bold text-emerald-600">98.2% Seamless</span>
+          <div className="pt-4 border-t border-zinc-100 mt-6 flex items-center justify-between text-xs">
+            <span className="text-zinc-500">Live payment channels</span>
+            <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 text-[11px]">
+              Active & Healthy
+            </span>
           </div>
         </div>
       </div>
 
-      {/* 2-Column: Recent Transactions & Expiring Subscriptions Warning */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Recent Transactions (2 cols) */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-2xs flex flex-col justify-between">
+      {/* Row 2: Recent Ledger Activity + Expiring Renewals */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Ledger Entries */}
+        <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-2xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
-              <h3 className="text-sm font-bold text-zinc-900">
-                Recent Payment Ledger
-              </h3>
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <Receipt className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-zinc-900">Recent Transactions</h3>
+                  <p className="text-xs text-zinc-500">Real-time payment settlements</p>
+                </div>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onSelectTab("transactions")}
-                className="text-xs font-semibold text-[#D97706] hover:text-amber-700 cursor-pointer"
+                className="text-xs font-semibold text-zinc-600 hover:text-zinc-900 cursor-pointer"
               >
-                View All Ledger &rarr;
+                Full Ledger &rarr;
               </Button>
             </div>
 
@@ -198,27 +217,22 @@ export function SubscriptionsAnalyticsOverview({
               {recentTransactions.slice(0, 5).map((t) => (
                 <div key={t.id} className="py-3 flex items-center justify-between text-xs">
                   <div className="flex items-center gap-3">
-                    <div className="size-8 rounded-lg bg-zinc-100 text-zinc-700 flex items-center justify-center font-mono font-bold text-[10px]">
-                      TXN
+                    <div className="size-8 rounded-lg bg-zinc-50 border border-zinc-200/80 flex items-center justify-center font-mono text-[10px] text-zinc-500">
+                      {(t.invoiceNumber || t.reference || t.id).slice(0, 4)}
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-bold text-zinc-900">{t.payerName}</span>
+                      <span className="font-semibold text-zinc-900">
+                        {t.studentName || t.payerName || "Student"}
+                      </span>
                       <span className="text-[11px] text-zinc-400">
-                        {t.planOrItem} • {t.paymentMethod}
+                        {t.itemDescription || t.planName || "Subscription"}
                       </span>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="font-bold text-zinc-900">
-                        {t.amount.toLocaleString()} {t.currency}
-                      </div>
-                      <div className="text-[10px] text-zinc-400">{t.date}</div>
-                    </div>
-
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {t.status}
+                  <div className="flex flex-col items-end">
+                    <span className="font-bold text-zinc-900">{t.amount} EGP</span>
+                    <span className="text-[11px] text-emerald-600 font-medium">
+                      {t.status || "Paid"}
                     </span>
                   </div>
                 </div>
@@ -227,48 +241,67 @@ export function SubscriptionsAnalyticsOverview({
           </div>
         </div>
 
-        {/* Right: Urgent Renewals Attention Box */}
+        {/* Expiring Soon Action List */}
         <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-2xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
               <div className="flex items-center gap-2">
-                <Clock className="size-4 text-amber-600" />
-                <h3 className="text-sm font-bold text-zinc-900">
-                  Expiring Within 7 Days
-                </h3>
+                <div className="size-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                  <Clock className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-zinc-900">Renewals Due in 7 Days</h3>
+                  <p className="text-xs text-zinc-500">Students needing term re-enrollment</p>
+                </div>
               </div>
-              <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                {expiringSubscribers.length} Students
-              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onSelectTab("subscribers")}
+                className="text-xs font-semibold text-zinc-600 hover:text-zinc-900 cursor-pointer"
+              >
+                View All &rarr;
+              </Button>
             </div>
 
-            <div className="flex flex-col gap-3 mt-4">
-              {expiringSubscribers.slice(0, 4).map((sub) => (
-                <div
-                  key={sub.id}
-                  className="p-3 rounded-xl bg-amber-50/40 border border-amber-200/60 flex items-center justify-between text-xs"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-bold text-zinc-900">{sub.studentName}</span>
-                    <span className="text-[11px] text-zinc-500">
-                      {sub.planName} • Parent: {sub.parentPhone}
-                    </span>
+            <div className="flex flex-col divide-y divide-zinc-100 mt-2">
+              {expiringSubscribers.slice(0, 5).map((sub) => {
+                const days = sub.daysRemaining ?? sub.remainingDays ?? 3
+                return (
+                  <div key={sub.id} className="py-3 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="size-8 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center font-bold text-[11px]">
+                        {(sub.studentName || "ST").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-zinc-900">
+                          {sub.studentName || "Student"}
+                        </span>
+                        <span className="text-[11px] text-zinc-400">
+                          {sub.planName} &bull; {sub.parentPhone || "No contact"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="font-bold text-rose-600">{days} days remaining</span>
+                      <span className="text-[11px] text-zinc-400">{sub.amountCharged ?? 0} EGP</span>
+                    </div>
                   </div>
-
-                  <span className="text-[11px] font-bold text-amber-800">
-                    {sub.remainingDays}d left
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
-          <div className="pt-4 border-t border-zinc-100 mt-5">
+          <div className="pt-4 border-t border-zinc-100 mt-4 flex items-center justify-between">
+            <span className="text-xs text-zinc-500">
+              Expiring cohort: <strong>{expiringSubscribers.length}</strong> students
+            </span>
             <Button
-              onClick={() => onSelectTab("subscribers")}
-              className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded-xl h-9 text-xs cursor-pointer shadow-2xs"
+              onClick={onAssignNew}
+              className="bg-[#F59E0B] hover:bg-amber-500 text-white text-xs h-8 px-3 rounded-xl gap-1.5 shadow-2xs cursor-pointer"
             >
-              Review All Expiring Accounts
+              <Users className="size-3.5" />
+              <span>Enroll Student</span>
             </Button>
           </div>
         </div>

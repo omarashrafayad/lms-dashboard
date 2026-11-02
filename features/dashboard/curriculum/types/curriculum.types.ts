@@ -198,6 +198,7 @@ export interface CreatePdfPayload {
   fileSize: number
   isOfflineAvailable: boolean
   file: File
+  bookImage?:File | null
 }
 
 export interface UpdatePdfPayload {
