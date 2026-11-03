@@ -8,6 +8,7 @@ import {
   Download,
   Plus,
   UserPlus,
+  CreditCard,
 } from "lucide-react"
 import { SubscriptionsHeaderStats } from "../components/SubscriptionsHeaderStats"
 import { SubscriptionsNavTabs, SubscriptionsTabKey } from "../components/SubscriptionsNavTabs"
@@ -19,6 +20,7 @@ import { AssignSubscriptionModal } from "../components/Subscribers/AssignSubscri
 import { TransactionsTable } from "../components/Transactions/TransactionsTable"
 import { InvoiceReceiptModal } from "../components/Transactions/InvoiceReceiptModal"
 import { RefundModal } from "../components/Transactions/RefundModal"
+import { RecordPaymentModal } from "../components/Transactions/RecordPaymentModal"
 import {
   useSubscriptionStats,
   useSubscriptionPlans,
@@ -30,12 +32,16 @@ import {
   useAssignSubscriber,
   useUpdateSubscriberStatus,
   useRefundPayment,
+  useRecordPayment,
+  useReviewPayment,
+  useMarkPaymentFailed,
 } from "../hooks/useSubscriptions"
 import {
   SubscriptionPlan,
   TransactionItem,
   CreatePlanPayload,
   AssignPlanPayload,
+  RecordPaymentPayload,
 } from "../types/subscriptions.types"
 import { exportPaymentsLedger } from "../api/subscriptionsApi"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
@@ -63,6 +69,7 @@ export function SubscriptionsMainPage({
   const [editingPlan, setEditingPlan] = React.useState<SubscriptionPlan | null>(null)
   const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false)
   const [assigningPlan, setAssigningPlan] = React.useState<SubscriptionPlan | null>(null)
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = React.useState(false)
   const [viewingInvoice, setViewingInvoice] = React.useState<TransactionItem | null>(null)
   const [refundingTxn, setRefundingTxn] = React.useState<TransactionItem | null>(null)
 
@@ -100,6 +107,9 @@ export function SubscriptionsMainPage({
   const assignSubscriberMutation = useAssignSubscriber()
   const updateSubscriberStatusMutation = useUpdateSubscriberStatus()
   const refundPaymentMutation = useRefundPayment()
+  const recordPaymentMutation = useRecordPayment()
+  const reviewPaymentMutation = useReviewPayment()
+  const markPaymentFailedMutation = useMarkPaymentFailed()
 
   const handleTabChange = (tab: SubscriptionsTabKey) => {
     setActiveTab(tab)
@@ -150,6 +160,43 @@ export function SubscriptionsMainPage({
     }
   }
 
+  const handleRecordPayment = async (payload: RecordPaymentPayload) => {
+    try {
+      await recordPaymentMutation.mutateAsync(payload)
+      toast.success("Payment recorded successfully!")
+      setIsRecordPaymentOpen(false)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
+  const handleApprovePayment = async (id: string) => {
+    try {
+      await reviewPaymentMutation.mutateAsync({ id, approve: true })
+      toast.success("Payment approved successfully!")
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
+  const handleRejectPayment = async (id: string) => {
+    try {
+      await reviewPaymentMutation.mutateAsync({ id, approve: false })
+      toast.success("Payment rejected!")
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
+  const handleMarkPaymentFailed = async (id: string) => {
+    try {
+      await markPaymentFailedMutation.mutateAsync(id)
+      toast.success("Payment marked as failed")
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
   const handleRefund = async (reason: string) => {
     if (!refundingTxn) return
     try {
@@ -189,6 +236,15 @@ export function SubscriptionsMainPage({
             >
               <Download className="size-3.5 text-zinc-400" />
               <span>Export Ledger</span>
+            </Button>
+
+            <Button
+              onClick={() => setIsRecordPaymentOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2 rounded-xl h-10 px-3.5 border-emerald-200/80 bg-emerald-50/60 hover:bg-emerald-50 text-emerald-800 text-xs font-semibold cursor-pointer shadow-2xs transition-all"
+            >
+              <CreditCard className="size-3.5 text-emerald-600" />
+              <span>Record Payment</span>
             </Button>
 
             <Button
@@ -299,6 +355,10 @@ export function SubscriptionsMainPage({
                 isLoading={isTxnsLoading}
                 onViewInvoice={(t) => setViewingInvoice(t)}
                 onRefund={(t) => setRefundingTxn(t)}
+                onRecordPayment={() => setIsRecordPaymentOpen(true)}
+                onApprove={handleApprovePayment}
+                onReject={handleRejectPayment}
+                onMarkFailed={handleMarkPaymentFailed}
               />
             )}
           </>
@@ -325,6 +385,12 @@ export function SubscriptionsMainPage({
         onAssign={handleAssignSubscriber}
         plans={plans}
         initialPlan={assigningPlan}
+      />
+
+      <RecordPaymentModal
+        isOpen={isRecordPaymentOpen}
+        onClose={() => setIsRecordPaymentOpen(false)}
+        onRecord={handleRecordPayment}
       />
 
       <InvoiceReceiptModal

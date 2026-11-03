@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { StudentProfileHeader } from "../components/profile/StudentProfileHeader"
 import { StudentKpiCards } from "../components/profile/StudentKpiCards"
 import { StudentInfoCards } from "../components/profile/StudentInfoCards"
@@ -39,12 +40,24 @@ function getAvatarColor(key: string): string {
 }
 
 export default function StudentDetailPage({ studentId }: StudentDetailPageProps) {
+  const router = useRouter()
   const { data: apiStudent, isLoading, isError } = useStudent(studentId)
 
   const profile: StudentProfile | null = React.useMemo(() => {
     if (!apiStudent) return null
 
-    const initials = (apiStudent.fullName || "Student")
+    const studentData = apiStudent.profile || apiStudent
+    const stats = apiStudent.stats || {
+      overallProgress: 0,
+      averageScore: 0,
+      completedCourses: 0,
+      totalCourses: 0,
+      completedLessons: 0,
+      totalLessons: 0,
+      upcomingSessions: 0,
+    }
+
+    const initials = (studentData.fullName || "Student")
       .trim()
       .split(/\s+/)
       .filter(Boolean)
@@ -52,65 +65,123 @@ export default function StudentDetailPage({ studentId }: StudentDetailPageProps)
       .map((n) => n[0].toUpperCase())
       .join("") || "ST"
 
-    const code = `STD-${(apiStudent.id || "").slice(0, 5).toUpperCase()}`
+    const code = `STD-${(studentData.id || studentId).slice(0, 5).toUpperCase()}`
+
+    const courses = (apiStudent.courses || []).map((c) => ({
+      id: c.courseId,
+      name: c.courseName || "Course",
+      progress: c.progressPercentage ?? 0,
+      score: c.averageScore ?? 0,
+      status: (c.status === "Completed" ? "Completed" : "In Progress") as "Completed" | "In Progress",
+    }))
+
+    const lessons = (apiStudent.lessons || []).map((l) => ({
+      id: l.lessonId,
+      name: l.lessonName || "Lesson",
+      course: l.courseName || "Course",
+      completedDate: l.completedAt ? new Date(l.completedAt).toLocaleDateString() : "—",
+      status: (l.status === "Completed" ? "Completed" : "In Progress") as "Completed" | "In Progress",
+    }))
+
+    const exams = (apiStudent.exams || []).map((e) => ({
+      id: e.id || e.examId,
+      name: e.examTitle || "Exam",
+      course: e.courseName || "Course",
+      date: e.completedAt ? new Date(e.completedAt).toLocaleDateString() : "—",
+      score: e.score ?? 0,
+      result: (e.score >= 50 ? "Passed" : "Failed") as "Passed" | "Failed",
+    }))
+
+    const formatSession = (s: any) => {
+      const start = s.scheduledStart ? new Date(s.scheduledStart) : null
+      return {
+        id: s.id,
+        subject: s.title || s.courseOrSubject || "Live Session",
+        instructor: s.teacherName || "Teacher",
+        dateText: start ? start.toLocaleDateString() : "—",
+        timeText: start
+          ? start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : "—",
+        status: (s.displayStatus || s.status || "Upcoming") as
+          | "Upcoming"
+          | "Attended"
+          | "Missed",
+      }
+    }
+
+    const sessions = {
+      upcoming: (apiStudent.sessions?.upcoming || []).map(formatSession),
+      previous: (apiStudent.sessions?.previous || []).map(formatSession),
+    }
+
+    const firstSub = apiStudent.subscriptions?.[0]
+    const subscription = {
+      plan: firstSub?.planName || "No Active Plan",
+      status: (firstSub?.status === "Active" || studentData.isActive
+        ? "Active"
+        : "Inactive") as "Active" | "Inactive",
+      startDate: firstSub?.startsAt
+        ? new Date(firstSub.startsAt).toLocaleDateString()
+        : studentData.createdAt
+        ? new Date(studentData.createdAt).toLocaleDateString()
+        : "—",
+      expiryDate: firstSub?.expiresAt
+        ? new Date(firstSub.expiresAt).toLocaleDateString()
+        : "—",
+    }
+
+    const firstGuardian = apiStudent.guardians?.[0]
+    const parent = {
+      name: firstGuardian?.fullName || "—",
+      relationship: "Guardian / Parent",
+      email: firstGuardian?.email || "—",
+      phone: firstGuardian?.phoneNumber || "—",
+    }
 
     return {
-      id: apiStudent.id,
-      name: apiStudent.fullName || "Student",
-      fullName: apiStudent.fullName || "Student",
+      id: studentData.id || studentId,
+      name: studentData.fullName || "Student",
+      fullName: studentData.fullName || "Student",
       code,
       studentId: code,
       avatarInitials: initials,
-      avatarColorClass: getAvatarColor(apiStudent.id || apiStudent.fullName || ""),
-      status: apiStudent.isActive ? "Active" : "Inactive",
-      stage: apiStudent.educationStage || "—",
-      educationStage: apiStudent.educationStage || "—",
-      grade: apiStudent.grade || "—",
-      system: apiStudent.educationSystem || "—",
-      educationSystem: apiStudent.educationSystem || "—",
+      avatarColorClass: getAvatarColor(studentData.id || studentData.fullName || ""),
+      status: studentData.isActive ? "Active" : "Inactive",
+      stage: studentData.educationStage || "—",
+      educationStage: studentData.educationStage || "—",
+      grade: studentData.grade || "—",
+      system: studentData.educationSystem || "—",
+      educationSystem: studentData.educationSystem || "—",
       school: "—",
-      gender: (apiStudent.gender === "Female" ? "Female" : "Male"),
-      dateOfBirth: apiStudent.dateOfBirth || "—",
-      email: apiStudent.email || "—",
-      phone: apiStudent.phoneNumber || "—",
+      gender: (studentData.gender === "Female" ? "Female" : "Male"),
+      dateOfBirth: studentData.dateOfBirth || "—",
+      email: studentData.email || "—",
+      phone: studentData.phoneNumber || "—",
       kpis: {
-        overallProgress: 0,
-        averageScore: 0,
-        completedCourses: 0,
-        completedLessons: 0,
-        upcomingSessions: 0,
+        overallProgress: stats.overallProgress ?? 0,
+        averageScore: stats.averageScore ?? 0,
+        completedCourses: stats.completedCourses ?? 0,
+        completedLessons: stats.completedLessons ?? 0,
+        upcomingSessions: stats.upcomingSessions ?? (apiStudent.sessions?.upcomingCount ?? 0),
       },
       learningProgress: {
-        overallProgress: 0,
-        currentLevel: "Beginner",
-        completedLessons: 0,
-        totalLessons: 0,
-        completedCourses: 0,
-        totalCourses: 0,
-        averageScore: 0,
+        overallProgress: stats.overallProgress ?? 0,
+        currentLevel: studentData.level || "Standard",
+        completedLessons: stats.completedLessons ?? 0,
+        totalLessons: stats.totalLessons ?? 0,
+        completedCourses: stats.completedCourses ?? 0,
+        totalCourses: stats.totalCourses ?? 0,
+        averageScore: stats.averageScore ?? 0,
       },
-      courses: [],
-      lessons: [],
-      exams: [],
-      sessions: {
-        upcoming: [],
-        previous: [],
-      },
-      subscription: {
-        plan: "Standard Plan",
-        status: apiStudent.isActive ? "Active" : "Inactive",
-        startDate: apiStudent.createdAt ? new Date(apiStudent.createdAt).toLocaleDateString() : "—",
-        expiryDate: "—",
-      },
-      parent: {
-        name: "—",
-        relationship: "Parent",
-        email: "—",
-        phone: "—",
-      },
+      courses,
+      lessons,
+      exams,
+      sessions,
+      subscription,
+      parent,
       activityHistory: [],
     }
-  }, [apiStudent])
+  }, [apiStudent, studentId])
 
   if (isLoading) {
     return (
@@ -134,7 +205,7 @@ export default function StudentDetailPage({ studentId }: StudentDetailPageProps)
       <StudentProfileHeader
         profile={profile}
         onEdit={() => {
-          console.log("Edit Student clicked for", profile.name)
+          router.push(`/student/${studentId}/edit`)
         }}
       />
 

@@ -10,6 +10,8 @@ import {
   XCircle,
   AlertTriangle,
   Receipt,
+  CreditCard,
+  Ban,
 } from "lucide-react"
 import UniTable, { type UniTableColumn } from "@/components/shared/uniTable"
 import EmptyState from "@/components/shared/EmptyState"
@@ -23,6 +25,10 @@ interface TransactionsTableProps {
   isLoading?: boolean
   onViewInvoice: (transaction: TransactionItem) => void
   onRefund: (transaction: TransactionItem) => void
+  onRecordPayment?: () => void
+  onApprove?: (id: string) => void
+  onReject?: (id: string) => void
+  onMarkFailed?: (id: string) => void
 }
 
 export function TransactionsTable({
@@ -30,6 +36,10 @@ export function TransactionsTable({
   isLoading,
   onViewInvoice,
   onRefund,
+  onRecordPayment,
+  onApprove,
+  onReject,
+  onMarkFailed,
 }: TransactionsTableProps) {
   const [search, setSearch] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState<string>("all")
@@ -68,6 +78,7 @@ export function TransactionsTable({
           icon: CheckCircle2,
         }
       case "Pending":
+      case "In Review":
         return {
           pill: "text-amber-700 bg-amber-50 border-amber-200/60",
           icon: Clock,
@@ -188,7 +199,7 @@ export function TransactionsTable({
         header: "ACTIONS",
         headerClassName: "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase text-right",
         cell: (_, t) => (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-1.5">
             <Button
               variant="ghost"
               size="sm"
@@ -199,22 +210,65 @@ export function TransactionsTable({
               <span>Invoice</span>
             </Button>
 
+            {/* Pending actions */}
+            {(t.status === "Pending" || t.status === "In Review") && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onApprove?.(t.id)}
+                  className="h-8 px-2.5 rounded-lg text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 gap-1 cursor-pointer font-medium"
+                >
+                  <CheckCircle2 className="size-3.5" />
+                  <span>Approve</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onReject?.(t.id)}
+                  className="h-8 px-2.5 rounded-lg text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 cursor-pointer font-medium"
+                >
+                  <XCircle className="size-3.5" />
+                  <span>Reject</span>
+                </Button>
+              </>
+            )}
+
+            {/* Paid actions */}
             {t.status === "Paid" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onRefund(t)}
-                className="h-8 px-2.5 rounded-lg text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1.5 cursor-pointer"
-              >
-                <RotateCcw className="size-3.5" />
-                <span>Refund</span>
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRefund(t)}
+                  className="h-8 px-2.5 rounded-lg text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw className="size-3.5" />
+                  <span>Refund</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (confirm("Are you sure you want to mark this payment as Failed?")) {
+                      onMarkFailed?.(t.id)
+                    }
+                  }}
+                  className="h-8 px-2 rounded-lg text-xs text-zinc-400 hover:text-rose-600 hover:bg-rose-50 gap-1 cursor-pointer"
+                  title="Mark as Failed"
+                >
+                  <Ban className="size-3.5" />
+                  <span>Fail</span>
+                </Button>
+              </>
             )}
           </div>
         ),
       },
     ],
-    [onViewInvoice, onRefund]
+    [onViewInvoice, onRefund, onApprove, onReject, onMarkFailed]
   )
 
   return (
@@ -232,7 +286,7 @@ export function TransactionsTable({
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -256,6 +310,17 @@ export function TransactionsTable({
             <option value="InstaPay">InstaPay</option>
             <option value="Bank Transfer">Bank Transfer</option>
           </select>
+
+          {onRecordPayment && (
+            <Button
+              type="button"
+              onClick={onRecordPayment}
+              className="h-9.5 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer shadow-2xs flex items-center gap-1.5 transition-all active:scale-[0.98]"
+            >
+              <CreditCard className="size-3.5" />
+              <span>Record Payment</span>
+            </Button>
+          )}
         </div>
       </div>
 

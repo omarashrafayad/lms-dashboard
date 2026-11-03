@@ -1,6 +1,7 @@
 import clientAxios from "@/lib/axios/clientAxios";
 import {
   ApiStudent,
+  ApiStudentWithProfile,
   CreateStudentPayload,
   UpdateStudentPayload,
   StudentQueryParams,
@@ -31,9 +32,27 @@ export const createStudent = async (data: CreateStudentPayload) => {
   return res.data;
 };
 
-export const getStudentById = async (studentId: string): Promise<ApiStudent> => {
-  const res = await clientAxios.get(`/students/${studentId}`);
-  return res.data?.data || res.data;
+export const getStudentById = async (studentId: string): Promise<ApiStudentWithProfile> => {
+  const res = await clientAxios.get(`/students/${studentId}/profile`);
+  const data = res.data?.data || res.data;
+
+  const profile = data?.profile || {};
+  return {
+    ...profile,
+    ...data,
+    id: profile.id || data.id || studentId,
+    fullName: profile.fullName || data.fullName || "",
+    email: profile.email || data.email || "",
+    phoneNumber: profile.phoneNumber || data.phoneNumber || "",
+    isActive: profile.isActive ?? data.isActive ?? true,
+    gender: profile.gender || data.gender || "",
+    educationStage: profile.educationStage || data.educationStage || "",
+    grade: profile.grade || data.grade || "",
+    educationSystem: profile.educationSystem || data.educationSystem || "",
+    dateOfBirth: profile.dateOfBirth || data.dateOfBirth || "",
+    status: profile.status || data.status || "Active",
+    createdAt: profile.createdAt || data.createdAt || "",
+  };
 };
 
 export const updateStudent = async (
