@@ -99,11 +99,6 @@ export default function SessionListPage() {
           completed={completedCount}
         />
 
-        <SessionStatusTabs
-          activeTab={filters.statusTab}
-          onTabChange={(tab) => handleFilterChange("statusTab", tab)}
-        />
-
         <SessionFilters
           filters={filters}
           onChange={handleFilterChange}

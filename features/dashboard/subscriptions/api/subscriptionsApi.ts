@@ -177,6 +177,25 @@ export const refundPayment = async (
   return res.data?.data ?? res.data
 }
 
+export const reviewPayment = async (
+  id: string,
+  approve: boolean,
+  note?: string
+): Promise<ApiPayment> => {
+  const res = await clientAxios.post(`/billing/payments/${id}/review`, {
+    approve,
+    note: note || (approve ? "Payment approved by admin" : "Payment rejected by admin"),
+  })
+  return res.data?.data ?? res.data
+}
+
+export const markPaymentFailed = async (
+  id: string
+): Promise<ApiPayment> => {
+  const res = await clientAxios.post(`/billing/payments/${id}/mark-failed`)
+  return res.data?.data ?? res.data
+}
+
 export const exportPaymentsLedger = async (): Promise<any> => {
   const res = await clientAxios.get("/billing/payments/export")
   return res.data

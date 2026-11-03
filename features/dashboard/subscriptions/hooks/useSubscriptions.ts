@@ -15,6 +15,8 @@ import {
   getPaymentsList,
   recordPayment,
   refundPayment,
+  reviewPayment,
+  markPaymentFailed,
 } from "../api/subscriptionsApi"
 import {
   CreatePlanPayload,
@@ -180,6 +182,7 @@ export const useRecordPayment = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] })
       queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
+      queryClient.invalidateQueries({ queryKey: ["subscribers"] })
     },
   })
 }
@@ -197,6 +200,37 @@ export const useRefundPayment = () => {
 }
 
 export const useRefundTransaction = useRefundPayment
+
+export const useReviewPayment = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      approve,
+      note,
+    }: {
+      id: string
+      approve: boolean
+      note?: string
+    }) => reviewPayment(id, approve, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
+      queryClient.invalidateQueries({ queryKey: ["subscribers"] })
+    },
+  })
+}
+
+export const useMarkPaymentFailed = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => markPaymentFailed(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] })
+      queryClient.invalidateQueries({ queryKey: ["subscription-stats"] })
+    },
+  })
+}
 
 // Compatibility placeholder for paymentRequests
 export const usePaymentRequests = () => {
