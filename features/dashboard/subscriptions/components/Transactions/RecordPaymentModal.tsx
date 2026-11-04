@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { X, CreditCard, Sparkles } from "lucide-react"
+import { X, CreditCard } from "lucide-react"
 import { RecordPaymentPayload } from "../../types/subscriptions.types"
 import { recordPaymentSchema, RecordPaymentFormData } from "../../schema/subscription.schema"
 import { Button } from "@/components/ui/button"
@@ -81,7 +81,7 @@ export function RecordPaymentModal({
         amount: 750,
         discountAmount: 0,
         couponCode: "",
-        method: "Visa / Mastercard",
+        method: "VisaMastercard",
         gatewayReference: `REF-${Math.floor(100000 + Math.random() * 900000)}`,
         itemDescription: "Subscription Payment",
       })
@@ -152,11 +152,11 @@ export function RecordPaymentModal({
         {/* Form Body */}
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(onSubmit as any)}
+            onSubmit={form.handleSubmit(onSubmit )}
             className="flex-1 overflow-y-auto p-6 flex flex-col gap-4.5"
           >
             <UniSelect
-              control={form.control as any}
+              control={form.control}
               name="studentId"
               label="Select Student"
               placeholder="Search or select student"
@@ -166,7 +166,7 @@ export function RecordPaymentModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UniSelect
-                control={form.control as any}
+                control={form.control }
                 name="planId"
                 label="Associated Plan (Optional)"
                 placeholder="Select plan"
@@ -175,7 +175,7 @@ export function RecordPaymentModal({
               />
 
               <UniSelect
-                control={form.control as any}
+                control={form.control }
                 name="method"
                 label="Payment Method"
                 placeholder="Select method"
@@ -185,7 +185,7 @@ export function RecordPaymentModal({
             </div>
 
             <UniInput
-              control={form.control as any}
+              control={form.control }
               name="itemDescription"
               label="Item / Payment Description"
               placeholder="e.g. Standard Scholar Plan - Term 1"
@@ -194,7 +194,7 @@ export function RecordPaymentModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UniInput
-                control={form.control as any}
+                control={form.control }
                 name="amount"
                 label="Amount (EGP)"
                 type="number"
@@ -203,7 +203,7 @@ export function RecordPaymentModal({
               />
 
               <UniInput
-                control={form.control as any}
+                control={form.control }
                 name="discountAmount"
                 label="Discount Amount (EGP)"
                 type="number"
@@ -213,14 +213,14 @@ export function RecordPaymentModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UniInput
-                control={form.control as any}
+                control={form.control }
                 name="gatewayReference"
                 label="Reference / Receipt #"
                 placeholder="e.g. REF-123456"
               />
 
               <UniInput
-                control={form.control as any}
+                control={form.control }
                 name="couponCode"
                 label="Coupon Code (Optional)"
                 placeholder="e.g. SAVE20"

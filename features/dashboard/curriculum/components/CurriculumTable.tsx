@@ -105,7 +105,7 @@ export function CurriculumTable({
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
           <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md bg-zinc-100 text-xs font-semibold text-zinc-700">
-            {subject.chaptersCount ?? 0}
+            {subject.chapterCount ?? 0}
           </span>
         ),
       },
@@ -116,7 +116,7 @@ export function CurriculumTable({
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
           <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md bg-zinc-100 text-xs font-semibold text-zinc-700">
-            {subject.unitsCount ?? 0}
+            {subject.unitCount ?? 0}
           </span>
         ),
       },
@@ -127,7 +127,7 @@ export function CurriculumTable({
           "text-[11px] font-semibold tracking-wider text-zinc-400 uppercase",
         cell: (_, subject) => (
           <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md bg-zinc-100 text-xs font-semibold text-zinc-700">
-            {subject.lessonsCount ?? 0}
+            {subject.lessonCount ?? 0}
           </span>
         ),
       },
