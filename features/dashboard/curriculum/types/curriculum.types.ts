@@ -16,9 +16,9 @@ export interface CurriculumSubject {
   educationSystemId?: string
   educationSystemName?: EducationSystem | string
   term: string
-  chaptersCount?: number
-  unitsCount?: number
-  lessonsCount?: number
+  chapterCount?: number
+  unitCount?: number
+  lessonCount?: number
   status?: SubjectStatus | string
   chapters?: Chapter[]
   createdAt?: string
