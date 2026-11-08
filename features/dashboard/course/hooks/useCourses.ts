@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getCourses,
   getCourseById,
+  getCourseLessons,
   createCourse,
   updateCourse,
   deleteCourse,
@@ -34,6 +35,14 @@ export const useCourse = (courseId: string) => {
 }
 
 export const useCourseDetail = useCourse
+
+export const useCourseLessons = (courseId: string) => {
+  return useQuery({
+    queryKey: ["course-lessons", courseId],
+    queryFn: () => getCourseLessons(courseId),
+    enabled: !!courseId,
+  })
+}
 
 export const useCreateCourse = () => {
   const queryClient = useQueryClient()

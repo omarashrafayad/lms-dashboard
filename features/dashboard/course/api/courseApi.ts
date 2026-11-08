@@ -49,6 +49,12 @@ export const deleteCourse = async (courseId: string): Promise<void> => {
   await clientAxios.delete(`/curriculum/courses/${courseId}`)
 }
 
+export const getCourseLessons = async (courseId: string) => {
+  const res = await clientAxios.get(`/curriculum/lessons/course/${courseId}`)
+  const data = res.data?.data ?? res.data
+  return Array.isArray(data) ? data : []
+}
+
 // Backward compatibility aliases
 export const getCourseList = getCourses
 export const getCourseDetailById = getCourseById

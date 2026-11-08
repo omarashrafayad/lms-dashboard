@@ -18,9 +18,10 @@ export interface AddLessonModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   chapterId?: string | null
-  unitId: string | null
+  unitId?: string | null
+  courseId?: string | null
   defaultOrder?: number
-  onAddLesson: (payload: CreateLessonPayload) => Promise<void> | void
+  onAddLesson: (payload: CreateLessonPayload) => Promise<any> | void
   isSubmitting?: boolean
 }
 
@@ -28,6 +29,7 @@ export function AddLessonModal({
   open,
   onOpenChange,
   unitId,
+  courseId,
   defaultOrder = 1,
   onAddLesson,
   isSubmitting = false,
@@ -37,7 +39,7 @@ export function AddLessonModal({
   const [lessonOrder, setLessonOrder] = React.useState<number>(defaultOrder)
   const [duration, setDuration] = React.useState<number>(30)
   const [accessType, setAccessType] = React.useState<string>("Premium")
-  const [status, setStatus] = React.useState<string>("true")
+  const [status, setStatus] = React.useState<string>("Active")
 
   React.useEffect(() => {
     if (open) {
@@ -46,16 +48,17 @@ export function AddLessonModal({
       setLessonOrder(defaultOrder)
       setDuration(30)
       setAccessType("Premium")
-      setStatus("true")
+      setStatus("Active")
     }
   }, [open, defaultOrder])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim() || !unitId) return
+    if (!name.trim() || (!unitId && !courseId)) return
 
     await onAddLesson({
-      unitId,
+      unitId: unitId || undefined,
+      courseId: courseId || undefined,
       name: name.trim(),
       description: description.trim(),
       lessonOrder: Number(lessonOrder) || 1,
@@ -78,7 +81,7 @@ export function AddLessonModal({
                 Add Lesson
               </DialogTitle>
               <DialogDescription className="text-xs text-zinc-500">
-                Configure and add a new lesson to this unit.
+                Configure and add a new lesson to this {courseId ? "course" : "unit"}.
               </DialogDescription>
             </div>
           </div>
@@ -172,8 +175,8 @@ export function AddLessonModal({
                 onChange={(e) => setStatus(e.target.value)}
                 className="h-10 px-3 rounded-xl border border-zinc-200/80 bg-white text-xs text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/20 focus-visible:border-brand-orange"
               >
-                <option value="true">Active (Published)</option>
-                <option value="false">Draft (Inactive)</option>
+                <option value="Active">Active (Published)</option>
+                <option value="Draft">Draft (Inactive)</option>
               </select>
             </div>
           </div>

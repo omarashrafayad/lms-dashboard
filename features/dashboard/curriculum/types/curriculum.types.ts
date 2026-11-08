@@ -66,7 +66,8 @@ export interface Unit {
 }
 
 export interface CreateLessonPayload {
-  unitId: string
+  unitId?: string
+  courseId?: string
   name: string
   description?: string
   lessonOrder: number
@@ -260,6 +261,7 @@ export interface ContentVideoResponse {
   lessonId: string
   title: string
   filePath?: string
+  url?: string
   fileSize: number
   duration: number
   order: number

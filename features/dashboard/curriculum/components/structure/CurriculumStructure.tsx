@@ -92,7 +92,9 @@ export function CurriculumStructure({
       toast.success("Lesson created successfully!")
       setIsAddLessonOpen(false)
       // Automatically expand this unit
-      setExpandedUnits((prev) => ({ ...prev, [payload.unitId]: true }))
+      if (payload.unitId) {
+        setExpandedUnits((prev) => ({ ...prev, [payload.unitId!]: true }))
+      }
     } catch (err: unknown) {
       toast.error(getErrorMessage(err))
     }

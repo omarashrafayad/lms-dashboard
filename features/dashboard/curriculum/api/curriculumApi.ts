@@ -144,6 +144,10 @@ export const getLessonDetail = async (
   return res.data?.data || res.data
 }
 
+export const deleteLesson = async (lessonId: string): Promise<void> => {
+  await clientAxios.delete(`/curriculum/lessons/${lessonId}`)
+}
+
 // ======================== Content: PDF API ========================
 export const uploadPdf = async (
   payload: CreatePdfPayload

@@ -2,10 +2,11 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { ChevronLeft, Play, FileText, Video, Clock } from "lucide-react"
+import { ChevronLeft, Play, FileText, Video, Clock, Loader2 } from "lucide-react"
 import { useCourseDetail } from "../hooks/useCourses"
-import { CourseLessonItem } from "../types/course.types"
+import { useLessonDetail, useLessonVideos } from "@/features/dashboard/curriculum/hooks/useCurriculum"
+import { LessonVideosCard } from "@/features/dashboard/curriculum/components/lesson/LessonVideosCard"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
 
 export interface CourseLessonViewPageProps {
   courseId: string
@@ -16,28 +17,59 @@ export default function CourseLessonViewPage({
   courseId,
   lessonId,
 }: CourseLessonViewPageProps) {
-  const router = useRouter()
   const { data: course } = useCourseDetail(courseId)
+  const { data: rawLesson, isLoading: isLessonLoading } = useLessonDetail(
+    courseId,
+    lessonId
+  )
+  const { data: serverVideos = [], isLoading: isVideosLoading } =
+    useLessonVideos(lessonId)
 
-  // Find targeted lesson or fallback to Mathematics: Core Concepts matching Image 1
-  const lesson =
-    course?.lessons?.find((l: CourseLessonItem) => l.id === lessonId) || {
-      id: "lesson-c-2",
-      order: 2,
-      title: "Mathematics: Core Concepts",
-      type: "Reading" as const,
-      duration: "32 min",
+  const lesson = React.useMemo(() => {
+    return {
+      id: rawLesson?.id || lessonId,
+      order: rawLesson?.lessonOrder || 1,
+      title: rawLesson?.name || rawLesson?.title || "Course Lesson",
+      type: serverVideos.length > 0 ? "Video" : "Reading",
+      duration: rawLesson?.duration ? `${rawLesson.duration} min` : "30 min",
       offlineAvailable: true,
       description:
-        "This lesson covers mathematics: core concepts through guided explanation and practice. Students work through core ideas step by step, then check understanding with a short activity.",
+        rawLesson?.description ||
+        "This lesson covers course concepts through guided explanation and materials.",
+      status: rawLesson?.status || "Active",
     }
+  }, [rawLesson, lessonId, serverVideos])
 
+  const [activeVideoUrl, setActiveVideoUrl] = React.useState<string | null>(null)
   const [isPlaying, setIsPlaying] = React.useState(false)
+
+  React.useEffect(() => {
+    if (serverVideos.length > 0 && !activeVideoUrl) {
+      const firstWithUrl = serverVideos.find((v: any) => v.url || v.filePath)
+      if (firstWithUrl) {
+        setActiveVideoUrl(firstWithUrl.url || firstWithUrl.filePath || null)
+      }
+    }
+  }, [serverVideos, activeVideoUrl])
+
+  if (isLessonLoading) {
+    return (
+      <div className="flex-1 p-12 flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner title="Loading lesson..." />
+      </div>
+    )
+  }
+
+  // Calculate total duration from videos
+  const totalDurationMinutes = serverVideos.reduce((acc: number, curr: any) => {
+    const dur = typeof curr.duration === "number" ? curr.duration : 0
+    return acc + Math.round(dur / 60)
+  }, 0)
 
   return (
     <div className="flex flex-col min-h-full">
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1300px] w-full mx-auto pb-20 animate-in fade-in duration-200">
-        {/* Top Back Link matching Image 1 */}
+        {/* Top Back Link */}
         <div>
           <Link
             href={`/courses/${courseId}`}
@@ -48,20 +80,26 @@ export default function CourseLessonViewPage({
           </Link>
         </div>
 
-        {/* Lesson Header matching Image 1 */}
+        {/* Lesson Header */}
         <div className="flex items-center gap-3.5">
           <div className="size-11 rounded-xl bg-[#FEF3C7] text-[#D97706] flex items-center justify-center shrink-0 shadow-2xs">
             <FileText className="size-5 stroke-[2]" />
           </div>
 
           <div className="flex flex-col">
-            <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
-              {lesson.title}
-            </h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
+                {lesson.title}
+              </h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                <span className="size-1.5 rounded-full bg-emerald-500" />
+                {lesson.status}
+              </span>
+            </div>
             <div className="flex items-center gap-2 text-xs text-zinc-400 font-normal mt-0.5">
-              <span>{course?.category || "Computer Science"}</span>
+              <span>{course?.category || "Course"}</span>
               <span>·</span>
-              <span>{lesson.type}</span>
+              <span>Lesson {lesson.order}</span>
               <span>·</span>
               <div className="flex items-center gap-1">
                 <Clock className="size-3 text-zinc-400" />
@@ -71,50 +109,53 @@ export default function CourseLessonViewPage({
           </div>
         </div>
 
-        {/* 2-Column Layout matching Image 1 */}
+        {/* 2-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column (Span 2) */}
           <div className="lg:col-span-2 flex flex-col gap-6">
-            {/* Media / Video Player Card matching Image 1 */}
-            <div className="w-full bg-[#F4F4F5]/70 rounded-2xl border border-zinc-200/80 shadow-2xs aspect-video min-h-[360px] flex items-center justify-center relative overflow-hidden group">
-              {isPlaying ? (
-                <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center text-white">
-                  <div className="text-sm font-semibold animate-pulse">
-                    Playing Video Content...
-                  </div>
+            {/* Media / Video Player Card */}
+            <div className="w-full bg-[#18181B] rounded-2xl border border-zinc-200/80 shadow-2xs aspect-video min-h-[360px] flex items-center justify-center relative overflow-hidden group">
+              {activeVideoUrl && isPlaying ? (
+                <video
+                  src={activeVideoUrl}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-white relative">
                   <button
                     type="button"
-                    onClick={() => setIsPlaying(false)}
-                    className="mt-4 px-4 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-xs font-medium backdrop-blur-xs transition-colors cursor-pointer"
+                    onClick={() => setIsPlaying(true)}
+                    className="size-16 rounded-full bg-[#F59E0B] hover:bg-amber-500 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                    aria-label="Play video"
                   >
-                    Pause Video
+                    <Play className="size-7 fill-white text-white ml-1" />
                   </button>
+                  <span className="mt-3 text-xs text-zinc-300 font-medium">
+                    {serverVideos.length > 0
+                      ? serverVideos[0]?.title || "Play Lesson Video"
+                      : "No video uploaded yet"}
+                  </span>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsPlaying(true)}
-                  className="size-16 rounded-full bg-[#F59E0B] hover:bg-amber-500 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer"
-                  aria-label="Play video"
-                >
-                  <Play className="size-7 fill-white text-white ml-1" />
-                </button>
               )}
             </div>
 
-            {/* About this lesson Card matching Image 1 */}
+            {/* About this lesson Card */}
             <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-6 md:p-8 flex flex-col gap-3">
               <h3 className="text-sm font-bold text-zinc-900 tracking-tight">
                 About this lesson
               </h3>
               <p className="text-xs text-zinc-600 font-normal leading-relaxed">
-                {lesson.description ||
-                  "This lesson covers mathematics: core concepts through guided explanation and practice. Students work through core ideas step by step, then check understanding with a short activity."}
+                {lesson.description}
               </p>
             </div>
+
+            {/* Lesson Videos Card (Matching lessondetails) */}
+            <LessonVideosCard lessonId={lessonId} />
           </div>
 
-          {/* Right Column (Span 1: 2 Stat Cards) matching Image 1 */}
+          {/* Right Column (Span 1: Stat Cards) */}
           <div className="flex flex-col gap-4">
             {/* Card 1: Videos */}
             <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-5 flex items-center gap-4 transition-all hover:border-zinc-300">
@@ -123,10 +164,10 @@ export default function CourseLessonViewPage({
               </div>
               <div className="flex flex-col">
                 <span className="text-2xl font-bold text-zinc-900 tracking-tight leading-tight">
-                  3
+                  {serverVideos.length}
                 </span>
                 <span className="text-xs font-medium text-zinc-400">
-                  Videos
+                  {serverVideos.length === 1 ? "Video" : "Videos"}
                 </span>
               </div>
             </div>
@@ -138,7 +179,7 @@ export default function CourseLessonViewPage({
               </div>
               <div className="flex flex-col">
                 <span className="text-2xl font-bold text-zinc-900 tracking-tight leading-tight">
-                  32m
+                  {totalDurationMinutes > 0 ? `${totalDurationMinutes}m` : lesson.duration}
                 </span>
                 <span className="text-xs font-medium text-zinc-400">
                   Duration

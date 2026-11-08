@@ -390,4 +390,5 @@ function UniTable<TData>({
     )
 }
 
+export { UniTable }
 export default UniTable
