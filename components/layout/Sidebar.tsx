@@ -15,6 +15,8 @@ import {
   ChevronRight,
   ChevronDown,
   Database,
+  Ticket,
+  Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -37,6 +39,8 @@ export function Sidebar() {
   const isRefGendersRoute = pathname.startsWith("/reference-data/genders")
   const isReferenceDataActive = pathname.startsWith("/reference-data")
   const isSubscriptionsRoute = pathname.startsWith("/subscriptions")
+  const isCouponsActive = pathname.startsWith("/coupons")
+  const isNotificationsActive = pathname.startsWith("/notifications")
   const isSupportActive = pathname.startsWith("/support")
   const isSettingsActive = pathname.startsWith("/settings")
 
@@ -613,6 +617,52 @@ export function Sidebar() {
                 <span>Analytics</span>
               </div>
             </Link> */}
+
+            {/* Coupons */}
+            <Link
+              href="/coupons"
+              className={cn(
+                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                isCouponsActive
+                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Ticket
+                  className={cn(
+                    "size-[18px] transition-colors",
+                    isCouponsActive
+                      ? "text-brand-orange"
+                      : "text-zinc-400 group-hover:text-zinc-600"
+                  )}
+                />
+                <span>Coupons</span>
+              </div>
+            </Link>
+
+            {/* Notifications */}
+            <Link
+              href="/notifications"
+              className={cn(
+                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                isNotificationsActive
+                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Bell
+                  className={cn(
+                    "size-[18px] transition-colors",
+                    isNotificationsActive
+                      ? "text-brand-orange"
+                      : "text-zinc-400 group-hover:text-zinc-600"
+                  )}
+                />
+                <span>Notifications</span>
+              </div>
+            </Link>
 
             {/* Support */}
             <Link

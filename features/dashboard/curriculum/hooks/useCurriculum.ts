@@ -15,6 +15,7 @@ import {
   createUnit,
   getLessons,
   createLesson,
+  deleteLesson,
   uploadPdf,
   getPdfs,
   getPdfById,
@@ -175,12 +176,43 @@ export const useCreateLesson = (subjectId?: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: CreateLessonPayload) => createLesson(data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["curriculum-lessons", variables.unitId],
-      })
+    onSuccess: (createdLesson, variables) => {
+      if (variables.unitId) {
+        queryClient.invalidateQueries({
+          queryKey: ["curriculum-lessons", variables.unitId],
+        })
+      }
+      if (variables.courseId) {
+        queryClient.invalidateQueries({
+          queryKey: ["course-lessons", variables.courseId],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ["course", variables.courseId],
+        })
+      }
       queryClient.invalidateQueries({
         queryKey: ["curriculum-units"],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-subject-structure"],
+      })
+    },
+  })
+}
+
+export const useDeleteLesson = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (lessonId: string) => deleteLesson(lessonId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["curriculum-lessons"],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["course-lessons"],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["course"],
       })
       queryClient.invalidateQueries({
         queryKey: ["curriculum-subject-structure"],
