@@ -22,16 +22,16 @@ import { CreateCouponPayload } from "../types/coupons.types"
 const couponSchema = z.object({
   code: z
     .string()
-    .min(3, "Code must be at least 3 characters")
-    .max(20, "Code cannot exceed 20 characters")
+    .min(2, "Code must be at least 2 characters")
+    .max(30, "Code cannot exceed 30 characters")
     .regex(/^[A-Za-z0-9_-]+$/, "Code must contain only letters, numbers, hyphens or underscores"),
-  discountType: z.enum(["percentage", "fixed"]),
+  discountType: z.string().min(1, "Please select discount type"),
   discountValue: z.coerce.number().positive("Discount value must be greater than 0"),
-  applicableTo: z.enum(["all", "courses", "subscriptions"]),
+  applicableScope: z.string().min(1, "Please select applicable scope"),
   usageLimit: z.string().optional(),
-  minPurchaseAmount: z.string().optional(),
-  endDate: z.string().optional(),
-  status: z.enum(["active", "disabled"]),
+  minOrderAmount: z.string().optional(),
+  expiresAt: z.string().optional(),
+  isActive: z.boolean().default(true),
 })
 
 type CouponFormData = z.infer<typeof couponSchema>
@@ -49,17 +49,17 @@ export function CreateCouponModal({
   onSubmitCoupon,
   isSubmitting = false,
 }: CreateCouponModalProps) {
-  const form = useForm({
-    resolver: zodResolver(couponSchema),
+  const form = useForm<CouponFormData>({
+    resolver: zodResolver(couponSchema) as any,
     defaultValues: {
       code: "",
-      discountType: "percentage",
+      discountType: "Percentage",
       discountValue: 10,
-      applicableTo: "all",
+      applicableScope: "All",
       usageLimit: "",
-      minPurchaseAmount: "",
-      endDate: "",
-      status: "active",
+      minOrderAmount: "",
+      expiresAt: "",
+      isActive: true,
     },
   })
 
@@ -67,170 +67,184 @@ export function CreateCouponModal({
     if (open) {
       form.reset({
         code: "",
-        discountType: "percentage",
+        discountType: "Percentage",
         discountValue: 10,
-        applicableTo: "all",
+        applicableScope: "All",
         usageLimit: "",
-        minPurchaseAmount: "",
-        endDate: "",
-        status: "active",
+        minOrderAmount: "",
+        expiresAt: "",
+        isActive: true,
       })
     }
   }, [open, form])
 
-  const onSubmit = async (values: any) => {
+  const onSubmit = async (values: CouponFormData) => {
     await onSubmitCoupon({
       code: values.code.trim().toUpperCase(),
       discountType: values.discountType,
       discountValue: Number(values.discountValue),
-      applicableTo: values.applicableTo,
-      usageLimit: values.usageLimit ? Number(values.usageLimit) : null,
-      minPurchaseAmount: values.minPurchaseAmount
-        ? Number(values.minPurchaseAmount)
-        : null,
-      endDate: values.endDate ? new Date(values.endDate).toISOString() : null,
-      status: values.status,
+      applicableScope: values.applicableScope,
+      usageLimit: values.usageLimit && values.usageLimit.trim() ? Number(values.usageLimit) : null,
+      minOrderAmount:
+        values.minOrderAmount && values.minOrderAmount.trim()
+          ? Number(values.minOrderAmount)
+          : null,
+      expiresAt: values.expiresAt && values.expiresAt.trim() ? new Date(values.expiresAt).toISOString() : null,
+      isActive: Boolean(values.isActive),
     })
   }
 
   const discountTypeOptions = [
-    { label: "Percentage Discount (%)", value: "percentage" },
-    { label: "Fixed Amount Discount ($)", value: "fixed" },
+    { label: "Percentage (%)", value: "Percentage" },
+    { label: "Fixed Amount ($)", value: "Fixed" },
   ]
 
   const scopeOptions = [
-    { label: "All Items (Courses & Subscriptions)", value: "all" },
-    { label: "Courses Only", value: "courses" },
-    { label: "Subscriptions Only", value: "subscriptions" },
-  ]
-
-  const statusOptions = [
-    { label: "Active (Immediately Available)", value: "active" },
-    { label: "Disabled (Draft)", value: "disabled" },
+    { label: "All Items / Plans", value: "All" },
+    { label: "Courses", value: "Courses" },
+    { label: "Subscriptions", value: "Subscriptions" },
+    { label: "Bundles", value: "Bundles" },
   ]
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        onClose={() => onOpenChange(false)}
-        className="max-w-[520px] p-6 max-h-[90vh] overflow-y-auto"
-      >
-        <DialogHeader className="gap-1">
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="size-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-              <Ticket className="size-4" />
+      <DialogContent className="max-w-xl rounded-2xl p-6 sm:p-7 max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="space-y-1.5 pb-2 border-b border-zinc-100">
+          <div className="flex items-center gap-2.5">
+            <div className="size-9 rounded-xl bg-amber-50 text-brand-orange flex items-center justify-center">
+              <Ticket className="size-4.5" />
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-zinc-900">
-                Create Promo Coupon
+                Create New Coupon
               </DialogTitle>
               <DialogDescription className="text-xs text-zinc-500">
-                Generate a discount coupon code with custom rates and usage limits.
+                Add a promotional discount code for students or courses.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit as any)} className="flex flex-col gap-4 mt-2">
-          {/* Code */}
-          <UniInput
-            control={form.control as any}
-            name="code"
-            label="Coupon Code"
-            placeholder="e.g. SUMMER2026"
-            required
-          />
-
-          {/* Row: Type & Value */}
-          <div className="grid grid-cols-2 gap-3">
-            <UniSelect
-              control={form.control as any}
-              name="discountType"
-              label="Discount Type"
-              options={discountTypeOptions}
-              required
-            />
-
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
+            {/* Coupon Code */}
             <UniInput
-              control={form.control as any}
-              name="discountValue"
-              label="Discount Value"
-              type="number"
-              placeholder="e.g. 20"
-              required
-            />
-          </div>
-
-          {/* Applicable Scope */}
-          <UniSelect
-            control={form.control as any}
-            name="applicableTo"
-            label="Applicable Scope"
-            options={scopeOptions}
-            required
-          />
-
-          {/* Row: Usage Limit & Min Purchase */}
-          <div className="grid grid-cols-2 gap-3">
-            <UniInput
-              control={form.control as any}
-              name="usageLimit"
-              label="Usage Limit (Optional)"
-              type="number"
-              placeholder="e.g. 100"
+              control={form.control}
+              name="code"
+              label="Coupon Code *"
+              placeholder="e.g. SUMMER25, PROMO2026"
+              inputClassName="font-mono uppercase tracking-wider"
+              helperText="Uppercase alphanumeric characters, numbers and dashes"
             />
 
-            <UniInput
-              control={form.control as any}
-              name="minPurchaseAmount"
-              label="Min Order Amount ($)"
-              type="number"
-              placeholder="e.g. 50"
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Discount Type */}
+              <UniSelect
+                control={form.control}
+                name="discountType"
+                label="Discount Type *"
+                placeholder="Select Type"
+                options={discountTypeOptions}
+              />
 
-          {/* Row: Expiry Date & Status */}
-          <div className="grid grid-cols-2 gap-3">
-            <UniInput
-              control={form.control as any}
-              name="endDate"
-              label="Expiry Date (Optional)"
-              type="date"
-            />
+              {/* Discount Value */}
+              <UniInput
+                control={form.control}
+                name="discountValue"
+                label="Discount Value *"
+                type="number"
+                placeholder="e.g. 20"
+                min={1}
+              />
+            </div>
 
-            <UniSelect
-              control={form.control as any}
-              name="status"
-              label="Initial Status"
-              options={statusOptions}
-              required
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Applicable Scope */}
+              <UniSelect
+                control={form.control}
+                name="applicableScope"
+                label="Applicable Scope *"
+                placeholder="Select Scope"
+                options={scopeOptions}
+              />
 
-          <DialogFooter className="mt-3 pt-3 border-t border-zinc-100 flex items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => onOpenChange(false)}
-              className="h-10 px-4 rounded-xl border-zinc-200/80 text-zinc-700 text-xs font-medium hover:bg-zinc-50 cursor-pointer"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="h-10 px-5 rounded-xl bg-brand-orange hover:bg-brand-orange/90 text-white text-xs font-semibold shadow-2xs cursor-pointer flex items-center gap-2"
-            >
-              {isSubmitting && <Loader2 className="size-3.5 animate-spin" />}
-              <span>{isSubmitting ? "Generating..." : "Create Coupon"}</span>
-            </Button>
-          </DialogFooter>
-        </form>
-      </Form>
-    </DialogContent>
+              {/* Expiration Date */}
+              <UniInput
+                control={form.control}
+                name="expiresAt"
+                label="Expiration Date (Optional)"
+                type="date"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Usage Limit */}
+              <UniInput
+                control={form.control}
+                name="usageLimit"
+                label="Max Usage Limit (Optional)"
+                type="number"
+                placeholder="e.g. 100 (empty for unlimited)"
+                min={1}
+              />
+
+              {/* Minimum Purchase Amount */}
+              <UniInput
+                control={form.control}
+                name="minOrderAmount"
+                label="Min Order Amount (Optional)"
+                type="number"
+                placeholder="e.g. 50"
+                min={0}
+              />
+            </div>
+
+            {/* Is Active Toggle */}
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/80">
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-zinc-900">
+                  Activate Coupon Immediately
+                </span>
+                <span className="text-[11px] text-zinc-500">
+                  Allow users to redeem this code immediately upon creation
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={form.watch("isActive")}
+                onChange={(e) => form.setValue("isActive", e.target.checked)}
+                className="size-4.5 rounded border-zinc-300 text-brand-orange focus:ring-brand-orange cursor-pointer accent-[#D97706]"
+              />
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-zinc-100 gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+                className="rounded-xl text-xs h-9"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="rounded-xl text-xs h-9 bg-brand-orange hover:bg-brand-orange/90 text-white font-semibold"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    <span>Creating...</span>
+                  </span>
+                ) : (
+                  "Create Coupon"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
     </Dialog>
   )
 }
-

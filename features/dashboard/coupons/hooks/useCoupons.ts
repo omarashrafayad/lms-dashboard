@@ -1,16 +1,17 @@
-"use client"
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getCoupons,
+  getCouponStats,
+  getCouponById,
   createCoupon,
   updateCoupon,
   deleteCoupon,
+  toggleCoupon,
 } from "../api/couponsApi"
 import {
-  CouponQueryParams,
   CreateCouponPayload,
   UpdateCouponPayload,
+  CouponQueryParams,
 } from "../types/coupons.types"
 
 export const useCoupons = (params: CouponQueryParams = {}) => {
@@ -20,12 +21,28 @@ export const useCoupons = (params: CouponQueryParams = {}) => {
   })
 }
 
+export const useCoupon = (id?: string) => {
+  return useQuery({
+    queryKey: ["coupons", id],
+    queryFn: () => getCouponById(id!),
+    enabled: Boolean(id),
+  })
+}
+
+export const useCouponStats = () => {
+  return useQuery({
+    queryKey: ["coupon-stats"],
+    queryFn: getCouponStats,
+  })
+}
+
 export const useCreateCoupon = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: CreateCouponPayload) => createCoupon(data),
+    mutationFn: (payload: CreateCouponPayload) => createCoupon(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] })
+      queryClient.invalidateQueries({ queryKey: ["coupon-stats"] })
     },
   })
 }
@@ -37,6 +54,7 @@ export const useUpdateCoupon = () => {
       updateCoupon(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] })
+      queryClient.invalidateQueries({ queryKey: ["coupon-stats"] })
     },
   })
 }
@@ -47,7 +65,18 @@ export const useDeleteCoupon = () => {
     mutationFn: (id: string) => deleteCoupon(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] })
+      queryClient.invalidateQueries({ queryKey: ["coupon-stats"] })
     },
   })
 }
 
+export const useToggleCoupon = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => toggleCoupon(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["coupons"] })
+      queryClient.invalidateQueries({ queryKey: ["coupon-stats"] })
+    },
+  })
+}

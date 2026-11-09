@@ -1,42 +1,52 @@
-export type DiscountType = "percentage" | "fixed"
-export type CouponStatus = "active" | "expired" | "disabled"
-export type CouponScope = "all" | "courses" | "subscriptions"
+export type DiscountType = "Percentage" | "Fixed" | "percentage" | "fixed"
+export type CouponStatus = "Active" | "Expired" | "Disabled" | "active" | "expired" | "disabled"
+export type ApplicableScope = "All" | "Courses" | "Subscriptions" | "Bundles" | "all" | "courses" | "subscriptions" | "bundles"
 
 export interface Coupon {
   id: string
   code: string
-  discountType: DiscountType
+  discountType: string
   discountValue: number
-  applicableTo: CouponScope
+  discountLabel?: string | null
+  applicableScope: string
+  scopeLabel?: string | null
   usageLimit?: number | null
-  usedCount: number
-  minPurchaseAmount?: number | null
-  startDate: string
-  endDate?: string | null
-  status: CouponStatus
+  remainingUses?: number | null
+  minOrderAmount?: number | null
+  expiresAt?: string | null
+  redemptionCount: number
+  isActive: boolean
+  status: string
   createdAt: string
+}
+
+export interface CouponStats {
+  totalCodes: number
+  activeCodes: number
+  totalRedemptions: number
+  avgDiscountRatePercent: number
 }
 
 export interface CreateCouponPayload {
   code: string
-  discountType: DiscountType
+  discountType: string
   discountValue: number
-  applicableTo: CouponScope
+  applicableScope: string
   usageLimit?: number | null
-  minPurchaseAmount?: number | null
-  endDate?: string | null
-  status: "active" | "disabled"
+  minOrderAmount?: number | null
+  expiresAt?: string | null
+  isActive: boolean
 }
 
 export interface UpdateCouponPayload {
   code?: string
-  discountType?: DiscountType
+  discountType?: string
   discountValue?: number
-  applicableTo?: CouponScope
+  applicableScope?: string
   usageLimit?: number | null
-  minPurchaseAmount?: number | null
-  endDate?: string | null
-  status?: CouponStatus
+  minOrderAmount?: number | null
+  expiresAt?: string | null
+  isActive?: boolean
 }
 
 export interface CouponQueryParams {
@@ -44,4 +54,3 @@ export interface CouponQueryParams {
   discountType?: string
   search?: string
 }
-
