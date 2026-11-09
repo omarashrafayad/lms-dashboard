@@ -8,8 +8,6 @@ import {
   LayoutGrid,
   Calendar,
   CreditCard,
-  FileText,
-  TrendingUp,
   HelpCircle,
   Settings,
   ChevronRight,
@@ -17,6 +15,7 @@ import {
   Database,
   Ticket,
   Bell,
+  Image as ImageIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -36,10 +35,13 @@ export function Sidebar() {
   const isRefAcademicStagesRoute = pathname.startsWith("/reference-data/academic-stages")
   const isRefEducationSystemsRoute = pathname.startsWith("/reference-data/education-systems")
   const isRefGradesRoute = pathname.startsWith("/reference-data/grades")
+  const isRefTermsRoute = pathname.startsWith("/reference-data/terms")
+  const isRefTeachingLevelsRoute = pathname.startsWith("/reference-data/teaching-levels")
   const isRefGendersRoute = pathname.startsWith("/reference-data/genders")
   const isReferenceDataActive = pathname.startsWith("/reference-data")
   const isSubscriptionsRoute = pathname.startsWith("/subscriptions")
   const isCouponsActive = pathname.startsWith("/coupons")
+  const isBannersActive = pathname.startsWith("/banners")
   const isNotificationsActive = pathname.startsWith("/notifications")
   const isSupportActive = pathname.startsWith("/support")
   const isSettingsActive = pathname.startsWith("/settings")
@@ -428,6 +430,28 @@ export function Sidebar() {
                     Grades
                   </Link>
                   <Link
+                    href="/reference-data/terms"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isRefTermsRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Academic Terms
+                  </Link>
+                  <Link
+                    href="/reference-data/teaching-levels"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isRefTeachingLevelsRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Teaching Levels
+                  </Link>
+                  <Link
                     href="/reference-data/genders"
                     className={cn(
                       "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
@@ -617,6 +641,29 @@ export function Sidebar() {
                 <span>Analytics</span>
               </div>
             </Link> */}
+
+            {/* Banners */}
+            <Link
+              href="/banners"
+              className={cn(
+                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                isBannersActive
+                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <ImageIcon
+                  className={cn(
+                    "size-[18px] transition-colors",
+                    isBannersActive
+                      ? "text-brand-orange"
+                      : "text-zinc-400 group-hover:text-zinc-600"
+                  )}
+                />
+                <span>Banners</span>
+              </div>
+            </Link>
 
             {/* Coupons */}
             <Link

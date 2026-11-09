@@ -14,6 +14,8 @@ import {
   useAcademicStages,
   useEducationSystems,
   useGrades,
+  useTerms,
+  useTeachingLevels,
 } from "../hooks/useReferenceData"
 import { Gender, CreateReferenceDataPayload } from "../types/referenceData.types"
 import { toast } from "sonner"
@@ -23,6 +25,8 @@ export default function GendersPage() {
   const { data: stages = [] } = useAcademicStages()
   const { data: systems = [] } = useEducationSystems()
   const { data: grades = [] } = useGrades()
+  const { data: terms = [] } = useTerms()
+  const { data: teachingLevels = [] } = useTeachingLevels()
 
   const createMutation = useCreateGender()
   const updateMutation = useUpdateGender()
@@ -98,6 +102,8 @@ export default function GendersPage() {
             educationSystems: systems.length,
             grades: grades.length,
             genders: genders.length,
+            terms: terms.length,
+            teachingLevels: teachingLevels.length,
           }}
         />
 

@@ -14,6 +14,8 @@ import {
   useAcademicStages,
   useGrades,
   useGenders,
+  useTerms,
+  useTeachingLevels,
 } from "../hooks/useReferenceData"
 import {
   EducationSystem,
@@ -26,6 +28,8 @@ export default function EducationSystemsPage() {
   const { data: stages = [] } = useAcademicStages()
   const { data: grades = [] } = useGrades()
   const { data: genders = [] } = useGenders()
+  const { data: terms = [] } = useTerms()
+  const { data: teachingLevels = [] } = useTeachingLevels()
 
   const createMutation = useCreateEducationSystem()
   const updateMutation = useUpdateEducationSystem()
@@ -102,6 +106,8 @@ export default function EducationSystemsPage() {
             educationSystems: systems.length,
             grades: grades.length,
             genders: genders.length,
+            terms: terms.length,
+            teachingLevels: teachingLevels.length,
           }}
         />
 

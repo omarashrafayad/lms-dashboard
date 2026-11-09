@@ -32,6 +32,22 @@ export interface Grade {
   updatedAt?: string | null
 }
 
+export interface Term {
+  id: string
+  name: string
+  isActive?: boolean
+  createdAt?: string
+  updatedAt?: string | null
+}
+
+export interface TeachingLevel {
+  id: string
+  name: string
+  isActive?: boolean
+  createdAt?: string
+  updatedAt?: string | null
+}
+
 export interface CreateReferenceDataPayload {
   name: string
   isActive: boolean
@@ -59,3 +75,5 @@ export type ReferenceDataTab =
   | "education-systems"
   | "grades"
   | "genders"
+  | "terms"
+  | "teaching-levels"

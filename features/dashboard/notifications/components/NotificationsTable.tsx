@@ -91,7 +91,7 @@ export function NotificationsTable({
     },
     {
       id: "targetAudience",
-      header: "Target Recipients (المستهدفين)",
+      header: "Target Recipients",
       cell: (_, row) => {
         const isAll = !row.targetRole || row.targetRole === "all"
         return (

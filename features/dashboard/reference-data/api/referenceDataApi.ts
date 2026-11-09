@@ -4,6 +4,8 @@ import {
   EducationSystem,
   Gender,
   Grade,
+  Term,
+  TeachingLevel,
   CreateReferenceDataPayload,
   UpdateReferenceDataPayload,
   CreateGradePayload,
@@ -124,4 +126,69 @@ export const updateGrade = async (
 
 export const deleteGrade = async (id: string): Promise<void> => {
   await clientAxios.delete(`/reference-data/grades/${id}`)
+}
+
+// ==========================================
+// Terms
+// ==========================================
+export const getTerms = async (): Promise<Term[]> => {
+  const res = await clientAxios.get("/reference-data/terms")
+  if (Array.isArray(res.data)) return res.data
+  if (res.data && Array.isArray(res.data.data)) return res.data.data
+  if (res.data && Array.isArray(res.data.items)) return res.data.items
+  return []
+}
+
+export const createTerm = async (
+  data: CreateReferenceDataPayload
+): Promise<Term> => {
+  const res = await clientAxios.post("/reference-data/terms", data)
+  return res.data?.data || res.data
+}
+
+export const updateTerm = async (
+  id: string,
+  data: UpdateReferenceDataPayload
+): Promise<Term> => {
+  const res = await clientAxios.put(`/reference-data/terms/${id}`, data)
+  return res.data?.data || res.data
+}
+
+export const deleteTerm = async (id: string): Promise<void> => {
+  await clientAxios.delete(`/reference-data/terms/${id}`)
+}
+
+// ==========================================
+// Teaching Levels
+// ==========================================
+export const getTeachingLevels = async (): Promise<TeachingLevel[]> => {
+  const res = await clientAxios.get("/teaching-levels")
+  if (Array.isArray(res.data)) return res.data
+  if (res.data && Array.isArray(res.data.data)) return res.data.data
+  if (res.data && Array.isArray(res.data.items)) return res.data.items
+  return []
+}
+
+export const getTeachingLevelById = async (id: string): Promise<TeachingLevel> => {
+  const res = await clientAxios.get(`/teaching-levels/${id}`)
+  return res.data?.data || res.data
+}
+
+export const createTeachingLevel = async (
+  data: CreateReferenceDataPayload
+): Promise<TeachingLevel> => {
+  const res = await clientAxios.post("/teaching-levels", data)
+  return res.data?.data || res.data
+}
+
+export const updateTeachingLevel = async (
+  id: string,
+  data: UpdateReferenceDataPayload
+): Promise<TeachingLevel> => {
+  const res = await clientAxios.put(`/teaching-levels/${id}`, data)
+  return res.data?.data || res.data
+}
+
+export const deleteTeachingLevel = async (id: string): Promise<void> => {
+  await clientAxios.delete(`/teaching-levels/${id}`)
 }

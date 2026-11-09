@@ -18,8 +18,6 @@ import {
   Users,
   AlertCircle,
   ExternalLink,
-  Radio,
-  Tag,
 } from "lucide-react"
 import { ApiNotification } from "../types/notifications.types"
 
@@ -109,7 +107,7 @@ export function ViewNotificationModal({
           <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/60 flex flex-col gap-1.5">
             <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
               <Users className="size-4 text-amber-700" />
-              <span>Target Recipients (الفئة المستهدفة):</span>
+              <span>Target Recipients</span>
             </div>
             <p className="text-xs font-semibold text-amber-950 pl-6">
               {getRecipientSummary()}

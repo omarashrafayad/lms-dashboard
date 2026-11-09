@@ -3,7 +3,14 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { GraduationCap, Landmark, Sparkles, Users } from "lucide-react"
+import {
+  GraduationCap,
+  Landmark,
+  Sparkles,
+  Users,
+  CalendarRange,
+  Award,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export interface TabItem {
@@ -20,6 +27,8 @@ interface ReferenceDataTabsProps {
     educationSystems?: number
     grades?: number
     genders?: number
+    terms?: number
+    teachingLevels?: number
   }
 }
 
@@ -47,6 +56,20 @@ export function ReferenceDataTabs({ counts }: ReferenceDataTabsProps) {
       href: "/reference-data/grades",
       icon: Sparkles,
       count: counts?.grades,
+    },
+    {
+      id: "terms",
+      label: "Academic Terms",
+      href: "/reference-data/terms",
+      icon: CalendarRange,
+      count: counts?.terms,
+    },
+    {
+      id: "teaching-levels",
+      label: "Teaching Levels",
+      href: "/reference-data/teaching-levels",
+      icon: Award,
+      count: counts?.teachingLevels,
     },
     {
       id: "genders",
