@@ -392,11 +392,15 @@ export const useQuizById = (quizId?: string) => {
 
 export const useCreateQuiz = () => {
   const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: (data: CreateQuizPayload) => createQuiz(data),
     onSuccess: (_, variables) => {
+      // ✅ قراءة lessonId مباشرة من variables
+      const lessonId = (variables as any).lessonId || (variables as any).request?.lessonId
+
       queryClient.invalidateQueries({
-        queryKey: ["curriculum-quizzes", variables.request.lessonId],
+        queryKey: ["curriculum-quizzes", lessonId],
       })
       queryClient.invalidateQueries({
         queryKey: ["curriculum-lesson"],

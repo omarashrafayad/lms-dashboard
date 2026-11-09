@@ -281,14 +281,20 @@ export interface CreateQuizQuestionPayload {
 }
 
 export interface CreateQuizPayload {
-  request: {
+  request?: {
     lessonId: string
     title: string
     passingScore: number
     timeLimit: number
     isPublished: boolean
   }
-  questions: CreateQuizQuestionPayload[]
+  questions?: CreateQuizQuestionPayload[]
+  lessonId?: string
+  title?: string
+  passingScore?: number
+  timeLimit?: number
+  isPublished?: boolean
+  groups?: any[]
 }
 
 export interface UpdateQuizPayload {

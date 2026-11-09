@@ -18,6 +18,15 @@ import {
   createGrade,
   updateGrade,
   deleteGrade,
+  getTerms,
+  createTerm,
+  updateTerm,
+  deleteTerm,
+  getTeachingLevels,
+  getTeachingLevelById,
+  createTeachingLevel,
+  updateTeachingLevel,
+  deleteTeachingLevel,
 } from "../api/referenceDataApi"
 import {
   CreateReferenceDataPayload,
@@ -243,3 +252,119 @@ export const useDeleteGrade = () => {
     },
   })
 }
+
+// ==========================================
+// Terms Hooks
+// ==========================================
+export const useTerms = () => {
+  return useQuery({
+    queryKey: ["reference-data", "terms"],
+    queryFn: getTerms,
+    staleTime: 1000 * 60 * 10,
+  })
+}
+
+export const useCreateTerm = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreateReferenceDataPayload) => createTerm(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["reference-data", "terms"],
+      })
+    },
+  })
+}
+
+export const useUpdateTerm = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string
+      data: UpdateReferenceDataPayload
+    }) => updateTerm(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["reference-data", "terms"],
+      })
+    },
+  })
+}
+
+export const useDeleteTerm = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteTerm(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["reference-data", "terms"],
+      })
+    },
+  })
+}
+
+// ==========================================
+// Teaching Levels Hooks
+// ==========================================
+export const useTeachingLevels = () => {
+  return useQuery({
+    queryKey: ["reference-data", "teaching-levels"],
+    queryFn: getTeachingLevels,
+    staleTime: 1000 * 60 * 10,
+  })
+}
+
+export const useTeachingLevel = (id?: string) => {
+  return useQuery({
+    queryKey: ["reference-data", "teaching-levels", id],
+    queryFn: () => getTeachingLevelById(id!),
+    enabled: Boolean(id),
+    staleTime: 1000 * 60 * 10,
+  })
+}
+
+export const useCreateTeachingLevel = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreateReferenceDataPayload) => createTeachingLevel(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["reference-data", "teaching-levels"],
+      })
+    },
+  })
+}
+
+export const useUpdateTeachingLevel = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string
+      data: UpdateReferenceDataPayload
+    }) => updateTeachingLevel(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["reference-data", "teaching-levels"],
+      })
+    },
+  })
+}
+
+export const useDeleteTeachingLevel = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteTeachingLevel(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["reference-data", "teaching-levels"],
+      })
+    },
+  })
+}
+

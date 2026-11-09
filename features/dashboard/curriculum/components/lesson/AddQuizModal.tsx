@@ -14,8 +14,31 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { useCreateQuiz } from "../../hooks/useCurriculum"
-import { CreateQuizPayload } from "../../types/curriculum.types"
 import { toast } from "sonner"
+
+// --- Types المطابقة للباك إند ---
+export interface CreateQuizQuestionPayload {
+  questionText: string
+  options: string
+  correctAnswer: string
+  explanation: string
+  order: number
+}
+
+export interface CreateQuizGroupPayload {
+  name: string
+  order: number
+  questions: CreateQuizQuestionPayload[]
+}
+
+export interface CreateQuizPayload {
+  lessonId: string
+  title: string
+  passingScore: number
+  timeLimit: number
+  isPublished: boolean
+  groups: CreateQuizGroupPayload[]
+}
 
 export interface AddQuizModalProps {
   open: boolean
@@ -29,6 +52,7 @@ interface QuestionDraft {
   questionText: string
   options: string
   correctAnswer: string
+  explanation: string
 }
 
 interface QuestionGroupDraft {
@@ -46,6 +70,7 @@ const createInitialGroup = (): QuestionGroupDraft => ({
       questionText: "",
       options: "Option A, Option B, Option C, Option D",
       correctAnswer: "Option A",
+      explanation: "",
     },
   ],
 })
@@ -78,6 +103,7 @@ export function AddQuizModal({
             questionText: "",
             options: "Option A, Option B, Option C, Option D",
             correctAnswer: "Option A",
+            explanation: "",
           },
         ],
       },
@@ -112,6 +138,7 @@ export function AddQuizModal({
               questionText: "",
               options: "Option A, Option B, Option C, Option D",
               correctAnswer: "Option A",
+              explanation: "",
             },
           ],
         }
@@ -161,6 +188,12 @@ export function AddQuizModal({
       return
     }
 
+    const emptyGroupTitle = groups.find((g) => !g.title.trim())
+    if (emptyGroupTitle) {
+      toast.error("Please enter a title for all groups")
+      return
+    }
+
     const allQuestions = groups.flatMap((g) => g.questions)
     const invalidQ = allQuestions.find((q) => !q.questionText.trim())
     if (invalidQ) {
@@ -168,19 +201,23 @@ export function AddQuizModal({
       return
     }
 
+    // بناء الـ Payload المطابق لطلب الـ API
     const payload: CreateQuizPayload = {
-      request: {
-        lessonId,
-        title: title.trim(),
-        passingScore: Number(passingScore) || 70,
-        timeLimit: Number(timeLimit) || 15,
-        isPublished,
-      },
-      questions: allQuestions.map((q, idx) => ({
-        questionText: q.questionText.trim(),
-        options: q.options.trim(),
-        correctAnswer: q.correctAnswer.trim(),
-        order: idx + 1,
+      lessonId,
+      title: title.trim(),
+      passingScore: Number(passingScore) || 70,
+      timeLimit: Number(timeLimit) || 15,
+      isPublished,
+      groups: groups.map((g, groupIdx) => ({
+        name: g.title.trim(),
+        order: groupIdx + 1,
+        questions: g.questions.map((q, qIdx) => ({
+          questionText: q.questionText.trim(),
+          options: q.options.trim(),
+          correctAnswer: q.correctAnswer.trim(),
+          explanation: q.explanation.trim(),
+          order: qIdx + 1,
+        })),
       })),
     }
 
@@ -312,6 +349,7 @@ export function AddQuizModal({
                         onChange={(e) => handleGroupTitleChange(group.id, e.target.value)}
                         placeholder="Group Title (e.g. Vocabulary, Grammar)"
                         className="h-8 px-2.5 rounded-lg border-zinc-200 bg-white text-xs max-w-xs font-medium"
+                        required
                       />
                     </div>
                     {groups.length > 1 && (
@@ -372,7 +410,7 @@ export function AddQuizModal({
                         {/* Options */}
                         <div className="flex flex-col gap-1">
                           <label className="text-[11px] font-medium text-zinc-600">
-                            Options (comma-separated)
+                            Options (comma-separated) <span className="text-red-500">*</span>
                           </label>
                           <Input
                             type="text"
@@ -389,7 +427,7 @@ export function AddQuizModal({
                         {/* Correct Answer */}
                         <div className="flex flex-col gap-1">
                           <label className="text-[11px] font-medium text-zinc-600">
-                            Correct Answer
+                            Correct Answer <span className="text-red-500">*</span>
                           </label>
                           <Input
                             type="text"
@@ -400,6 +438,22 @@ export function AddQuizModal({
                             placeholder="e.g. Option A"
                             className="h-9 px-3 rounded-lg border-zinc-200 bg-zinc-50/30 text-xs"
                             required
+                          />
+                        </div>
+
+                        {/* Explanation */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11px] font-medium text-zinc-600">
+                            Explanation (Optional)
+                          </label>
+                          <Input
+                            type="text"
+                            value={q.explanation}
+                            onChange={(e) =>
+                              handleQuestionChange(group.id, q.id, "explanation", e.target.value)
+                            }
+                            placeholder="e.g. Because 2/4 reduces to 1/2"
+                            className="h-9 px-3 rounded-lg border-zinc-200 bg-zinc-50/30 text-xs"
                           />
                         </div>
                       </div>

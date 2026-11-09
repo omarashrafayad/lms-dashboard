@@ -14,6 +14,8 @@ import {
   useAcademicStages,
   useEducationSystems,
   useGenders,
+  useTerms,
+  useTeachingLevels,
 } from "../hooks/useReferenceData"
 import { Grade, CreateGradePayload } from "../types/referenceData.types"
 import {
@@ -37,6 +39,8 @@ export default function GradesPage() {
   const { data: stages = [], isLoading: stagesLoading } = useAcademicStages()
   const { data: systems = [] } = useEducationSystems()
   const { data: genders = [] } = useGenders()
+  const { data: terms = [] } = useTerms()
+  const { data: teachingLevels = [] } = useTeachingLevels()
 
   const createMutation = useCreateGrade()
   const updateMutation = useUpdateGrade()
@@ -169,6 +173,8 @@ export default function GradesPage() {
             educationSystems: systems.length,
             grades: grades.length,
             genders: genders.length,
+            terms: terms.length,
+            teachingLevels: teachingLevels.length,
           }}
         />
 

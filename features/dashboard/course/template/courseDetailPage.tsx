@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { ChevronLeft, Eye, Pencil } from "lucide-react"
 import { CourseOverviewTab } from "../components/detail/CourseOverviewTab"
 import { CourseContentTab } from "../components/detail/CourseContentTab"
-import { CourseExamTab } from "../components/detail/CourseExamTab"
+// import { CourseExamTab } from "../components/detail/CourseExamTab"
 import { CourseStudentsTab } from "../components/detail/CourseStudentsTab"
 import { CourseAnalyticsTab } from "../components/detail/CourseAnalyticsTab"
 import { CourseActivityTab } from "../components/detail/CourseActivityTab"
@@ -84,7 +84,6 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
   const tabs: CourseDetailTab[] = [
     "Overview",
     "Course Content",
-    "Course Exam",
     "Students",
     "Analytics",
     "Activity History",
@@ -182,14 +181,14 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
         {activeTab === "Course Content" && (
           <CourseContentTab initialLessons={course.lessons || []} courseId={course.id} />
         )}
-        {activeTab === "Course Exam" && (
+        {/* {activeTab === "Course Exam" && (
           <CourseExamTab
             courseId={course.id}
             courseTitle={course.title || course.name || "Course"}
             courseLevel={course.level || "Beginner"}
             initialExam={course.exam}
           />
-        )}
+        )} */}
         {activeTab === "Students" && (
           <CourseStudentsTab
             students={course.students || []}
