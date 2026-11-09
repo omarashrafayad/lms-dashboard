@@ -38,6 +38,46 @@ export interface StudentActivityItem {
   timestamp: string
 }
 
+export interface StudentPaymentRequest {
+  id: string
+  code: string
+  plan: string
+  amount: string
+  requestedDate: string
+  status: "Pending" | "Approved" | "Rejected"
+  notes?: string
+}
+
+export interface StudentTransaction {
+  id: string
+  code: string
+  studentName: string
+  plan: string
+  amount: string
+  points: string
+  date: string
+  paymentStatus: "Paid" | "Pending" | "Failed"
+  transactionStatus: "Completed" | "Processing" | "Failed"
+}
+
+export interface StudentPointsDetails {
+  currentBalance: number
+  totalEarned: number
+  totalRedeemed: number
+  privateSessionsRemaining: number
+  privateSessionsUsed: number
+}
+
+export interface StudentFinanceSummary {
+  totalSpent: number
+  currentPlanName: string
+  currentPlanCost: number
+  billingCycle: string
+  nextBillingDate: string
+  paymentMethod: string
+  currency: string
+}
+
 export interface StudentProfile {
   id: string
   name: string
@@ -105,6 +145,12 @@ export interface StudentProfile {
     phone: string
   }
 
-  // Activity History
+  // Points & Finance & Requests
+  finance: StudentFinanceSummary
+  pointsDetails: StudentPointsDetails
+  paymentRequests: StudentPaymentRequest[]
+  transactions: StudentTransaction[]
+
+  // Activity
   activityHistory: StudentActivityItem[]
 }

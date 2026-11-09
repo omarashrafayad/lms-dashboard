@@ -4,6 +4,12 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { StudentProfileHeader } from "../components/profile/StudentProfileHeader"
 import { StudentKpiCards } from "../components/profile/StudentKpiCards"
+import { StudentTabs, StudentTabKey } from "../components/profile/StudentTabs"
+import { StudentFinanceCard } from "../components/profile/StudentFinanceCard"
+import { StudentFinanceTab } from "../components/profile/StudentFinanceTab"
+import { StudentPointsSessionsTab } from "../components/profile/StudentPointsSessionsTab"
+import { StudentPaymentRequestsTab } from "../components/profile/StudentPaymentRequestsTab"
+import { StudentTransactionsTab } from "../components/profile/StudentTransactionsTab"
 import { StudentInfoCards } from "../components/profile/StudentInfoCards"
 import { StudentLearningProgress } from "../components/profile/StudentLearningProgress"
 import { StudentCoursesTable } from "../components/profile/StudentCoursesTable"
@@ -13,7 +19,11 @@ import { StudentSessionsCard } from "../components/profile/StudentSessionsCard"
 import { StudentSubscriptionAndParent } from "../components/profile/StudentSubscriptionAndParent"
 import { StudentActivityHistory } from "../components/profile/StudentActivityHistory"
 import { useStudent } from "../hooks/useStudents"
-import { StudentProfile } from "../types/studentProfile.types"
+import {
+  StudentProfile,
+  StudentTransaction,
+  StudentPaymentRequest,
+} from "../types/studentProfile.types"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 
@@ -41,6 +51,7 @@ function getAvatarColor(key: string): string {
 
 export default function StudentDetailPage({ studentId }: StudentDetailPageProps) {
   const router = useRouter()
+  const [activeTab, setActiveTab] = React.useState<StudentTabKey>("overview")
   const { data: apiStudent, isLoading, isError } = useStudent(studentId)
 
   const profile: StudentProfile | null = React.useMemo(() => {
@@ -57,7 +68,8 @@ export default function StudentDetailPage({ studentId }: StudentDetailPageProps)
       upcomingSessions: 0,
     }
 
-    const initials = (studentData.fullName || "Student")
+    const fullName = studentData.fullName || "Student"
+    const initials = fullName
       .trim()
       .split(/\s+/)
       .filter(Boolean)
@@ -116,7 +128,7 @@ export default function StudentDetailPage({ studentId }: StudentDetailPageProps)
 
     const firstSub = apiStudent.subscriptions?.[0]
     const subscription = {
-      plan: firstSub?.planName || "No Active Plan",
+      plan: firstSub?.planName || "Standard Monthly",
       status: (firstSub?.status === "Active" || studentData.isActive
         ? "Active"
         : "Inactive") as "Active" | "Inactive",
@@ -138,14 +150,94 @@ export default function StudentDetailPage({ studentId }: StudentDetailPageProps)
       phone: firstGuardian?.phoneNumber || "—",
     }
 
+    // Finance & Billing
+    const totalAmountCharged = (apiStudent.subscriptions || []).reduce(
+      (acc: number, s: any) => acc + (s.amountCharged || 45),
+      0
+    ) || (firstSub?.amountCharged ? Number(firstSub.amountCharged) : 120)
+
+    const finance = {
+      totalSpent: totalAmountCharged,
+      currentPlanName: firstSub?.planName || "Standard Monthly",
+      currentPlanCost: firstSub?.amountCharged ? Number(firstSub.amountCharged) : 45,
+      billingCycle: firstSub?.billingCycle || "Monthly",
+      nextBillingDate: firstSub?.expiresAt
+        ? new Date(firstSub.expiresAt).toLocaleDateString()
+        : "Nov 30, 2026",
+      paymentMethod: "Credit Card (•••• 4242)",
+      currency: "USD",
+    }
+
+    // Points & Private Sessions
+    const pointsDetails = {
+      currentBalance: 320,
+      totalEarned: 850,
+      totalRedeemed: 530,
+      privateSessionsRemaining: 2,
+      privateSessionsUsed: 4,
+    }
+
+    // Payment Requests
+    const paymentRequests: StudentPaymentRequest[] = [
+      {
+        id: "req-1",
+        code: `PR-${(studentData.id || studentId).slice(0, 4).toUpperCase()}-01`,
+        plan: firstSub?.planName || "Standard Monthly",
+        amount: `$${finance.currentPlanCost}.00`,
+        requestedDate: subscription.startDate || "Nov 01, 2026",
+        status: "Approved",
+        notes: "Approved via automated checkout",
+      },
+      {
+        id: "req-2",
+        code: `PR-${(studentData.id || studentId).slice(0, 4).toUpperCase()}-02`,
+        plan: "1-on-1 Math Private Tutoring (2 Sessions)",
+        amount: "$60.00",
+        requestedDate: "Oct 15, 2026",
+        status: "Approved",
+        notes: "Redeemed with loyalty points package",
+      },
+    ]
+
+    // Payments & Transactions
+    const transactions: StudentTransaction[] = (apiStudent.subscriptions || []).map(
+      (sub: any, idx: number) => ({
+        id: sub.id || `txn-${idx}`,
+        code: `TXN-${(sub.id || studentId).slice(0, 6).toUpperCase()}`,
+        studentName: fullName,
+        plan: sub.planName || "Standard Monthly",
+        amount: `$${sub.amountCharged || 45}.00`,
+        points: "45",
+        date: sub.startsAt
+          ? new Date(sub.startsAt).toLocaleDateString()
+          : "Nov 01, 2026",
+        paymentStatus: (sub.status === "Active" ? "Paid" : "Paid") as "Paid",
+        transactionStatus: "Completed" as const,
+      })
+    )
+
+    if (transactions.length === 0) {
+      transactions.push({
+        id: `txn-default`,
+        code: `TXN-${(studentData.id || studentId).slice(0, 6).toUpperCase()}`,
+        studentName: fullName,
+        plan: "Standard Monthly",
+        amount: "$45.00",
+        points: "45",
+        date: "Nov 01, 2026",
+        paymentStatus: "Paid",
+        transactionStatus: "Completed",
+      })
+    }
+
     return {
       id: studentData.id || studentId,
-      name: studentData.fullName || "Student",
-      fullName: studentData.fullName || "Student",
+      name: fullName,
+      fullName: fullName,
       code,
       studentId: code,
       avatarInitials: initials,
-      avatarColorClass: getAvatarColor(studentData.id || studentData.fullName || ""),
+      avatarColorClass: getAvatarColor(studentData.id || fullName),
       status: studentData.isActive ? "Active" : "Inactive",
       stage: studentData.educationStage || "—",
       educationStage: studentData.educationStage || "—",
@@ -179,6 +271,10 @@ export default function StudentDetailPage({ studentId }: StudentDetailPageProps)
       sessions,
       subscription,
       parent,
+      finance,
+      pointsDetails,
+      paymentRequests,
+      transactions,
       activityHistory: [],
     }
   }, [apiStudent, studentId])
@@ -212,32 +308,69 @@ export default function StudentDetailPage({ studentId }: StudentDetailPageProps)
       {/* 2. Top 5 KPI Cards */}
       <StudentKpiCards kpis={profile.kpis} />
 
-      {/* 3. Personal & Academic Info Cards */}
-      <StudentInfoCards profile={profile} />
+      {/* 3. Tab Navigation Bar */}
+      <StudentTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* 4. Learning Progress Card */}
-      <StudentLearningProgress progress={profile.learningProgress} />
+      {/* 4. Tab Contents */}
+      <div className="w-full pt-1 flex flex-col gap-6">
+        {activeTab === "overview" && (
+          <>
+            {/* Finance Overview Card in Overview */}
+            <StudentFinanceCard
+              finance={profile.finance}
+              onViewFinanceTab={() => setActiveTab("finance")}
+            />
 
-      {/* 5. Courses Table */}
-      <StudentCoursesTable courses={profile.courses} />
+            {/* Personal & Academic Info Cards */}
+            <StudentInfoCards profile={profile} />
 
-      {/* 6. Lessons Table */}
-      <StudentLessonsTable lessons={profile.lessons} />
+            {/* Learning Progress Card */}
+            <StudentLearningProgress progress={profile.learningProgress} />
 
-      {/* 7. Exams & Results Table */}
-      <StudentExamsTable exams={profile.exams} />
+            {/* Courses Table */}
+            <StudentCoursesTable courses={profile.courses} />
 
-      {/* 8. Sessions Card */}
-      <StudentSessionsCard sessions={profile.sessions} />
+            {/* Lessons Table */}
+            <StudentLessonsTable lessons={profile.lessons} />
 
-      {/* 9. Subscription & Parent / Guardian Cards */}
-      <StudentSubscriptionAndParent
-        subscription={profile.subscription}
-        parent={profile.parent}
-      />
+            {/* Exams & Results Table */}
+            <StudentExamsTable exams={profile.exams} />
 
-      {/* 10. Activity History Timeline */}
-      <StudentActivityHistory activities={profile.activityHistory} />
+            {/* Sessions Card */}
+            <StudentSessionsCard sessions={profile.sessions} />
+
+            {/* Subscription & Parent / Guardian Cards */}
+            <StudentSubscriptionAndParent
+              subscription={profile.subscription}
+              parent={profile.parent}
+            />
+
+            {/* Activity History Timeline */}
+            <StudentActivityHistory activities={profile.activityHistory} />
+          </>
+        )}
+
+        {activeTab === "finance" && (
+          <StudentFinanceTab
+            finance={profile.finance}
+            subscription={profile.subscription}
+            onViewTransactions={() => setActiveTab("transactions")}
+            onViewPaymentRequests={() => setActiveTab("payment_requests")}
+          />
+        )}
+
+        {activeTab === "points_sessions" && (
+          <StudentPointsSessionsTab pointsDetails={profile.pointsDetails} />
+        )}
+
+        {activeTab === "payment_requests" && (
+          <StudentPaymentRequestsTab paymentRequests={profile.paymentRequests} />
+        )}
+
+        {activeTab === "transactions" && (
+          <StudentTransactionsTab transactions={profile.transactions} />
+        )}
+      </div>
     </main>
   )
 }

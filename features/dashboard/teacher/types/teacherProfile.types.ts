@@ -24,6 +24,45 @@ export interface TeacherSession {
   status: "Confirmed" | "Pending" | "Completed" | "Cancelled"
 }
 
+export interface TeacherPaymentRequest {
+  id: string
+  code: string
+  description: string
+  amount: string
+  requestedDate: string
+  status: "Pending" | "Approved" | "Rejected"
+  notes?: string
+}
+
+export interface TeacherTransaction {
+  id: string
+  code: string
+  teacherName: string
+  payoutMethod: string
+  amount: string
+  date: string
+  paymentStatus: "Paid" | "Pending" | "Failed"
+  transactionStatus: "Completed" | "Processing" | "Failed"
+}
+
+export interface TeacherPointsDetails {
+  currentBalance: number
+  totalEarned: number
+  privateSessionsConducted: number
+  ratingBonusPoints: number
+}
+
+export interface TeacherFinanceSummary {
+  totalEarnings: number
+  pendingPayout: number
+  completedPayouts: number
+  hourlyRate: number
+  totalBilledHours: number
+  payoutMethod: string
+  nextPayoutDate: string
+  currency: string
+}
+
 export interface TeacherProfile {
   id: string
   name: string
@@ -80,4 +119,10 @@ export interface TeacherProfile {
   weeklyAvailability: DaySchedule[]
   upcomingSessions: TeacherSession[]
   previousSessions: TeacherSession[]
+
+  // Points & Finance & Requests
+  finance: TeacherFinanceSummary
+  pointsDetails: TeacherPointsDetails
+  paymentRequests: TeacherPaymentRequest[]
+  transactions: TeacherTransaction[]
 }
