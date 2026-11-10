@@ -7,10 +7,22 @@ import { OverviewStats } from "../components/OverviewStats"
 import { OverviewCharts } from "../components/OverviewCharts"
 import { OverviewQuickActions } from "../components/OverviewQuickActions"
 import { OverviewRecentLists } from "../components/OverviewRecentLists"
+import { useDashboardOverview } from "../hooks/useOverview"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import GlobalError from "@/components/shared/globalerror"
 import { Button } from "@/components/ui/button"
-import { Plus, Download } from "lucide-react"
+import { Plus, } from "lucide-react"
 
 export default function DashboardOverviewPage() {
+  const {
+    data: overviewData,
+    isLoading,
+    isError,
+  } = useDashboardOverview({
+    recentStudentsLimit: 5,
+    recentTeachersLimit: 5,
+  })
+
   return (
     <div className="flex flex-col min-h-full">
       {/* Top Header */}
@@ -19,13 +31,6 @@ export default function DashboardOverviewPage() {
         description="Welcome back! Here is your school's daily activity, student enrollment, and teacher operations."
         actions={
           <div className="flex items-center gap-2.5">
-            <Button
-              variant="outline"
-              className="hidden sm:flex items-center gap-2 rounded-xl h-10 px-3.5 border-zinc-200/80 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium cursor-pointer shadow-2xs"
-            >
-              <Download className="size-3.5 text-zinc-400" />
-              <span>Export Report</span>
-            </Button>
             <Link href="/student/add">
               <Button className="bg-brand-orange hover:bg-brand-orange/90 text-white font-medium rounded-xl h-10 px-4 gap-2 text-xs shadow-2xs cursor-pointer transition-all hover:brightness-95">
                 <Plus className="size-4 stroke-[2.5]" />
@@ -38,25 +43,39 @@ export default function DashboardOverviewPage() {
 
       {/* Main Content Area */}
       <main className="p-6 md:p-8 flex flex-col gap-7 max-w-7xl w-full">
-        {/* Metric KPI Cards */}
-        <section aria-label="Key Performance Indicators">
-          <OverviewStats />
-        </section>
+        {isLoading ? (
+          <LoadingSpinner title="loading dashboard overview" />
+        ) : isError ? (
+          <GlobalError />
+        ) : (
+          <>
+            {/* Metric KPI Cards */}
+            <section aria-label="Key Performance Indicators">
+              <OverviewStats data={overviewData} />
+            </section>
 
-        {/* Quick Shortcuts */}
-        <section aria-label="Quick Actions">
-          <OverviewQuickActions />
-        </section>
+            {/* Quick Shortcuts */}
+            <section aria-label="Quick Actions">
+              <OverviewQuickActions />
+            </section>
 
-        {/* Charts & Distribution */}
-        <section aria-label="Analytics & Curriculum Distribution">
-          <OverviewCharts />
-        </section>
+            {/* Charts & Distribution */}
+            <section aria-label="Analytics & Curriculum Distribution">
+              <OverviewCharts
+                educationSystems={overviewData?.educationSystems}
+                totalStudents={overviewData?.totalStudents}
+              />
+            </section>
 
-        {/* Recent Students & Teachers Highlights */}
-        <section aria-label="Recent Students and Teachers">
-          <OverviewRecentLists />
-        </section>
+            {/* Recent Students & Teachers Highlights */}
+            <section aria-label="Recent Students and Teachers">
+              <OverviewRecentLists
+                recentStudents={overviewData?.recentStudents}
+                activeTeachers={overviewData?.activeTeacherList}
+              />
+            </section>
+          </>
+        )}
       </main>
     </div>
   )

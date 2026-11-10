@@ -1,4 +1,4 @@
-export type NotificationRole =
+export type NotificationAudience =
   | "all"
   | "students"
   | "teachers"
@@ -21,30 +21,32 @@ export interface ApiNotification {
   title: string
   summary: string
   content: string
+  audience: string
+  audienceLabel?: string
+  courseId?: string | null
+  planId?: string | null
+  academicStageId?: string | null
+  gradeId?: string | null
+  educationSystemId?: string | null
+  category: string
+  categoryLabel?: string
+  priority: string
+  actionUrl?: string | null
   imageUrl?: string | null
-  isPublished: boolean
+  channels?: string[]
+  status?: string
   publishedAt?: string | null
   createdAt: string
   updatedAt?: string | null
 
-  // Target audience metadata
-  targetRole?: NotificationRole
-  targetStage?: string | null
+  // Backward compatibility alias
+  targetRole?: string
+  isPublished?: boolean
   targetStageName?: string | null
-  targetGrade?: string | null
   targetGradeName?: string | null
-  targetSystem?: string | null
   targetSystemName?: string | null
-  targetCourseId?: string | null
   targetCourseName?: string | null
-  targetPlanId?: string | null
   targetPlanName?: string | null
-
-  // Classification & routing
-  category?: NotificationCategory
-  priority?: NotificationPriority
-  actionUrl?: string | null
-  channels?: string[]
 }
 
 export type NotificationItem = ApiNotification
@@ -52,62 +54,51 @@ export type NotificationItem = ApiNotification
 export interface NotificationQueryParams {
   page?: number
   pageSize?: number
-  published?: boolean
   search?: string
-  targetRole?: string
-  category?: string
-  priority?: string
+  audience?: string
+  status?: string
 }
 
 export interface CreateNotificationPayload {
   title: string
   summary: string
   content: string
-  imageUrl?: string | null
-  isPublished: boolean
-
-  // Target audience
-  targetRole: NotificationRole
-  targetStage?: string | null
-  targetStageName?: string | null
-  targetGrade?: string | null
-  targetGradeName?: string | null
-  targetSystem?: string | null
-  targetSystemName?: string | null
-  targetCourseId?: string | null
-  targetCourseName?: string | null
-  targetPlanId?: string | null
-  targetPlanName?: string | null
-
-  category: NotificationCategory
-  priority: NotificationPriority
+  audience: string
+  category: string
+  priority: string
+  courseId?: string | null
+  planId?: string | null
+  academicStageId?: string | null
+  gradeId?: string | null
+  educationSystemId?: string | null
   actionUrl?: string | null
-  channels: string[]
+  imageUrl?: string | null
+  channels?: string[]
+  publish: boolean
 }
 
 export interface UpdateNotificationPayload {
   title?: string
   summary?: string
   content?: string
-  imageUrl?: string | null
-  isPublished?: boolean
-
-  targetRole?: NotificationRole
-  targetStage?: string | null
-  targetStageName?: string | null
-  targetGrade?: string | null
-  targetGradeName?: string | null
-  targetSystem?: string | null
-  targetSystemName?: string | null
-  targetCourseId?: string | null
-  targetCourseName?: string | null
-  targetPlanId?: string | null
-  targetPlanName?: string | null
-
-  category?: NotificationCategory
-  priority?: NotificationPriority
+  audience?: string
+  category?: string
+  priority?: string
+  courseId?: string | null
+  planId?: string | null
+  academicStageId?: string | null
+  gradeId?: string | null
+  educationSystemId?: string | null
   actionUrl?: string | null
+  imageUrl?: string | null
   channels?: string[]
+  publish?: boolean
+}
+
+export interface NotificationStats {
+  totalBroadcasts: number
+  publishedActive: number
+  draftMessages: number
 }
 
 export interface NotificationsResponse {

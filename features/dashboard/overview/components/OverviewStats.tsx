@@ -1,69 +1,75 @@
 "use client"
 
 import * as React from "react"
-import { Users, GraduationCap, Calendar, TrendingUp } from "lucide-react"
+import { Users, GraduationCap, UserCheck, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { DashboardOverviewResponse } from "../types/overview.types"
 
-interface OverviewStatItem {
-  title: string
-  value: string
-  change: string
-  period: string
-  isPositive: boolean
-  icon: React.ComponentType<{ className?: string }>
-  iconBg: string
-  iconColor: string
-  dotColor: string
+export interface OverviewStatsProps {
+  data?: DashboardOverviewResponse
 }
 
-const stats: OverviewStatItem[] = [
-  {
-    title: "Total Students",
-    value: "2,450",
-    change: "+6.2%",
-    period: "vs last month",
-    isPositive: true,
-    icon: GraduationCap,
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
-    dotColor: "bg-blue-400",
-  },
-  {
-    title: "Total Teachers",
-    value: "128",
-    change: "+4.1%",
-    period: "vs last month",
-    isPositive: true,
-    icon: Users,
-    iconBg: "bg-purple-50",
-    iconColor: "text-purple-600",
-    dotColor: "bg-purple-400",
-  },
-  {
-    title: "Sessions Today",
-    value: "42",
-    change: "+18%",
-    period: "vs yesterday",
-    isPositive: true,
-    icon: Calendar,
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-600",
-    dotColor: "bg-amber-400",
-  },
-  {
-    title: "Completion Rate",
-    value: "94.2%",
-    change: "+2.5%",
-    period: "vs last month",
-    isPositive: true,
-    icon: TrendingUp,
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-600",
-    dotColor: "bg-emerald-400",
-  },
-]
+export function OverviewStats({ data }: OverviewStatsProps) {
+  const totalStudents = data?.totalStudents ?? 0
+  const activeStudents = data?.activeStudents ?? 0
+  const newStudents = data?.newStudentsThisMonth ?? 0
+  const studentGrowth = data?.studentsGrowthPercent ?? 0
 
-export function OverviewStats() {
+  const totalTeachers = data?.totalTeachers ?? 0
+  const activeTeachers = data?.activeTeachers ?? 0
+  const availableTeachers = data?.availableTeachers ?? 0
+  const teacherGrowth = data?.teachersGrowthPercent ?? 0
+
+  const activeStudentPct =
+    totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0
+
+  const stats = [
+    {
+      title: "Total Students",
+      value: totalStudents.toLocaleString(),
+      change: `${studentGrowth >= 0 ? "+" : ""}${studentGrowth.toFixed(1)}%`,
+      period: `${newStudents.toLocaleString()} new this month`,
+      isPositive: studentGrowth >= 0,
+      icon: GraduationCap,
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600",
+      dotColor: "bg-blue-400",
+    },
+    {
+      title: "Active Students",
+      value: activeStudents.toLocaleString(),
+      change: `${activeStudentPct}%`,
+      period: "Of total enrolled capacity",
+      isPositive: true,
+      icon: Users,
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+      dotColor: "bg-emerald-400",
+    },
+    {
+      title: "Total Faculty",
+      value: totalTeachers.toLocaleString(),
+      change: `${teacherGrowth >= 0 ? "+" : ""}${teacherGrowth.toFixed(1)}%`,
+      period: "Teachers & instructors",
+      isPositive: teacherGrowth >= 0,
+      icon: UserCheck,
+      iconBg: "bg-purple-50",
+      iconColor: "text-purple-600",
+      dotColor: "bg-purple-400",
+    },
+    {
+      title: "Active Teachers",
+      value: activeTeachers.toLocaleString(),
+      change: `${availableTeachers} Available`,
+      period: "Ready for live sessions",
+      isPositive: true,
+      icon: Sparkles,
+      iconBg: "bg-amber-50",
+      iconColor: "text-amber-600",
+      dotColor: "bg-amber-400",
+    },
+  ]
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
       {stats.map((stat) => {
@@ -86,7 +92,7 @@ export function OverviewStats() {
               </div>
               <div className="flex items-center gap-1.5">
                 <span className={cn("size-2 rounded-full", stat.dotColor)} />
-                <span className="text-[11px] font-medium text-zinc-400">Live</span>
+                <span className="text-[11px] font-medium text-zinc-400">Live Metric</span>
               </div>
             </div>
 
@@ -112,7 +118,7 @@ export function OverviewStats() {
               >
                 {stat.change}
               </span>
-              <span className="text-[11px] text-zinc-400 font-normal">
+              <span className="text-[11px] text-zinc-400 font-normal truncate">
                 {stat.period}
               </span>
             </div>

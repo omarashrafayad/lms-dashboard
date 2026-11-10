@@ -16,6 +16,7 @@ import {
   Ticket,
   Bell,
   Image as ImageIcon,
+  ShieldCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -43,6 +44,7 @@ export function Sidebar() {
   const isCouponsActive = pathname.startsWith("/coupons")
   const isBannersActive = pathname.startsWith("/banners")
   const isNotificationsActive = pathname.startsWith("/notifications")
+  const isRolesActive = pathname.startsWith("/roles")
   const isSupportActive = pathname.startsWith("/support")
   const isSettingsActive = pathname.startsWith("/settings")
 
@@ -708,6 +710,29 @@ export function Sidebar() {
                   )}
                 />
                 <span>Notifications</span>
+              </div>
+            </Link>
+
+            {/* Roles & Permissions */}
+            <Link
+              href="/roles"
+              className={cn(
+                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                isRolesActive
+                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <ShieldCheck
+                  className={cn(
+                    "size-[18px] transition-colors",
+                    isRolesActive
+                      ? "text-brand-orange"
+                      : "text-zinc-400 group-hover:text-zinc-600"
+                  )}
+                />
+                <span>Roles & Permissions</span>
               </div>
             </Link>
 

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { BarChart3, PieChart, ArrowUpRight } from "lucide-react"
+import { EducationSystemDistributionResponse } from "../types/overview.types"
 
 interface DailyActivity {
   day: string
@@ -20,35 +21,48 @@ const weeklyData: DailyActivity[] = [
   { day: "Sun", completed: 46, scheduled: 48, percentage: 95 },
 ]
 
-const systemDistribution = [
-  {
-    name: "National Curriculum",
-    count: 1176,
-    percentage: 48,
-    color: "bg-amber-400",
-    textColor: "text-amber-600",
-    bgColor: "bg-amber-50",
-  },
-  {
-    name: "American Diploma",
-    count: 784,
-    percentage: 32,
-    color: "bg-blue-500",
-    textColor: "text-blue-600",
-    bgColor: "bg-blue-50",
-  },
-  {
-    name: "IGCSE / British",
-    count: 490,
-    percentage: 20,
-    color: "bg-purple-500",
-    textColor: "text-purple-600",
-    bgColor: "bg-purple-50",
-  },
+const PALETTE = [
+  { color: "bg-amber-400", textColor: "text-amber-600", bgColor: "bg-amber-50" },
+  { color: "bg-blue-500", textColor: "text-blue-600", bgColor: "bg-blue-50" },
+  { color: "bg-purple-500", textColor: "text-purple-600", bgColor: "bg-purple-50" },
+  { color: "bg-emerald-500", textColor: "text-emerald-600", bgColor: "bg-emerald-50" },
+  { color: "bg-rose-500", textColor: "text-rose-600", bgColor: "bg-rose-50" },
 ]
 
-export function OverviewCharts() {
+export interface OverviewChartsProps {
+  educationSystems?: EducationSystemDistributionResponse[] | null
+  totalStudents?: number
+}
+
+export function OverviewCharts({
+  educationSystems,
+  totalStudents = 0,
+}: OverviewChartsProps) {
   const [activeDay, setActiveDay] = React.useState<string>("Thu")
+
+  const systems = React.useMemo(() => {
+    if (educationSystems && educationSystems.length > 0) {
+      return educationSystems.map((item, idx) => {
+        const style = PALETTE[idx % PALETTE.length]
+        return {
+          name: item.educationSystem || "Standard System",
+          count: item.studentCount,
+          percentage: Math.round(item.percentage),
+          ...style,
+        }
+      })
+    }
+    return [
+      {
+        name: "National Curriculum",
+        count: 0,
+        percentage: 0,
+        color: "bg-amber-400",
+        textColor: "text-amber-600",
+        bgColor: "bg-amber-50",
+      },
+    ]
+  }, [educationSystems])
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -161,7 +175,7 @@ export function OverviewCharts() {
 
           {/* Progress Bars */}
           <div className="flex flex-col gap-4 mt-6">
-            {systemDistribution.map((sys) => (
+            {systems.map((sys) => (
               <div key={sys.name} className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-medium text-zinc-800">{sys.name}</span>
@@ -179,7 +193,7 @@ export function OverviewCharts() {
                 <div className="w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${sys.color}`}
-                    style={{ width: `${sys.percentage}%` }}
+                    style={{ width: `${Math.min(100, Math.max(sys.count > 0 ? 4 : 0, sys.percentage))}%` }}
                   />
                 </div>
               </div>
@@ -189,8 +203,10 @@ export function OverviewCharts() {
 
         {/* Summary Pill Box */}
         <div className="mt-6 p-3.5 rounded-xl bg-zinc-50/80 border border-zinc-100 flex items-center justify-between text-xs">
-          <span className="text-zinc-500">Total Enrolled Capacity</span>
-          <span className="font-bold text-zinc-900">2,450 / 3,000</span>
+          <span className="text-zinc-500">Total Enrolled Students</span>
+          <span className="font-bold text-zinc-900">
+            {totalStudents.toLocaleString()}
+          </span>
         </div>
       </div>
     </div>

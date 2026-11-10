@@ -3,48 +3,60 @@
 import * as React from "react"
 import UniTable, { UniTableColumn } from "@/components/shared/uniTable"
 import { ApiNotification } from "../types/notifications.types"
-import { Eye, Trash2, Globe, Clock, Users, GraduationCap, AlertCircle, Sparkles } from "lucide-react"
+import {
+  Eye,
+  Trash2,
+  Globe,
+  Clock,
+  Users,
+  AlertCircle,
+  Pencil,
+  Send,
+  Loader2,
+} from "lucide-react"
 
 export interface NotificationsTableProps {
   notifications: ApiNotification[]
   onView: (notification: ApiNotification) => void
+  onEdit: (notification: ApiNotification) => void
   onTogglePublish: (notification: ApiNotification) => void
   onDelete: (id: string) => void
   isToggling?: string | null
   isDeleting?: string | null
+  serverPagination?: {
+    currentPage: number
+    totalPages: number
+    totalItems: number
+    onPageChange: (page: number) => void
+    pageSizeOptions?: number[]
+    onPageSizeChange?: (pageSize: number) => void
+  }
 }
 
 export function NotificationsTable({
   notifications,
   onView,
+  onEdit,
   onTogglePublish,
   onDelete,
   isToggling,
   isDeleting,
+  serverPagination,
 }: NotificationsTableProps) {
-  const getRoleLabel = (notification: ApiNotification) => {
-    switch (notification.targetRole) {
-      case "students": {
-        const details = [
-          notification.targetStageName,
-          notification.targetGradeName,
-        ]
-          .filter(Boolean)
-          .join(" • ")
-        return `Students ${details ? `(${details})` : ""}`
-      }
+  const getAudienceLabel = (notification: ApiNotification) => {
+    if (notification.audienceLabel) return notification.audienceLabel
+
+    switch (notification.audience || notification.targetRole) {
+      case "students":
+        return "Students Only"
       case "teachers":
         return "Teachers & Instructors"
       case "parents":
         return "Parents & Guardians"
       case "course":
-        return notification.targetCourseName
-          ? `Course: ${notification.targetCourseName}`
-          : "Specific Course"
+        return "Specific Course"
       case "plan":
-        return notification.targetPlanName
-          ? `Plan: ${notification.targetPlanName}`
-          : "Specific Plan"
+        return "Specific Plan"
       default:
         return "All Users (General)"
     }
@@ -77,38 +89,38 @@ export function NotificationsTable({
   const columns: UniTableColumn<ApiNotification>[] = [
     {
       id: "title",
-      header: "Notification & Message",
+      header: "Notification & Summary",
       cell: (_, row) => (
-        <div className="flex flex-col min-w-[220px] max-w-[380px] py-1">
+        <div className="flex flex-col min-w-[220px] max-w-[360px] py-1">
           <span className="text-xs font-bold text-zinc-900 line-clamp-1">
             {row.title}
           </span>
           <span className="text-[11px] text-zinc-500 line-clamp-1 mt-0.5">
-            {row.summary}
+            {row.summary || row.content}
           </span>
         </div>
       ),
     },
     {
-      id: "targetAudience",
+      id: "audience",
       header: "Target Recipients",
       cell: (_, row) => {
-        const isAll = !row.targetRole || row.targetRole === "all"
+        const aud = row.audience || row.targetRole || "all"
         return (
           <div className="flex items-center gap-1.5 py-1">
             <span
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${
-                isAll
+                aud === "all"
                   ? "bg-sky-50 text-sky-800 border-sky-200/60"
-                  : row.targetRole === "students"
+                  : aud === "students"
                   ? "bg-purple-50 text-purple-800 border-purple-200/60"
-                  : row.targetRole === "teachers"
+                  : aud === "teachers"
                   ? "bg-emerald-50 text-emerald-800 border-emerald-200/60"
                   : "bg-amber-50 text-amber-800 border-amber-200/60"
               }`}
             >
               <Users className="size-3" />
-              <span className="truncate max-w-[200px]">{getRoleLabel(row)}</span>
+              <span className="truncate max-w-[180px]">{getAudienceLabel(row)}</span>
             </span>
           </div>
         )
@@ -116,9 +128,16 @@ export function NotificationsTable({
     },
     {
       id: "priority",
-      header: "Priority",
+      header: "Priority & Topic",
       cell: (_, row) => (
-        <div className="py-1">{getPriorityBadge(row.priority)}</div>
+        <div className="flex flex-col gap-1 py-1">
+          <div>{getPriorityBadge(row.priority)}</div>
+          {row.category && (
+            <span className="text-[10px] text-zinc-400 capitalize">
+              {row.category.replace("_", " ")}
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -142,14 +161,13 @@ export function NotificationsTable({
     },
     {
       id: "createdAt",
-      header: "Created Date",
+      header: "Created / Published",
       cell: (_, row) => {
-        if (!row.createdAt) {
-          return <span className="text-xs text-zinc-400">—</span>
-        }
-        const d = new Date(row.createdAt)
+        const rawDate = row.publishedAt || row.createdAt
+        if (!rawDate) return <span className="text-xs text-zinc-400">—</span>
+        const d = new Date(rawDate)
         return (
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-zinc-500 whitespace-nowrap">
             {d.toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -176,6 +194,15 @@ export function NotificationsTable({
 
           <button
             type="button"
+            onClick={() => onEdit(row)}
+            className="size-8 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 flex items-center justify-center shadow-2xs transition-colors cursor-pointer"
+            title="Edit notification"
+          >
+            <Pencil className="size-3.5 text-zinc-600" />
+          </button>
+
+          <button
+            type="button"
             disabled={isToggling === row.id}
             onClick={() => onTogglePublish(row)}
             className={`h-8 px-2.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer disabled:opacity-50 ${
@@ -185,7 +212,11 @@ export function NotificationsTable({
             }`}
             title={row.isPublished ? "Convert to Draft" : "Publish now"}
           >
-            <Globe className="size-3.5" />
+            {isToggling === row.id ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Globe className="size-3.5" />
+            )}
             <span>{row.isPublished ? "Draft" : "Publish"}</span>
           </button>
 
@@ -210,6 +241,8 @@ export function NotificationsTable({
         columns={columns}
         enablePagination={true}
         pageSize={10}
+        serverPagination={serverPagination}
+        getRowId={(row) => row.id}
         itemLabel="Notifications"
         emptyMessage="No notifications or announcements found."
       />

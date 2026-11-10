@@ -160,7 +160,7 @@ export default function ParentAddPage() {
               <button
                 type="submit"
                 disabled={isFormLoading}
-                className="h-10 px-6 rounded-xl bg-[#FEF3C7] hover:bg-[#FDE68A] text-zinc-900 border border-[#FDE68A] text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                className="h-10 px-6 rounded-xl bg-primary text-white border border-[#FDE68A] text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-2 disabled:opacity-50"
               >
                 {isFormLoading && <Loader2 className="size-4 animate-spin text-amber-700" />}
                 <span>Create Parent</span>

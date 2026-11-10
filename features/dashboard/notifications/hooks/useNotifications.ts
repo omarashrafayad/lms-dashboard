@@ -3,10 +3,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getNotifications,
+  getNotificationStats,
   getNotificationById,
   createNotification,
   updateNotification,
   deleteNotification,
+  publishNotification,
 } from "../api/notificationsApi"
 import {
   NotificationQueryParams,
@@ -18,6 +20,13 @@ export const useNotifications = (params: NotificationQueryParams = {}) => {
   return useQuery({
     queryKey: ["notifications", params],
     queryFn: () => getNotifications(params),
+  })
+}
+
+export const useNotificationStats = () => {
+  return useQuery({
+    queryKey: ["notifications", "stats"],
+    queryFn: getNotificationStats,
   })
 }
 
@@ -66,3 +75,13 @@ export const useDeleteNotification = () => {
   })
 }
 
+export const usePublishNotification = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => publishNotification(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] })
+      queryClient.invalidateQueries({ queryKey: ["notification", id] })
+    },
+  })
+}

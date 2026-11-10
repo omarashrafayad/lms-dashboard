@@ -2,10 +2,12 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ChevronRight, ExternalLink } from "lucide-react"
-import { useStudents } from "@/features/dashboard/student/hooks/useStudents"
-import { useTeachers } from "@/features/dashboard/teacher/hooks/useTeachers"
+import { ChevronRight, ExternalLink, Calendar, GraduationCap } from "lucide-react"
 import { cn } from "@/lib/utils"
+import {
+  DashboardStudentResponse,
+  DashboardTeacherResponse,
+} from "../types/overview.types"
 
 const AVATAR_COLORS = [
   "bg-sky-100 text-sky-700",
@@ -16,7 +18,7 @@ const AVATAR_COLORS = [
   "bg-indigo-100 text-indigo-700",
 ]
 
-function getAvatarInitials(name?: string, fallback = "U"): string {
+function getAvatarInitials(name?: string | null, fallback = "U"): string {
   const parts = (name || fallback).trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return fallback
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
@@ -32,15 +34,17 @@ function getAvatarColor(key: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export function OverviewRecentLists() {
-  const { data: apiStudents } = useStudents()
-  const { data: apiTeachers } = useTeachers()
+export interface OverviewRecentListsProps {
+  recentStudents?: DashboardStudentResponse[] | null
+  activeTeachers?: DashboardTeacherResponse[] | null
+}
 
-  const studentsList = Array.isArray(apiStudents) ? apiStudents : apiStudents?.items || []
-  const teachersList = Array.isArray(apiTeachers) ? apiTeachers : apiTeachers?.items || []
-
-  const recentStudents = studentsList.slice(0, 5)
-  const recentTeachers = teachersList.slice(0, 4)
+export function OverviewRecentLists({
+  recentStudents = [],
+  activeTeachers = [],
+}: OverviewRecentListsProps) {
+  const studentsList = recentStudents || []
+  const teachersList = activeTeachers || []
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -49,8 +53,9 @@ export function OverviewRecentLists() {
         <div>
           <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
             <div>
-              <h2 className="text-base font-semibold text-zinc-900">
-                Recent Students
+              <h2 className="text-base font-semibold text-zinc-900 flex items-center gap-2">
+                <GraduationCap className="size-4.5 text-brand-orange" />
+                <span>Recent Students</span>
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5">
                 Newly registered and active students
@@ -60,30 +65,36 @@ export function OverviewRecentLists() {
               href="/student/student_list"
               className="text-xs font-semibold text-brand-orange hover:text-brand-orange/80 flex items-center gap-1 transition-colors"
             >
-              <span>View All</span>
+              <span>View Directory</span>
               <ChevronRight className="size-3.5" />
             </Link>
           </div>
 
           <div className="divide-y divide-zinc-100 mt-2">
-            {recentStudents.length === 0 ? (
-              <p className="text-xs text-zinc-400 py-6 text-center">No students found</p>
+            {studentsList.length === 0 ? (
+              <div className="py-10 text-center flex flex-col items-center justify-center gap-1.5 text-zinc-400">
+                <GraduationCap className="size-7 stroke-[1.5]" />
+                <p className="text-xs font-medium">No recent students found</p>
+              </div>
             ) : (
-              recentStudents.map((student) => {
+              studentsList.map((student) => {
                 const initials = getAvatarInitials(student.fullName, "ST")
                 const colorClass = getAvatarColor(student.id || student.fullName || "")
-                const code = `STD-${(student.id || "").slice(0, 5).toUpperCase()}`
-                const progress = student.progress ?? 75
+                const metaParts = [
+                  student.grade,
+                  student.academicStage,
+                  student.educationSystem,
+                ].filter(Boolean)
 
                 return (
                   <div
                     key={student.id}
-                    className="py-3 flex items-center justify-between gap-3 group hover:bg-zinc-50/60 -mx-2 px-2 rounded-xl transition-colors"
+                    className="py-3 flex items-center justify-between gap-3 group hover:bg-zinc-50/70 -mx-2 px-2 rounded-xl transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
                         className={cn(
-                          "size-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs",
+                          "size-9.5 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs",
                           colorClass
                         )}
                       >
@@ -94,28 +105,33 @@ export function OverviewRecentLists() {
                           href={`/student/${student.id}`}
                           className="text-xs font-semibold text-zinc-900 truncate hover:text-brand-orange transition-colors"
                         >
-                          {student.fullName}
+                          {student.fullName || "Student"}
                         </Link>
                         <span className="text-[11px] text-zinc-400 truncate">
-                          {code} • {student.grade || "Grade"} ({student.educationSystem || "General"})
+                          {student.email ||
+                            (metaParts.length > 0 ? metaParts.join(" • ") : "General")}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                      <div className="hidden sm:flex flex-col items-end text-right">
-                        <span className="text-xs font-semibold text-zinc-700">
-                          {progress}%
-                        </span>
-                        <span className="text-[10px] text-zinc-400">Progress</span>
-                      </div>
+                      {metaParts.length > 0 && (
+                        <div className="hidden sm:flex flex-col items-end text-right">
+                          <span className="text-xs font-medium text-zinc-700">
+                            {student.grade || student.academicStage}
+                          </span>
+                          <span className="text-[10px] text-zinc-400">
+                            {student.educationSystem || "Standard"}
+                          </span>
+                        </div>
+                      )}
 
                       <span
                         className={cn(
-                          "text-[11px] font-medium px-2 py-0.5 rounded-full border",
+                          "text-[11px] font-semibold px-2.5 py-0.5 rounded-full border",
                           student.isActive
-                            ? "text-emerald-700 bg-emerald-50 border-emerald-100"
-                            : "text-zinc-600 bg-zinc-50 border-zinc-200"
+                            ? "text-emerald-700 bg-emerald-50 border-emerald-200/80"
+                            : "text-zinc-500 bg-zinc-50 border-zinc-200"
                         )}
                       >
                         {student.isActive ? "Active" : "Inactive"}
@@ -129,9 +145,7 @@ export function OverviewRecentLists() {
         </div>
 
         <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-400">
-          <span>
-            Showing latest {Math.min(5, recentStudents.length)} of {studentsList.length} students
-          </span>
+          <span>Showing latest {studentsList.length} enrolled students</span>
           <Link
             href="/student/add"
             className="text-xs font-medium text-zinc-700 hover:text-brand-orange flex items-center gap-1 transition-colors"
@@ -147,89 +161,84 @@ export function OverviewRecentLists() {
         <div>
           <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
             <div>
-              <h2 className="text-base font-semibold text-zinc-900">
-                Active Teachers
+              <h2 className="text-base font-semibold text-zinc-900 flex items-center gap-2">
+                <Calendar className="size-4.5 text-purple-600" />
+                <span>Active Teachers</span>
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Faculty availability and upcoming schedules
+                Faculty members and availability status
               </p>
             </div>
             <Link
               href="/teacher/teacher_list"
               className="text-xs font-semibold text-brand-orange hover:text-brand-orange/80 flex items-center gap-1 transition-colors"
             >
-              <span>View All</span>
+              <span>View Directory</span>
               <ChevronRight className="size-3.5" />
             </Link>
           </div>
 
           <div className="divide-y divide-zinc-100 mt-2">
-            {recentTeachers.length === 0 ? (
-              <p className="text-xs text-zinc-400 py-6 text-center">No teachers found</p>
+            {teachersList.length === 0 ? (
+              <div className="py-10 text-center flex flex-col items-center justify-center gap-1.5 text-zinc-400">
+                <Calendar className="size-7 stroke-[1.5]" />
+                <p className="text-xs font-medium">No active teachers found</p>
+              </div>
             ) : (
-              recentTeachers.map((teacher) => {
+              teachersList.map((teacher) => {
                 const initials = getAvatarInitials(teacher.fullName, "TC")
                 const colorClass = getAvatarColor(teacher.id || teacher.fullName || "")
-                const subjectList = teacher.specializations
-                  ? (teacher.specializations.map((s: any) => s.subjectName).filter(Boolean) as string[])
-                  : []
-                const subjects = subjectList.length > 0 ? subjectList.join(", ") : "General"
-                const upcoming = teacher.availabilitySlots?.length ?? 0
-                const availability =
-                  teacher.isAvailable === false
-                    ? "Unavailable"
-                    : !teacher.isActive
-                    ? "Offline"
-                    : "Available"
+                const availabilityText = teacher.isAvailable
+                  ? "Available"
+                  : !teacher.isActive
+                  ? "Inactive"
+                  : "Busy / In Session"
 
                 return (
                   <div
                     key={teacher.id}
-                    className="py-3.5 flex items-center justify-between gap-3 group hover:bg-zinc-50/60 -mx-2 px-2 rounded-xl transition-colors"
+                    className="py-3 flex items-center justify-between gap-3 group hover:bg-zinc-50/70 -mx-2 px-2 rounded-xl transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className={cn(
-                          "size-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs",
-                          colorClass
-                        )}
-                      >
-                        {initials}
-                      </div>
+                      {teacher.profilePhotoUrl ? (
+                        <img
+                          src={teacher.profilePhotoUrl}
+                          alt={teacher.fullName || "Teacher"}
+                          className="size-9.5 rounded-full object-cover shrink-0 border border-zinc-200"
+                        />
+                      ) : (
+                        <div
+                          className={cn(
+                            "size-9.5 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs",
+                            colorClass
+                          )}
+                        >
+                          {initials}
+                        </div>
+                      )}
                       <div className="flex flex-col min-w-0">
                         <Link
                           href={`/teacher/${teacher.id}`}
                           className="text-xs font-semibold text-zinc-900 truncate hover:text-brand-orange transition-colors"
                         >
-                          {teacher.fullName}
+                          {teacher.fullName || "Teacher"}
                         </Link>
                         <span className="text-[11px] text-zinc-400 truncate">
-                          {subjects}
+                          {teacher.email || "Faculty Member"}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                      <div className="text-right">
-                        <span className="text-xs font-semibold text-zinc-800">
-                          {upcoming}
-                        </span>
-                        <span className="text-[10px] text-zinc-400 block">
-                          Sessions
-                        </span>
-                      </div>
-
                       <span
                         className={cn(
-                          "text-[11px] font-medium px-2 py-0.5 rounded-full border",
-                          availability === "Available"
-                            ? "text-emerald-700 bg-emerald-50 border-emerald-100"
-                            : availability === "Unavailable"
-                            ? "text-rose-700 bg-rose-50 border-rose-100"
-                            : "text-zinc-600 bg-zinc-50 border-zinc-200"
+                          "text-[11px] font-semibold px-2.5 py-0.5 rounded-full border",
+                          teacher.isAvailable
+                            ? "text-emerald-700 bg-emerald-50 border-emerald-200/80"
+                            : "text-amber-700 bg-amber-50 border-amber-200/80"
                         )}
                       >
-                        {availability}
+                        {availabilityText}
                       </span>
                     </div>
                   </div>
@@ -240,9 +249,7 @@ export function OverviewRecentLists() {
         </div>
 
         <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-400">
-          <span>
-            Showing {Math.min(4, recentTeachers.length)} of {teachersList.length} teachers
-          </span>
+          <span>Showing {teachersList.length} faculty instructors</span>
           <Link
             href="/teacher/add"
             className="text-xs font-medium text-zinc-700 hover:text-brand-orange flex items-center gap-1 transition-colors"

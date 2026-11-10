@@ -20,24 +20,14 @@ import {
   Bell,
   Users,
   GraduationCap,
-  Layers,
-  BookOpen,
-  CreditCard,
-  Send,
   Loader2,
-  Radio,
   Smartphone,
   Mail,
   MessageSquare,
-  AlertTriangle,
-  Flame,
-  Info,
 } from "lucide-react"
 import {
+  ApiNotification,
   CreateNotificationPayload,
-  NotificationRole,
-  NotificationCategory,
-  NotificationPriority,
 } from "../types/notifications.types"
 import {
   useAcademicStages,
@@ -48,24 +38,17 @@ import { useCourses } from "@/features/dashboard/course/hooks/useCourses"
 import { useSubscriptionPlans } from "@/features/dashboard/subscriptions/hooks/useSubscriptions"
 
 const notificationSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  summary: z.string().min(5, "Summary must be at least 5 characters"),
-  content: z.string().min(10, "Content must be at least 10 characters"),
-  targetRole: z.enum(["all", "students", "teachers", "parents", "course", "plan"]),
+  title: z.string().min(2, "Title must be at least 2 characters"),
+  summary: z.string().min(2, "Summary must be at least 2 characters"),
+  content: z.string().min(5, "Content must be at least 5 characters"),
+  targetRole: z.string().min(1, "Please select an audience"),
   targetStage: z.string().optional(),
   targetGrade: z.string().optional(),
   targetSystem: z.string().optional(),
   targetCourseId: z.string().optional(),
   targetPlanId: z.string().optional(),
-  category: z.enum([
-    "general",
-    "academic_exam",
-    "schedule_session",
-    "billing_subscription",
-    "course_update",
-    "urgent",
-  ]),
-  priority: z.enum(["normal", "important", "urgent"]),
+  category: z.string().default("general"),
+  priority: z.string().default("normal"),
   imageUrl: z.string().optional(),
   actionUrl: z.string().optional(),
   status: z.enum(["published", "draft"]),
@@ -75,6 +58,7 @@ export interface CreateNotificationModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmitNotification: (payload: CreateNotificationPayload) => Promise<void>
+  initialNotification?: ApiNotification | null
   isSubmitting?: boolean
 }
 
@@ -82,8 +66,11 @@ export function CreateNotificationModal({
   open,
   onOpenChange,
   onSubmitNotification,
+  initialNotification,
   isSubmitting = false,
 }: CreateNotificationModalProps) {
+  const isEditing = Boolean(initialNotification)
+
   // Reference data hooks for targeted recipients
   const { data: stages = [] } = useAcademicStages()
   const { data: grades = [] } = useGrades()
@@ -94,8 +81,8 @@ export function CreateNotificationModal({
 
   // Selected delivery channels
   const [channels, setChannels] = React.useState<string[]>([
-    "in_app",
-    "push",
+    "InApp",
+    "Push",
   ])
 
   const form = useForm({
@@ -114,7 +101,7 @@ export function CreateNotificationModal({
       priority: "normal",
       imageUrl: "",
       actionUrl: "",
-      status: "published",
+      status: "published" as "published" | "draft",
     },
   })
 
@@ -125,25 +112,53 @@ export function CreateNotificationModal({
 
   React.useEffect(() => {
     if (open) {
-      form.reset({
-        title: "",
-        summary: "",
-        content: "",
-        targetRole: "all",
-        targetStage: "all",
-        targetGrade: "all",
-        targetSystem: "all",
-        targetCourseId: "",
-        targetPlanId: "",
-        category: "general",
-        priority: "normal",
-        imageUrl: "",
-        actionUrl: "",
-        status: "published",
-      })
-      setChannels(["in_app", "push"])
+      if (initialNotification) {
+        form.reset({
+          title: initialNotification.title || "",
+          summary: initialNotification.summary || "",
+          content: initialNotification.content || "",
+          targetRole: initialNotification.audience || initialNotification.targetRole || "all",
+          targetStage: initialNotification.academicStageId || "all",
+          targetGrade: initialNotification.gradeId || "all",
+          targetSystem: initialNotification.educationSystemId || "all",
+          targetCourseId: initialNotification.courseId || "",
+          targetPlanId: initialNotification.planId || "",
+          category: initialNotification.category || "general",
+          priority: initialNotification.priority || "normal",
+          imageUrl: initialNotification.imageUrl || "",
+          actionUrl: initialNotification.actionUrl || "",
+          status:
+            initialNotification.isPublished ||
+            initialNotification.status === "Published"
+              ? "published"
+              : "draft",
+        })
+        setChannels(
+          Array.isArray(initialNotification.channels) && initialNotification.channels.length > 0
+            ? initialNotification.channels
+            : ["InApp", "Push"]
+        )
+      } else {
+        form.reset({
+          title: "",
+          summary: "",
+          content: "",
+          targetRole: "all",
+          targetStage: "all",
+          targetGrade: "all",
+          targetSystem: "all",
+          targetCourseId: "",
+          targetPlanId: "",
+          category: "general",
+          priority: "normal",
+          imageUrl: "",
+          actionUrl: "",
+          status: "published",
+        })
+        setChannels(["InApp", "Push"])
+      }
     }
-  }, [open, form])
+  }, [open, initialNotification, form])
 
   const toggleChannel = (channelKey: string) => {
     setChannels((prev) =>
@@ -154,35 +169,24 @@ export function CreateNotificationModal({
   }
 
   const onSubmit = async (values: any) => {
-    // Resolve names for labels
-    const stageObj = stages.find((s) => s.id === values.targetStage)
-    const gradeObj = grades.find((g) => g.id === values.targetGrade)
-    const systemObj = systems.find((sys) => sys.id === values.targetSystem)
-    const courseObj = courses.find((c) => c.id === values.targetCourseId)
-    const planObj = plans.find((p) => p.id === values.targetPlanId)
-
     await onSubmitNotification({
       title: values.title.trim(),
       summary: values.summary.trim(),
       content: values.content.trim(),
       imageUrl: values.imageUrl?.trim() || null,
-      isPublished: values.status === "published",
-      targetRole: values.targetRole as NotificationRole,
-      targetStage: values.targetStage !== "all" ? values.targetStage : null,
-      targetStageName: stageObj ? stageObj.name : null,
-      targetGrade: values.targetGrade !== "all" ? values.targetGrade : null,
-      targetGradeName: gradeObj ? gradeObj.name : null,
-      targetSystem: values.targetSystem !== "all" ? values.targetSystem : null,
-      targetSystemName: systemObj ? systemObj.name : null,
-      targetCourseId: values.targetCourseId || null,
-      targetCourseName: courseObj ? courseObj.name : null,
-      targetPlanId: values.targetPlanId || null,
-      targetPlanName: planObj ? planObj.name : null,
-      category: values.category as NotificationCategory,
-      priority: values.priority as NotificationPriority,
+      publish: values.status === "published",
+      audience: values.targetRole,
+      academicStageId: values.targetStage && values.targetStage !== "all" ? values.targetStage : null,
+      gradeId: values.targetGrade && values.targetGrade !== "all" ? values.targetGrade : null,
+      educationSystemId: values.targetSystem && values.targetSystem !== "all" ? values.targetSystem : null,
+      courseId: values.targetCourseId || null,
+      planId: values.targetPlanId || null,
+      category: values.category,
+      priority: values.priority,
       actionUrl: values.actionUrl?.trim() || null,
-      channels: channels.length > 0 ? channels : ["in_app"],
+      channels: channels.length > 0 ? channels : ["InApp"],
     })
+    onOpenChange(false)
   }
 
   // Options lists
@@ -212,12 +216,12 @@ export function CreateNotificationModal({
 
   const courseOptions = [
     { label: "Select a Course...", value: "" },
-    ...courses.map((c) => ({ label: c.name || "Untitled Course", value: c.id })),
+    ...courses.map((c: any) => ({ label: c.name || c.title || "Untitled Course", value: c.id })),
   ]
 
   const planOptions = [
     { label: "Select a Subscription Plan...", value: "" },
-    ...plans.map((p) => ({ label: `${p.name} (${p.monthlyPrice ?? 0} EGP)`, value: p.id })),
+    ...plans.map((p) => ({ label: `${p.name} (${p.monthlyPrice ?? p.priceMonthly ?? 0} EGP)`, value: p.id })),
   ]
 
   const categoryOptions = [
@@ -253,7 +257,7 @@ export function CreateNotificationModal({
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-zinc-900">
-                New Targeted Notification & Announcement
+                {isEditing ? "Edit Notification & Announcement" : "New Targeted Notification & Announcement"}
               </DialogTitle>
               <DialogDescription className="text-xs text-zinc-500">
                 Configure recipients, classification, and message content for broadcast.
@@ -267,12 +271,12 @@ export function CreateNotificationModal({
             onSubmit={form.handleSubmit(onSubmit as any)}
             className="flex flex-col gap-5 mt-2"
           >
-            {/* SECTION 1: RECIPIENTS / TARGET AUDIENCE (التركيز على هبعت الإشعار لمين) */}
+            {/* SECTION 1: RECIPIENTS / TARGET AUDIENCE */}
             <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/60 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
                   <Users className="size-4 text-amber-700" />
-                  <span>1. Target Audience & Recipients </span>
+                  <span>1. Target Audience & Recipients</span>
                 </div>
                 <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-200/60 text-amber-900">
                   Essential
@@ -288,8 +292,8 @@ export function CreateNotificationModal({
                 required
               />
 
-              {/* Conditional Filters: Students or Parents */}
-              {(targetRole === "students") && (
+              {/* Conditional Filters: Students */}
+              {targetRole === "students" && (
                 <div className="pt-2 border-t border-amber-200/50 flex flex-col gap-3 animate-in fade-in duration-150">
                   <span className="text-[11px] font-bold text-amber-950 flex items-center gap-1.5">
                     <GraduationCap className="size-3.5 text-amber-700" />
@@ -300,7 +304,7 @@ export function CreateNotificationModal({
                     <UniSelect
                       control={form.control as any}
                       name="targetStage"
-                      label="Stage "
+                      label="Stage"
                       options={stageOptions}
                     />
 
@@ -407,7 +411,7 @@ export function CreateNotificationModal({
                   control={form.control as any}
                   name="actionUrl"
                   label="Target Action URL / Route (Optional)"
-                  placeholder="e.g. /exams or /courses/..."
+                  placeholder="e.g. /academic/exams or /courses/..."
                 />
 
                 <UniInput
@@ -419,15 +423,15 @@ export function CreateNotificationModal({
               </div>
             </div>
 
-            {/* SECTION 4: DELIVERY CHANNELS (قنوات الإرسال) */}
+            {/* SECTION 4: DELIVERY CHANNELS */}
             <div className="flex flex-col gap-2 p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/80">
               <span className="text-xs font-bold text-zinc-700">
-                Delivery Channels 
+                Delivery Channels
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 {[
-                  { id: "in_app", label: "In-App Notification", icon: Bell },
-                  { id: "push", label: "Mobile Push", icon: Smartphone },
+                  { id: "InApp", label: "In-App Notification", icon: Bell },
+                  { id: "Push", label: "Mobile Push", icon: Smartphone },
                   { id: "sms", label: "SMS Text", icon: MessageSquare },
                   { id: "email", label: "Email Broadcast", icon: Mail },
                 ].map((item) => {
@@ -478,7 +482,9 @@ export function CreateNotificationModal({
               >
                 {isSubmitting && <Loader2 className="size-3.5 animate-spin" />}
                 <span>
-                  {isSubmitting ? "Broadcasting..." : "Broadcast Notification"}
+                  {isSubmitting
+                    ? isEditing ? "Saving Changes..." : "Broadcasting..."
+                    : isEditing ? "Save Changes" : "Broadcast Notification"}
                 </span>
               </Button>
             </DialogFooter>
