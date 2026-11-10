@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Search, X, Loader2 } from "lucide-react"
+import { useDebounce } from "@/hooks/useDebounce"
 import { useStudents } from "@/features/dashboard/student/hooks/useStudents"
 import { ApiStudent } from "@/features/dashboard/student/types/student.types"
 
@@ -18,6 +19,7 @@ export interface ParentLinkChildrenCardProps {
   linkedChildren: LinkedChildItem[]
   onAddChild: (student: ApiStudent) => void
   onRemoveChild: (id: string) => void
+  stepNumber?: number
 }
 
 const COLOR_VARIANTS = [
@@ -32,14 +34,23 @@ export function ParentLinkChildrenCard({
   linkedChildren,
   onAddChild,
   onRemoveChild,
+  stepNumber = 2,
 }: ParentLinkChildrenCardProps) {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [isSearching, setIsSearching] = React.useState(false)
   const searchContainerRef = React.useRef<HTMLDivElement>(null)
 
-  // Fetch students for linking (pageSize: 100 for dropdown)
-  const { data: studentsResponse, isLoading: isLoadingStudents } = useStudents({ pageSize: 100 })
-  const apiStudents = Array.isArray(studentsResponse) ? studentsResponse : studentsResponse?.items || []
+  const debouncedSearch = useDebounce(searchQuery, 400)
+
+  // Fetch students for linking using backend search: page 1, pageSize 10
+  const { data: studentsResponse, isLoading: isLoadingStudents } = useStudents({
+    search: debouncedSearch.trim() || undefined,
+    page: 1,
+    pageSize: 10,
+  })
+  const apiStudents = Array.isArray(studentsResponse)
+    ? studentsResponse
+    : studentsResponse?.items || []
 
   // Close dropdown on click outside
   React.useEffect(() => {
@@ -55,28 +66,13 @@ export function ParentLinkChildrenCard({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  // Frontend search and filter out already linked children
+  // Filter out already linked children from results
   const searchResults = React.useMemo(() => {
     if (!apiStudents || !Array.isArray(apiStudents)) return []
-    const available = apiStudents.filter(
+    return apiStudents.filter(
       (s) => !linkedChildren.some((c) => c.id === s.id)
     )
-    if (!searchQuery.trim()) return available
-
-    const q = searchQuery.toLowerCase().trim()
-    return available.filter((s) => {
-      const name = (s.fullName || "").toLowerCase()
-      const email = (s.email || "").toLowerCase()
-      const stage = (s.educationStage || "").toLowerCase()
-      const grade = (s.grade || "").toLowerCase()
-      return (
-        name.includes(q) ||
-        email.includes(q) ||
-        stage.includes(q) ||
-        grade.includes(q)
-      )
-    })
-  }, [apiStudents, linkedChildren, searchQuery])
+  }, [apiStudents, linkedChildren])
 
   const handleSelectStudent = (student: ApiStudent) => {
     onAddChild(student)
@@ -89,7 +85,7 @@ export function ParentLinkChildrenCard({
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
           <div className="size-6 rounded-full bg-[#FEF3C7] text-[#D97706] text-xs font-bold flex items-center justify-center shrink-0">
-            3
+            {stepNumber}
           </div>
           <h2 className="text-sm font-bold text-zinc-900">Link Children</h2>
         </div>
@@ -109,13 +105,15 @@ export function ParentLinkChildrenCard({
             setIsSearching(true)
           }}
           onFocus={() => setIsSearching(true)}
-          placeholder="Search students by name, email, or stage..."
+          placeholder="Search students by name, email, or stage (page 1, 10 items)..."
           className="w-full h-10 pl-10 pr-10 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
         />
 
-        {/* Clear search button */}
+        {/* Clear search button / loader */}
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-          {searchQuery ? (
+          {isLoadingStudents ? (
+            <Loader2 className="size-3.5 text-amber-500 animate-spin" />
+          ) : searchQuery ? (
             <button
               type="button"
               onClick={() => {
@@ -135,13 +133,13 @@ export function ParentLinkChildrenCard({
             {isLoadingStudents ? (
               <div className="flex items-center justify-center gap-2 py-6 text-zinc-400 text-xs">
                 <Loader2 className="size-4 animate-spin text-amber-500" />
-                <span>Loading students...</span>
+                <span>Searching students from backend...</span>
               </div>
             ) : searchResults.length === 0 ? (
               <div className="py-6 px-4 text-center text-xs text-zinc-400">
                 {searchQuery.trim()
                   ? `No students found matching "${searchQuery}"`
-                  : "No available students found."}
+                  : "No students returned."}
               </div>
             ) : (
               searchResults.map((student, idx) => {

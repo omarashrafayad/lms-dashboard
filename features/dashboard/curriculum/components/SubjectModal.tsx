@@ -19,6 +19,7 @@ import {
   useAcademicStages,
   useEducationSystems,
   useGrades,
+  useTerms,
 } from "@/features/dashboard/reference-data/hooks/useReferenceData"
 import {
   CurriculumSubject,
@@ -62,6 +63,18 @@ export function SubjectModal({
   // Reference data hooks
   const { data: stages = [], isLoading: stagesLoading } = useAcademicStages()
   const { data: systems = [], isLoading: systemsLoading } = useEducationSystems()
+  const { data: terms = [], isLoading: termsLoading } = useTerms()
+
+  const termOptions = React.useMemo(() => {
+    if (!terms || terms.length === 0) {
+      return [
+        { label: "Term 1", value: "Term 1" },
+        { label: "Term 2", value: "Term 2" },
+        { label: "Term 3", value: "Term 3" },
+      ]
+    }
+    return terms.map((t) => ({ label: t.name, value: t.name }))
+  }, [terms])
 
   // React Hook Form with Zod validation
   const form = useForm<SubjectFormData>({
@@ -151,7 +164,7 @@ export function SubjectModal({
           educationStageId: stageIdVal,
           gradeId: subjectToEdit.gradeId || "",
           educationSystemId: systemIdVal,
-          term: subjectToEdit.term || "Term 1",
+          term: subjectToEdit.term || terms[0]?.name || "Term 1",
           status: subjectToEdit.status || "Active",
         })
       } else {
@@ -160,12 +173,12 @@ export function SubjectModal({
           educationStageId: stages[0]?.id || "",
           gradeId: "",
           educationSystemId: systems[0]?.id || "",
-          term: "Term 1",
+          term: terms[0]?.name || "Term 1",
           status: "Active",
         })
       }
     }
-  }, [open, subjectToEdit, stages, systems, reset])
+  }, [open, subjectToEdit, stages, systems, terms, reset])
 
   // If in edit mode and grades load, match grade by name if gradeId was missing
   React.useEffect(() => {
@@ -316,13 +329,9 @@ export function SubjectModal({
                 control={control}
                 name="term"
                 label="Term"
-                placeholder="Select term"
-                options={[
-                  { label: "Term 1", value: "Term 1" },
-                  { label: "Term 2", value: "Term 2" },
-                  { label: "Term 3", value: "Term 3" },
-                  { label: "Full Year", value: "Full Year" },
-                ]}
+                placeholder={termsLoading ? "Loading terms..." : "Select term"}
+                options={termOptions}
+                isLoading={termsLoading}
                 required
                 labelClassName="text-xs font-semibold text-zinc-700"
               />

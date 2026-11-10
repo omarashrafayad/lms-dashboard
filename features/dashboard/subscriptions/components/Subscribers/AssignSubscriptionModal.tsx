@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { X, UserCheck } from "lucide-react"
+import { X, UserCheck, Loader2 } from "lucide-react"
 import { SubscriptionPlan, AssignPlanPayload } from "../../types/subscriptions.types"
 import { assignPlanSchema, AssignPlanFormData } from "../../schema/subscription.schema"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,7 @@ import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 interface AssignSubscriptionModalProps {
   isOpen: boolean
   onClose: () => void
-  onAssign: (data: AssignPlanPayload) => void
+  onAssign: (data: AssignPlanPayload) => Promise<void> | void
   plans: SubscriptionPlan[]
   initialPlan?: SubscriptionPlan | null
 }
@@ -34,6 +34,7 @@ export function AssignSubscriptionModal({
   plans,
   initialPlan,
 }: AssignSubscriptionModalProps) {
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
   const { data: studentsResponse } = useStudents({ pageSize: 100 })
   const students = Array.isArray(studentsResponse) ? studentsResponse : studentsResponse?.items || []
 
@@ -89,11 +90,12 @@ export function AssignSubscriptionModal({
     }
   }
 
-  const onSubmit = (data: AssignPlanFormData) => {
+  const onSubmit = async (data: AssignPlanFormData) => {
     try {
+      setIsSubmitting(true)
       const selectedStudent = students.find((s) => s.id === data.studentId)
       const studentName = data.studentName || selectedStudent?.fullName || "Student"
-      onAssign({
+      await onAssign({
         ...data,
         studentName,
         studentGrade: data.studentGrade || selectedStudent?.grade || "Secondary 1",
@@ -101,6 +103,8 @@ export function AssignSubscriptionModal({
       onClose()
     } catch (err) {
       toast.error(getErrorMessage(err))
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -195,6 +199,7 @@ export function AssignSubscriptionModal({
               <Button
                 type="button"
                 variant="outline"
+                disabled={isSubmitting}
                 onClick={onClose}
                 className="h-10 px-4 rounded-xl text-xs text-zinc-600 cursor-pointer"
               >
@@ -202,9 +207,11 @@ export function AssignSubscriptionModal({
               </Button>
               <Button
                 type="submit"
-                className="h-10 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-white font-medium text-xs shadow-2xs cursor-pointer active:scale-[0.98]"
+                disabled={isSubmitting}
+                className="h-10 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-white font-medium text-xs shadow-2xs cursor-pointer active:scale-[0.98] disabled:opacity-60 flex items-center gap-2"
               >
-                Assign Plan
+                {isSubmitting && <Loader2 className="size-4 animate-spin text-white" />}
+                <span>Assign Plan</span>
               </Button>
             </div>
           </form>

@@ -128,6 +128,7 @@ export function SubscriptionsMainPage({
       setEditingPlan(null)
     } catch (err) {
       toast.error(getErrorMessage(err))
+      throw err
     }
   }
 
@@ -148,6 +149,7 @@ export function SubscriptionsMainPage({
       setAssigningPlan(null)
     } catch (err) {
       toast.error(getErrorMessage(err))
+      throw err
     }
   }
 
@@ -167,6 +169,7 @@ export function SubscriptionsMainPage({
       setIsRecordPaymentOpen(false)
     } catch (err) {
       toast.error(getErrorMessage(err))
+      throw err
     }
   }
 

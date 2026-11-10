@@ -8,6 +8,7 @@ import {
   useAcademicStages,
   useEducationSystems,
   useGrades,
+  useTerms,
 } from "@/features/dashboard/reference-data/hooks/useReferenceData"
 
 export interface CurriculumFiltersProps {
@@ -26,6 +27,7 @@ export function CurriculumFilters({
   const { data: stages = [] } = useAcademicStages()
   const { data: systems = [] } = useEducationSystems()
   const { data: grades = [] } = useGrades()
+  const { data: terms = [] } = useTerms()
 
   const stageOptions: FilterOption[] = React.useMemo(() => {
     const list = Array.from(new Set(stages.map((s) => s.name).filter(Boolean)))
@@ -51,12 +53,20 @@ export function CurriculumFilters({
     ]
   }, [systems])
 
-  const termOptions: FilterOption[] = [
-    { label: "All Terms", value: "all" },
-    { label: "Term 1", value: "Term 1" },
-    { label: "Term 2", value: "Term 2" },
-    { label: "Term 3", value: "Term 3" },
-  ]
+  const termOptions: FilterOption[] = React.useMemo(() => {
+    if (!terms || terms.length === 0) {
+      return [
+        { label: "All Terms", value: "all" },
+        { label: "Term 1", value: "Term 1" },
+        { label: "Term 2", value: "Term 2" },
+        { label: "Term 3", value: "Term 3" },
+      ]
+    }
+    return [
+      { label: "All Terms", value: "all" },
+      ...terms.map((t) => ({ label: t.name, value: t.name })),
+    ]
+  }, [terms])
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">

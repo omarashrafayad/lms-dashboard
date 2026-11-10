@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { X, Plus, Trash2, Layers } from "lucide-react"
+import { X, Plus, Trash2, Layers, Loader2 } from "lucide-react"
 import { SubscriptionPlan, CreatePlanPayload } from "../../types/subscriptions.types"
 import { createPlanSchema, CreatePlanFormData } from "../../schema/subscription.schema"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,7 @@ import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 interface CreatePlanModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (planData: CreatePlanPayload) => void
+  onSave: (planData: CreatePlanPayload) => Promise<void> | void
   initialPlan?: SubscriptionPlan | null
 }
 
@@ -35,6 +35,7 @@ export function CreatePlanModal({
 }: CreatePlanModalProps) {
   const [featuresList, setFeaturesList] = React.useState<string[]>([])
   const [newFeatureText, setNewFeatureText] = React.useState("")
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   const form = useForm({
     resolver: zodResolver(createPlanSchema),
@@ -116,15 +117,18 @@ export function CreatePlanModal({
     setFeaturesList((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const onSubmit = (data: CreatePlanFormData) => {
+  const onSubmit = async (data: CreatePlanFormData) => {
     try {
-      onSave({
+      setIsSubmitting(true)
+      await onSave({
         ...data,
         features: featuresList,
       })
       onClose()
     } catch (err) {
       toast.error(getErrorMessage(err))
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -291,6 +295,7 @@ export function CreatePlanModal({
               <Button
                 type="button"
                 variant="outline"
+                disabled={isSubmitting}
                 onClick={onClose}
                 className="h-10 px-4 rounded-xl text-xs text-zinc-600 cursor-pointer"
               >
@@ -298,9 +303,11 @@ export function CreatePlanModal({
               </Button>
               <Button
                 type="submit"
-                className="h-10 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-white font-medium text-xs shadow-2xs cursor-pointer active:scale-[0.98]"
+                disabled={isSubmitting}
+                className="h-10 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-white font-medium text-xs shadow-2xs cursor-pointer active:scale-[0.98] disabled:opacity-60 flex items-center gap-2"
               >
-                {initialPlan ? "Save Changes" : "Create Plan"}
+                {isSubmitting && <Loader2 className="size-4 animate-spin text-white" />}
+                <span>{initialPlan ? "Save Changes" : "Create Plan"}</span>
               </Button>
             </div>
           </form>

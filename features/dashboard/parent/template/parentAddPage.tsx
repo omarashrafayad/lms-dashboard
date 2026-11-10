@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { Form } from "@/components/ui/form"
@@ -18,9 +18,7 @@ import {
 } from "../schema/parent.schema"
 import {
   ParentBasicInfoCard,
-  ParentAccountInfoCard,
   ParentLinkChildrenCard,
-  ParentReviewSummaryCard,
   LinkedChildItem,
 } from "../components/form"
 
@@ -120,10 +118,10 @@ export default function ParentAddPage() {
       {/* Page Header */}
       <PageHeader
         title="Add Parent"
-        description="Create a new parent account and manage their initial account setup."
+        description="Create a new parent account and link student accounts."
       />
 
-      <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto pb-16">
+      <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1000px] w-full mx-auto pb-16">
         {/* Back Link */}
         <div>
           <Link
@@ -137,28 +135,36 @@ export default function ParentAddPage() {
 
         {/* Form Provider & Layout */}
         <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-              {/* Left Column: Form Cards (Span 2) */}
-              <div className="lg:col-span-2 flex flex-col gap-6">
-                <ParentBasicInfoCard control={control} />
-                <ParentAccountInfoCard control={control} setValue={setValue} />
-                <ParentLinkChildrenCard
-                  linkedChildren={linkedChildren}
-                  onAddChild={handleAddChild}
-                  onRemoveChild={handleRemoveChild}
-                />
-              </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+            {/* Step 1: Basic Information + Status */}
+            <ParentBasicInfoCard control={control} setValue={setValue} />
 
-              {/* Right Column: Live Summary & Actions */}
-              <div className="lg:col-span-1">
-                <ParentReviewSummaryCard
-                  control={control}
-                  linkedChildren={linkedChildren}
-                  isSubmitting={isFormLoading}
-                  onCancel={handleCancel}
-                />
-              </div>
+            {/* Step 2: Link Children with backend search */}
+            <ParentLinkChildrenCard
+              stepNumber={2}
+              linkedChildren={linkedChildren}
+              onAddChild={handleAddChild}
+              onRemoveChild={handleRemoveChild}
+            />
+
+            {/* Form Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200">
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={isFormLoading}
+                className="h-10 px-5 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isFormLoading}
+                className="h-10 px-6 rounded-xl bg-[#FEF3C7] hover:bg-[#FDE68A] text-zinc-900 border border-[#FDE68A] text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              >
+                {isFormLoading && <Loader2 className="size-4 animate-spin text-amber-700" />}
+                <span>Create Parent</span>
+              </button>
             </div>
           </form>
         </Form>

@@ -27,6 +27,7 @@ import {
   UpdateCourseFormData,
 } from "../schema/course.schema"
 import { useCourse, useUpdateCourse } from "../hooks/useCourses"
+import { useTeachingLevels } from "@/features/dashboard/reference-data/hooks/useReferenceData"
 
 const CATEGORY_OPTIONS = [
   { label: "Computer Science", value: "Computer Science" },
@@ -66,6 +67,12 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
   const router = useRouter()
   const { data: course, isLoading, isError } = useCourse(courseId)
   const updateCourseMutation = useUpdateCourse()
+  const { data: teachingLevels = [], isLoading: isLoadingLevels } = useTeachingLevels()
+
+  const levelOptions = React.useMemo(() => {
+    if (!teachingLevels || teachingLevels.length === 0) return DIFFICULTY_OPTIONS
+    return teachingLevels.map((lvl) => ({ label: lvl.name, value: lvl.name }))
+  }, [teachingLevels])
 
   const form = useForm<UpdateCourseFormData>({
     resolver: zodResolver(updateCourseSchema) as any,
@@ -232,8 +239,9 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
                     control={control}
                     name="difficultyLevel"
                     label="Difficulty Level"
-                    placeholder="Select level"
-                    options={DIFFICULTY_OPTIONS}
+                    placeholder={isLoadingLevels ? "Loading levels..." : "Select level"}
+                    options={levelOptions}
+                    isLoading={isLoadingLevels}
                     labelClassName="text-xs font-medium text-zinc-700"
                   />
                 </div>

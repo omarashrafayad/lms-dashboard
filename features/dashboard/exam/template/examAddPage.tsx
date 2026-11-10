@@ -17,6 +17,8 @@ import {
   GripVertical,
   Check,
   Loader2,
+  Search,
+  X,
 } from "lucide-react"
 
 import { UniInput } from "@/components/shared/UniInput"
@@ -37,7 +39,8 @@ import {
 import { useCreateExam } from "../hooks/useExams"
 import { useCourses } from "@/features/dashboard/course/hooks/useCourses"
 import { useCurriculumSubjects } from "@/features/dashboard/curriculum/hooks/useCurriculum"
-import { useAcademicStages } from "@/features/dashboard/reference-data/hooks/useReferenceData"
+import { useTeachingLevels } from "@/features/dashboard/reference-data/hooks/useReferenceData"
+import { useDebounce } from "@/hooks/useDebounce"
 import { ExamStatus } from "../types/exam.types"
 import { cn } from "@/lib/utils"
 
@@ -53,6 +56,7 @@ interface QuestionDraft {
   questionType: string
   points: number
   correctAnswerIndex: number
+  correctAnswerText?: string
   options: QuestionOption[]
   required: boolean
 }
@@ -99,35 +103,34 @@ export default function ExamAddPage() {
   // Stepper state
   const [currentStep, setCurrentStep] = React.useState<number>(1)
 
-  // 1. Fetch dynamic courses
-  const { data: coursesData, isLoading: isLoadingCourses } = useCourses({ pageSize: 100 })
+  // 1. Fetch dynamic courses with backend search (page 1, pageSize 10)
+  const [courseSearch, setCourseSearch] = React.useState("")
+  const debouncedCourseSearch = useDebounce(courseSearch, 400)
+  const { data: coursesData, isLoading: isLoadingCourses } = useCourses({
+    search: debouncedCourseSearch.trim() || undefined,
+    page: 1,
+    pageSize: 10,
+  })
   const courses = Array.isArray(coursesData) ? coursesData : coursesData?.items || []
-  const courseOptions = React.useMemo(() => {
-    if (!Array.isArray(courses)) return []
-    return courses.map((c: any) => ({
-      label: c.name || c.title || "Untitled Course",
-      value: c.id,
-    }))
-  }, [courses])
 
-  // 2. Fetch dynamic academic stages
-  const { data: academicStages = [], isLoading: isLoadingStages } = useAcademicStages()
-  const stageOptions = React.useMemo(() => {
-    if (!Array.isArray(academicStages) || academicStages.length === 0) {
-      return [
-        { label: "Primary", value: "Primary" },
-        { label: "Preparatory", value: "Preparatory" },
-        { label: "Secondary", value: "Secondary" },
-      ]
-    }
-    return academicStages.map((st: any) => ({
-      label: st.name,
-      value: st.name,
+  // 2. Fetch dynamic teaching levels
+  const { data: teachingLevels = [], isLoading: isLoadingLevels } = useTeachingLevels()
+  const levelOptions = React.useMemo(() => {
+    if (!teachingLevels || teachingLevels.length === 0) return LEVEL_OPTIONS
+    return teachingLevels.map((l: any) => ({
+      label: l.name,
+      value: l.name,
     }))
-  }, [academicStages])
+  }, [teachingLevels])
 
-  // 3. Fetch dynamic curriculum subjects
-  const { data: curriculumSubjectsData, isLoading: isLoadingSubjects } = useCurriculumSubjects({ pageSize: 100 })
+  // 3. Fetch dynamic curriculum subjects with backend search (page 1, pageSize 10)
+  const [subjectSearch, setSubjectSearch] = React.useState("")
+  const debouncedSubjectSearch = useDebounce(subjectSearch, 400)
+  const { data: curriculumSubjectsData, isLoading: isLoadingSubjects } = useCurriculumSubjects({
+    search: debouncedSubjectSearch.trim() || undefined,
+    page: 1,
+    pageSize: 10,
+  })
   const curriculumSubjects = Array.isArray(curriculumSubjectsData) ? curriculumSubjectsData : curriculumSubjectsData?.items || []
 
   // Question drafts state
@@ -136,7 +139,7 @@ export default function ExamAddPage() {
       id: "q-1",
       number: 1,
       questionText: "",
-      questionType: "Multiple Choice",
+      questionType: "multichoise",
       points: 2,
       correctAnswerIndex: 0,
       options: [
@@ -160,9 +163,9 @@ export default function ExamAddPage() {
       description: "",
       examType: "Monthly",
       level: "Beginner",
-      educationStage: "Primary",
-      academicYear: "2026 / 2027",
-      term: "Term 1",
+      educationStage: "",
+      academicYear: "",
+      term: "",
       month: "October",
       subjects: [],
       courseId: "",
@@ -177,7 +180,7 @@ export default function ExamAddPage() {
       questions: [
         {
           questionText: "Sample question",
-          questionType: "Multiple Choice",
+          questionType: "multichoise",
           points: 2,
           options: "A: Option 1, B: Option 2",
           correctAnswer: "A",
@@ -211,13 +214,6 @@ export default function ExamAddPage() {
   const watchPassingScore = watch("passingScore")
   const watchAttemptsAllowed = watch("attemptsAllowed")
 
-  // Set default educationStage when dynamic stages load
-  React.useEffect(() => {
-    if (academicStages.length > 0 && !getValues("educationStage")) {
-      setValue("educationStage", academicStages[0].name)
-    }
-  }, [academicStages, setValue, getValues])
-
   // Handlers for Questions Step
   const handleAddQuestion = () => {
     const nextNumber = questions.length + 1
@@ -225,7 +221,7 @@ export default function ExamAddPage() {
       id: `q-${Date.now()}`,
       number: nextNumber,
       questionText: "",
-      questionType: "Multiple Choice",
+      questionType: "multichoise",
       points: 2,
       correctAnswerIndex: 0,
       options: [
@@ -370,14 +366,32 @@ export default function ExamAddPage() {
     }
 
     const serializedQuestions = questions.map((q) => {
-      const optionsStr = q.options.map((opt) => `${opt.key}: ${opt.text}`).join(", ")
-      const correctOpt = q.options[q.correctAnswerIndex]
+      const isMultichoice =
+        q.questionType === "multichoise" ||
+        q.questionType === "Multiple Choice" ||
+        !q.questionType
+
+      let optionsStr = ""
+      let correctAns = ""
+
+      if (isMultichoice) {
+        optionsStr = q.options.map((opt) => `${opt.key}: ${opt.text}`).join(", ")
+        const correctOpt = q.options[q.correctAnswerIndex]
+        correctAns = correctOpt ? correctOpt.key : (q.options[0]?.key || "A")
+      } else if (q.questionType === "True / False") {
+        optionsStr = "True, False"
+        correctAns = q.correctAnswerText || "True"
+      } else {
+        optionsStr = ""
+        correctAns = q.correctAnswerText || ""
+      }
+
       return {
         questionText: q.questionText.trim(),
-        questionType: q.questionType,
+        questionType: isMultichoice ? "multichoise" : q.questionType,
         points: Number(q.points) || 1,
         options: optionsStr,
-        correctAnswer: correctOpt?.key || "A",
+        correctAnswer: correctAns,
         isRequired: !!q.required,
       }
     })
@@ -387,9 +401,9 @@ export default function ExamAddPage() {
       description: watchDescription?.trim() || "",
       examType: watchExamType,
       level: watchLevel || "Beginner",
-      educationStage: watchEducationStage || "Primary",
-      academicYear: watchAcademicYear || "2026 / 2027",
-      term: watchTerm || "Term 1",
+      educationStage: "",
+      academicYear: "",
+      term: "",
       month: watchExamType === "Monthly" ? watchMonth || "October" : "",
       subjects: watchExamType === "Subject" ? watchSubjects : [],
       courseId: watchExamType === "Course" ? watchCourseId || null : null,
@@ -637,28 +651,89 @@ export default function ExamAddPage() {
 
                 {/* Course Selection Field - Placed in Step 2 for Course Exam */}
                 {watchExamType === "Course" && (
-                  <div className="space-y-1 animate-in fade-in-50 duration-200">
-                    <UniSelect
-                      control={control}
-                      name="courseId"
-                      label="SELECT COURSE *"
-                      placeholder={
-                        isLoadingCourses ? "Loading courses..." : "Choose an existing course"
-                      }
-                      options={courseOptions}
-                      isLoading={isLoadingCourses}
-                      required
-                      helperText="Choose the course this exam belongs to. Students enrolled in this course will take this assessment."
-                      onChangeCallback={(val) => {
-                        const selectedCourse = courses.find((c: any) => c.id === val)
-                        if (selectedCourse) {
-                          setValue(
-                            "courseName",
-                            selectedCourse.name || selectedCourse.title || ""
-                          )
-                        }
-                      }}
-                    />
+                  <div className="flex flex-col gap-2.5 animate-in fade-in-50 duration-200">
+                    <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
+                      SELECT COURSE *
+                    </label>
+
+                    {watchCourseId ? (
+                      <div className="flex items-center justify-between p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <GraduationCap className="size-4 text-amber-600 shrink-0" />
+                          <span className="text-xs font-bold text-zinc-900 truncate">
+                            {watchCourseName || "Selected Course"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setValue("courseId", "", { shouldValidate: true })
+                            setValue("courseName", "")
+                          }}
+                          className="text-xs font-semibold text-rose-600 hover:text-rose-700 cursor-pointer shrink-0 ml-3"
+                        >
+                          Change Course
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {/* Course search input */}
+                        <div className="relative">
+                          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
+                          <input
+                            type="text"
+                            value={courseSearch}
+                            onChange={(e) => setCourseSearch(e.target.value)}
+                            placeholder="Search courses from backend (page 1, 10 items)..."
+                            className="w-full h-10 pl-10 pr-10 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
+                          />
+                          {isLoadingCourses && (
+                            <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-amber-500 animate-spin" />
+                          )}
+                        </div>
+
+                        {/* Search results list */}
+                        <div className="border border-zinc-200 rounded-xl max-h-48 overflow-y-auto divide-y divide-zinc-100 bg-white shadow-2xs">
+                          {isLoadingCourses ? (
+                            <div className="flex items-center justify-center gap-2 py-4 text-zinc-400 text-xs">
+                              <Loader2 className="size-4 animate-spin text-amber-500" />
+                              <span>Searching courses...</span>
+                            </div>
+                          ) : courses.length === 0 ? (
+                            <div className="py-4 px-3 text-center text-xs text-zinc-400">
+                              {courseSearch ? `No courses found for "${courseSearch}"` : "No courses available."}
+                            </div>
+                          ) : (
+                            courses.map((c: any) => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => {
+                                  setValue("courseId", c.id, { shouldValidate: true })
+                                  setValue("courseName", c.name || c.title || "Untitled Course")
+                                }}
+                                className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-amber-50/50 text-left transition-colors cursor-pointer group"
+                              >
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-xs font-semibold text-zinc-900 group-hover:text-amber-700 truncate">
+                                    {c.name || c.title || "Untitled Course"}
+                                  </span>
+                                  <span className="text-[11px] text-zinc-400">
+                                    {[c.category, c.difficultyLevel].filter(Boolean).join(" · ") || "Course"}
+                                  </span>
+                                </div>
+                                <span className="text-xs font-semibold text-amber-700 bg-amber-50 group-hover:bg-amber-100 px-2.5 py-1 rounded-lg shrink-0 ml-2">
+                                  Select
+                                </span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-[11px] text-zinc-400">
+                      Choose the course this exam belongs to. Students enrolled in this course will take this assessment.
+                    </p>
                   </div>
                 )}
 
@@ -690,52 +765,20 @@ export default function ExamAddPage() {
                   Academic Mapping
                 </h2>
 
-                {/* Row 1: Level & Dynamic Stage */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Level (Dynamic from teaching-levels) */}
+                <div className="grid grid-cols-1 gap-5">
                   <UniSelect
                     control={control}
                     name="level"
                     label="LEVEL *"
-                    placeholder="Select Level"
-                    options={LEVEL_OPTIONS}
-                    required
-                  />
-
-                  {/* Dynamic Education Stage loaded from reference-data API */}
-                  <UniSelect
-                    control={control}
-                    name="educationStage"
-                    label="EDUCATION STAGE *"
-                    placeholder={
-                      isLoadingStages ? "Loading stages..." : "Select Stage"
-                    }
-                    options={stageOptions}
-                    isLoading={isLoadingStages}
+                    placeholder={isLoadingLevels ? "Loading levels..." : "Select Level"}
+                    options={levelOptions}
+                    isLoading={isLoadingLevels}
                     required
                   />
                 </div>
 
-                {/* Row 2: Year & Term */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <UniInput
-                    control={control}
-                    name="academicYear"
-                    label="ACADEMIC YEAR *"
-                    placeholder="2026 / 2027"
-                    required
-                  />
-
-                  <UniSelect
-                    control={control}
-                    name="term"
-                    label="TERM *"
-                    placeholder="Select Term"
-                    options={TERM_OPTIONS}
-                    required
-                  />
-                </div>
-
-                {/* Row 3: Month - ONLY when Monthly Exam is selected */}
+                {/* Month - ONLY when Monthly Exam is selected */}
                 {watchExamType === "Monthly" && (
                   <div className="animate-in fade-in-50 duration-200">
                     <UniSelect
@@ -749,30 +792,71 @@ export default function ExamAddPage() {
                   </div>
                 )}
 
-                {/* Row 4: Dynamic Subject(s) - ONLY when Subject Exam is selected */}
+                {/* Dynamic Subject(s) with Backend Search (page 1, pageSize 10) - ONLY when Subject Exam is selected */}
                 {watchExamType === "Subject" && (
-                  <div className="flex flex-col gap-2.5 animate-in fade-in-50 duration-200">
+                  <div className="flex flex-col gap-3 animate-in fade-in-50 duration-200">
                     <div className="flex items-center justify-between">
                       <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
                         SUBJECT(S) *
                       </label>
                       <span className="text-xs text-zinc-400">
-                        {watchSubjects.length} selected · select one or more
+                        {watchSubjects.length} selected
                       </span>
                     </div>
 
-                    {isLoadingSubjects ? (
-                      <div className="flex items-center gap-2 py-3 text-xs text-zinc-400">
-                        <Loader2 className="size-4 animate-spin text-amber-500" />
-                        <span>Loading curriculum subjects...</span>
+                    {/* Selected subjects list tags */}
+                    {watchSubjects.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-3 bg-zinc-50 rounded-xl border border-zinc-200/80">
+                        {watchSubjects.map((subId) => {
+                          const foundSub = curriculumSubjects.find((s: any) => s.id === subId)
+                          return (
+                            <span
+                              key={subId}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF3C7] text-zinc-900 border border-[#FDE68A]"
+                            >
+                              <span>{foundSub?.name || subId}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSubject(subId)}
+                                className="hover:text-rose-600 cursor-pointer"
+                                title="Remove subject"
+                              >
+                                <X className="size-3" />
+                              </button>
+                            </span>
+                          )
+                        })}
                       </div>
-                    ) : curriculumSubjects.length === 0 ? (
-                      <p className="text-xs text-zinc-400 py-2">
-                        No subjects found in curriculum.
-                      </p>
-                    ) : (
-                      <div className="flex flex-wrap items-center gap-2">
-                        {curriculumSubjects.map((sub: any) => {
+                    )}
+
+                    {/* Subject backend search input */}
+                    <div className="relative">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={subjectSearch}
+                        onChange={(e) => setSubjectSearch(e.target.value)}
+                        placeholder="Search subjects from backend (page 1, 10 items)..."
+                        className="w-full h-10 pl-10 pr-10 text-xs rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-2xs"
+                      />
+                      {isLoadingSubjects && (
+                        <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-amber-500 animate-spin" />
+                      )}
+                    </div>
+
+                    {/* Search results list */}
+                    <div className="border border-zinc-200 rounded-xl max-h-48 overflow-y-auto divide-y divide-zinc-100 bg-white shadow-2xs">
+                      {isLoadingSubjects ? (
+                        <div className="flex items-center justify-center gap-2 py-4 text-zinc-400 text-xs">
+                          <Loader2 className="size-4 animate-spin text-amber-500" />
+                          <span>Searching subjects...</span>
+                        </div>
+                      ) : curriculumSubjects.length === 0 ? (
+                        <div className="py-4 px-3 text-center text-xs text-zinc-400">
+                          {subjectSearch ? `No subjects found for "${subjectSearch}"` : "No curriculum subjects available."}
+                        </div>
+                      ) : (
+                        curriculumSubjects.map((sub: any) => {
                           const isSelected = watchSubjects.includes(sub.id)
                           return (
                             <button
@@ -780,18 +864,33 @@ export default function ExamAddPage() {
                               type="button"
                               onClick={() => handleToggleSubject(sub.id)}
                               className={cn(
-                                "px-4 py-1.5 rounded-full text-xs transition-all border shadow-2xs cursor-pointer select-none",
-                                isSelected
-                                  ? "bg-amber-50 text-amber-900 border-amber-300 font-semibold ring-1 ring-amber-300"
-                                  : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+                                "w-full flex items-center justify-between px-3.5 py-2.5 text-left transition-colors cursor-pointer group",
+                                isSelected ? "bg-amber-50/70" : "hover:bg-zinc-50"
                               )}
                             >
-                              {sub.name}
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-semibold text-zinc-900 truncate">
+                                  {sub.name}
+                                </span>
+                                <span className="text-[11px] text-zinc-400">
+                                  {[sub.educationStage, sub.term].filter(Boolean).join(" · ") || "Subject"}
+                                </span>
+                              </div>
+                              <span
+                                className={cn(
+                                  "text-xs font-semibold px-2.5 py-1 rounded-lg",
+                                  isSelected
+                                    ? "text-rose-600 bg-rose-50"
+                                    : "text-amber-700 bg-amber-50 group-hover:bg-amber-100"
+                                )}
+                              >
+                                {isSelected ? "Remove" : "+ Add"}
+                              </span>
                             </button>
                           )
-                        })}
-                      </div>
-                    )}
+                        })
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -880,7 +979,7 @@ export default function ExamAddPage() {
                             }
                             className="h-10 px-3 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-800 focus:outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
                           >
-                            <option value="Multiple Choice">Multiple Choice</option>
+                            <option value="multichoise">Multiple Choice (multichoise)</option>
                             <option value="True / False">True / False</option>
                             <option value="Short Answer">Short Answer</option>
                           </select>
@@ -904,82 +1003,159 @@ export default function ExamAddPage() {
                         </div>
                       </div>
 
-                      {/* Third Section: Options & Select correct answer */}
-                      <div className="flex flex-col gap-3">
-                        <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
-                          OPTIONS · SELECT THE CORRECT ANSWER
-                        </span>
+                      {/* Third Section: Options & Select correct answer when multichoise */}
+                      {(q.questionType === "multichoise" || q.questionType === "Multiple Choice") && (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
+                              OPTIONS · SELECT THE CORRECT ANSWER
+                            </span>
+                            <span className="text-[11px] font-semibold text-emerald-600">
+                              Correct: Option {q.options[q.correctAnswerIndex]?.key || "A"}
+                            </span>
+                          </div>
 
-                        <div className="flex flex-col gap-2.5">
-                          {q.options.map((opt, optIdx) => {
-                            const isCorrect = q.correctAnswerIndex === optIdx
+                          <div className="flex flex-col gap-2.5">
+                            {q.options.map((opt, optIdx) => {
+                              const isCorrect = q.correctAnswerIndex === optIdx
 
-                            return (
-                              <div
-                                key={opt.key}
-                                className="flex items-center gap-3"
-                              >
-                                {/* Radio Circle */}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleUpdateQuestion(q.id, {
-                                      correctAnswerIndex: optIdx,
-                                    })
-                                  }
+                              return (
+                                <div
+                                  key={opt.key}
                                   className={cn(
-                                    "size-5 rounded-full border flex items-center justify-center cursor-pointer transition-colors shrink-0",
+                                    "flex items-center gap-3 p-2 rounded-xl transition-colors border",
                                     isCorrect
-                                      ? "border-amber-500 bg-white"
-                                      : "border-zinc-300 hover:border-zinc-400 bg-white"
+                                      ? "bg-emerald-50/40 border-emerald-300"
+                                      : "border-transparent"
                                   )}
                                 >
-                                  {isCorrect && (
-                                    <span className="size-2.5 rounded-full bg-[#F59E0B]" />
-                                  )}
-                                </button>
-
-                                {/* Option Input */}
-                                <input
-                                  type="text"
-                                  value={opt.text}
-                                  onChange={(e) => {
-                                    const newOpts = [...q.options]
-                                    newOpts[optIdx].text = e.target.value
-                                    handleUpdateQuestion(q.id, {
-                                      options: newOpts,
-                                    })
-                                  }}
-                                  className="flex-1 h-10 px-3.5 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-amber-500 shadow-2xs"
-                                />
-
-                                {q.options.length > 2 && (
+                                  {/* Radio Circle */}
                                   <button
                                     type="button"
                                     onClick={() =>
-                                      handleDeleteOption(q.id, opt.key)
+                                      handleUpdateQuestion(q.id, {
+                                        correctAnswerIndex: optIdx,
+                                      })
                                     }
-                                    className="p-1 text-zinc-400 hover:text-rose-500 transition-colors cursor-pointer"
-                                    title="Remove option"
+                                    title="Mark as correct answer"
+                                    className={cn(
+                                      "size-5 rounded-full border flex items-center justify-center cursor-pointer transition-colors shrink-0",
+                                      isCorrect
+                                        ? "border-emerald-500 bg-white"
+                                        : "border-zinc-300 hover:border-zinc-400 bg-white"
+                                    )}
                                   >
-                                    <Trash2 className="size-3.5" />
+                                    {isCorrect && (
+                                      <span className="size-2.5 rounded-full bg-emerald-500" />
+                                    )}
                                   </button>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
 
-                        {/* + Add Option button */}
-                        <button
-                          type="button"
-                          onClick={() => handleAddOption(q.id)}
-                          className="self-start text-xs font-semibold text-[#D97706] hover:text-amber-700 flex items-center gap-1 mt-1 cursor-pointer"
-                        >
-                          <Plus className="size-3.5" />
-                          <span>Add option</span>
-                        </button>
-                      </div>
+                                  <span className="text-xs font-bold text-zinc-500 w-5 shrink-0">
+                                    {opt.key}.
+                                  </span>
+
+                                  {/* Option Input */}
+                                  <input
+                                    type="text"
+                                    value={opt.text}
+                                    onChange={(e) => {
+                                      const newOpts = [...q.options]
+                                      newOpts[optIdx].text = e.target.value
+                                      handleUpdateQuestion(q.id, {
+                                        options: newOpts,
+                                      })
+                                    }}
+                                    placeholder={`Option ${opt.key} text...`}
+                                    className="flex-1 h-10 px-3.5 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-amber-500 shadow-2xs"
+                                  />
+
+                                  {isCorrect && (
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-md shrink-0">
+                                      Correct Answer
+                                    </span>
+                                  )}
+
+                                  {q.options.length > 2 && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleDeleteOption(q.id, opt.key)
+                                      }
+                                      className="p-1 text-zinc-400 hover:text-rose-500 transition-colors cursor-pointer"
+                                      title="Remove option"
+                                    >
+                                      <Trash2 className="size-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          {/* + Add Option button */}
+                          <button
+                            type="button"
+                            onClick={() => handleAddOption(q.id)}
+                            className="self-start text-xs font-semibold text-[#D97706] hover:text-amber-700 flex items-center gap-1 mt-1 cursor-pointer"
+                          >
+                            <Plus className="size-3.5" />
+                            <span>Add option</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* When True / False */}
+                      {q.questionType === "True / False" && (
+                        <div className="flex flex-col gap-2">
+                          <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
+                            CORRECT ANSWER
+                          </span>
+                          <div className="flex items-center gap-4">
+                            {["True", "False"].map((val) => {
+                              const isSelected = (q.correctAnswerText || "True") === val
+                              return (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  onClick={() =>
+                                    handleUpdateQuestion(q.id, {
+                                      correctAnswerText: val,
+                                    })
+                                  }
+                                  className={cn(
+                                    "px-4 py-2 rounded-xl text-xs font-semibold border cursor-pointer transition-all",
+                                    isSelected
+                                      ? "bg-emerald-50 border-emerald-400 text-emerald-800"
+                                      : "bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+                                  )}
+                                >
+                                  {val}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* When Short Answer */}
+                      {q.questionType === "Short Answer" && (
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
+                            MODEL / EXPECTED ANSWER
+                          </label>
+                          <input
+                            type="text"
+                            value={q.correctAnswerText || ""}
+                            onChange={(e) =>
+                              handleUpdateQuestion(q.id, {
+                                correctAnswerText: e.target.value,
+                              })
+                            }
+                            placeholder="Enter expected answer..."
+                            className="h-10 px-3.5 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-amber-500 shadow-2xs"
+                          />
+                        </div>
+                      )}
 
                       <div className="h-px bg-zinc-100 my-1" />
 
@@ -1175,10 +1351,10 @@ export default function ExamAddPage() {
 
                     <div>
                       <span className="text-[11px] font-bold text-zinc-400 uppercase block mb-0.5">
-                        STAGE & TERM
+                        DIFFICULTY LEVEL
                       </span>
                       <span className="font-bold text-zinc-900">
-                        {watchEducationStage} · {watchTerm} ({watchAcademicYear})
+                        {watchLevel || "Beginner"}
                       </span>
                     </div>
 

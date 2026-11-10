@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { X, CreditCard } from "lucide-react"
+import { X, CreditCard, Loader2 } from "lucide-react"
 import { RecordPaymentPayload } from "../../types/subscriptions.types"
 import { recordPaymentSchema, RecordPaymentFormData } from "../../schema/subscription.schema"
 import { Button } from "@/components/ui/button"
@@ -18,7 +18,7 @@ import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 interface RecordPaymentModalProps {
   isOpen: boolean
   onClose: () => void
-  onRecord: (payload: RecordPaymentPayload) => void
+  onRecord: (payload: RecordPaymentPayload) => Promise<void> | void
 }
 
 const PAYMENT_METHODS = [
@@ -35,6 +35,7 @@ export function RecordPaymentModal({
   onClose,
   onRecord,
 }: RecordPaymentModalProps) {
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
   const { data: studentsResponse } = useStudents({ pageSize: 100 })
   const students = Array.isArray(studentsResponse) ? studentsResponse : studentsResponse?.items || []
 
@@ -106,10 +107,11 @@ export function RecordPaymentModal({
     }
   }
 
-  const onSubmit = (data: RecordPaymentFormData) => {
+  const onSubmit = async (data: RecordPaymentFormData) => {
     try {
+      setIsSubmitting(true)
       const selectedStudent = students.find((s) => s.id === data.studentId)
-      onRecord({
+      await onRecord({
         ...data,
         studentName: data.studentName || selectedStudent?.fullName || "Student",
         studentGrade: selectedStudent?.grade || "Secondary",
@@ -119,6 +121,8 @@ export function RecordPaymentModal({
       onClose()
     } catch (err) {
       toast.error(getErrorMessage(err))
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -232,6 +236,7 @@ export function RecordPaymentModal({
               <Button
                 type="button"
                 variant="outline"
+                disabled={isSubmitting}
                 onClick={onClose}
                 className="h-10 px-4 rounded-xl text-xs text-zinc-600 cursor-pointer"
               >
@@ -239,9 +244,11 @@ export function RecordPaymentModal({
               </Button>
               <Button
                 type="submit"
-                className="h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-2xs cursor-pointer active:scale-[0.98]"
+                disabled={isSubmitting}
+                className="h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-2xs cursor-pointer active:scale-[0.98] disabled:opacity-60 flex items-center gap-2"
               >
-                Record Payment
+                {isSubmitting && <Loader2 className="size-4 animate-spin text-white" />}
+                <span>Record Payment</span>
               </Button>
             </div>
           </form>
