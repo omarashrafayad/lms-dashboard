@@ -11,7 +11,7 @@ import { useDashboardOverview } from "../hooks/useOverview"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 import { Button } from "@/components/ui/button"
-import { Plus, } from "lucide-react"
+import { Plus } from "lucide-react"
 
 export default function DashboardOverviewPage() {
   const {
