@@ -35,6 +35,8 @@ export const createTeacherSchema = z
     teachingLevelIds: z.array(z.string()).min(1, "Teaching levels are required"),
     educationStageIds: z.array(z.string()).min(1, "Education stages are required"),
     availability: z.array(dayAvailabilitySchema).optional(),
+    CostPerHour: z.union([z.number(), z.string()]).optional(),
+
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -60,6 +62,7 @@ export const updateTeacherSchema = z.object({
   teachingLevelIds: z.array(z.string()),
   educationStageIds: z.array(z.string()),
   availability: z.array(dayAvailabilitySchema).optional(),
+  CostPerHour: z.union([z.number(), z.string()]).optional()
 })
 
 export type UpdateTeacherFormData = z.infer<typeof updateTeacherSchema>

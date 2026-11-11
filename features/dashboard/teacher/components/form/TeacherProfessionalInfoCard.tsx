@@ -44,6 +44,16 @@ export function TeacherProfessionalInfoCard<TFieldValues extends FieldValues = a
           inputClassName="h-10 text-xs rounded-xl"
           labelClassName="text-xs font-medium text-zinc-700"
         />
+          <UniInput
+          control={control}
+          name={"CostPerHour" as FieldPath<TFieldValues>}
+          label="CostPerHour"
+          placeholder="0"
+          inputClassName="h-10 text-xs rounded-xl"
+          labelClassName="text-xs font-medium text-zinc-700"
+          type="number"
+          min="0"
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

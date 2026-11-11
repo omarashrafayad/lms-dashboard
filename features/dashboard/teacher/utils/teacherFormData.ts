@@ -22,6 +22,7 @@ type CommonTeacherFields = Pick<
   | "subjectIds"
   | "teachingLevelIds"
   | "educationStageIds"
+  | "CostPerHour"
 >
 
 function appendCommonTeacherFields(
@@ -43,6 +44,7 @@ function appendCommonTeacherFields(
     formData.append("Qualifications", data.qualifications.trim())
   }
   formData.append("YearsOfExperience", String(Number(data.yearsOfExperience) || 0))
+  formData.append("CostPerHour", String(Number(data.CostPerHour) || 0))
   if (data.bio?.trim()) {
     formData.append("Bio", data.bio.trim())
   }
@@ -51,6 +53,7 @@ function appendCommonTeacherFields(
   }
 
   formData.append("IsActive", String(data.isActive))
+  
   // Multi-select arrays
   data.subjectIds.forEach((id) => formData.append("SubjectIds", id))
   data.teachingLevelIds.forEach((id) =>

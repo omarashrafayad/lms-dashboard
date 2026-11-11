@@ -17,6 +17,7 @@ import {
   Bell,
   Image as ImageIcon,
   ShieldCheck,
+  Video,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -28,11 +29,17 @@ export function Sidebar() {
   const isParentRoute = pathname.startsWith("/parent") || pathname.startsWith("/parents")
   const isUsersActive = isStudentRoute || isTeacherRoute || isParentRoute
   const isCurriculumRoute = pathname.startsWith("/curriculum")
-  const isLessonsRoute = pathname.startsWith("/lessons") || pathname.startsWith("/academic/lessons")
+  const isChaptersRoute = pathname.startsWith("/curriculum/chapters")
+  const isUnitsRoute = pathname.startsWith("/curriculum/units")
+  const isLessonsRoute = pathname.startsWith("/curriculum/lessons") || pathname.startsWith("/lessons") || pathname.startsWith("/academic/lessons")
   const isCoursesRoute = pathname.startsWith("/courses") || pathname.startsWith("/academic/courses")
   const isSessionsRoute = pathname.startsWith("/sessions")
   const isExamsRoute = pathname.startsWith("/academic/exams") || pathname.startsWith("/exams")
   const isAcademicActive = isCurriculumRoute || pathname.startsWith("/academic") || isLessonsRoute || isCoursesRoute || isExamsRoute
+  const isVideosRoute = pathname.startsWith("/content/videos")
+  const isPdfsRoute = pathname.startsWith("/content/pdfs")
+  const isQuizzesRoute = pathname.startsWith("/content/quizzes")
+  const isContentActive = pathname.startsWith("/content") || isVideosRoute || isPdfsRoute || isQuizzesRoute
   const isRefAcademicStagesRoute = pathname.startsWith("/reference-data/academic-stages")
   const isRefEducationSystemsRoute = pathname.startsWith("/reference-data/education-systems")
   const isRefGradesRoute = pathname.startsWith("/reference-data/grades")
@@ -53,6 +60,7 @@ export function Sidebar() {
   const [teachersExpanded, setTeachersExpanded] = React.useState<boolean>(isTeacherRoute || false)
   const [parentsExpanded, setParentsExpanded] = React.useState<boolean>(isParentRoute || false)
   const [academicExpanded, setAcademicExpanded] = React.useState<boolean>(isAcademicActive || false)
+  const [contentExpanded, setContentExpanded] = React.useState<boolean>(isContentActive || false)
   const [referenceDataExpanded, setReferenceDataExpanded] = React.useState<boolean>(isReferenceDataActive || false)
   const [sessionsExpanded, setSessionsExpanded] = React.useState<boolean>(isSessionsRoute || false)
   const [subscriptionsExpanded, setSubscriptionsExpanded] = React.useState<boolean>(isSubscriptionsRoute || false)
@@ -322,7 +330,7 @@ export function Sidebar() {
                     href="/curriculum"
                     className={cn(
                       "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isCurriculumRoute
+                      pathname === "/curriculum" || (isCurriculumRoute && !isChaptersRoute && !isUnitsRoute && !pathname.startsWith("/curriculum/lessons"))
                         ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
                         : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
                     )}
@@ -340,17 +348,6 @@ export function Sidebar() {
                   >
                     Courses
                   </Link>
-                  {/* <Link
-                    href="/lessons"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isLessonsRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Lessons
-                  </Link> */}
                   <Link
                     href="/academic/exams"
                     className={cn(
@@ -604,47 +601,111 @@ export function Sidebar() {
                   >
                     Transactions & Invoices
                   </Link>
-                  {/* <Link
-                    href="/subscriptions/requests"
-                    className={cn(
-                      "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      pathname === "/subscriptions/requests"
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    <span>Offline Verifications</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
-                      New
-                    </span>
-                  </Link> */}
                 </div>
               )}
             </div>
 
-            {/* Content */}
-            {/* <Link
-              href="/content"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <FileText className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
-                <span>Content</span>
-              </div>
-            </Link> */}
+            {/* Content Library */}
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setContentExpanded(!contentExpanded)}
+                className={cn(
+                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
+                  isContentActive
+                    ? "text-zinc-900 font-semibold"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <Video
+                    className={cn(
+                      "size-[18px] transition-colors",
+                      isContentActive
+                        ? "text-zinc-900"
+                        : "text-zinc-400 group-hover:text-zinc-600"
+                    )}
+                  />
+                  <span>Content</span>
+                </div>
+                {contentExpanded ? (
+                  <ChevronDown className="size-4 text-zinc-600" />
+                ) : (
+                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
+                )}
+              </button>
 
-            {/* Analytics */}
-            {/* <Link
-              href="/analytics"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <TrendingUp className="size-[18px] text-zinc-400 group-hover:text-zinc-600 transition-colors" />
-                <span>Analytics</span>
-              </div>
-            </Link> */}
-
-            {/* Banners */}
+              {contentExpanded && (
+                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
+                  <Link
+                    href="/content/videos"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isVideosRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Videos
+                  </Link>
+                  <Link
+                    href="/content/pdfs"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isPdfsRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    PDFs & Books
+                  </Link>
+                  <Link
+                    href="/content/quizzes"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isQuizzesRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Quizzes
+                  </Link>
+                   <Link
+                    href="/curriculum/chapters"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isChaptersRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Chapters
+                  </Link>
+                  <Link
+                    href="/curriculum/units"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isUnitsRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Units
+                  </Link>
+                  <Link
+                    href="/curriculum/lessons"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      isLessonsRoute
+                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                  >
+                    Lessons
+                  </Link>
+                </div>
+              )}
+            </div>
             <Link
               href="/banners"
               className={cn(

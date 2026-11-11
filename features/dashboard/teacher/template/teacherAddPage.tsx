@@ -140,6 +140,7 @@ export default function TeacherAddPage() {
       genderId: "",
       qualifications: "",
       yearsOfExperience: 0,
+      CostPerHour:0,
       bio: "",
       history: "",
       isActive: true,
