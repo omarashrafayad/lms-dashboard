@@ -85,7 +85,7 @@ export interface TeacherProfile {
     gender: "Male" | "Female"
     email: string
     phone: string
-    costPerHour:number
+
   }
   professionalInfo: {
     subjects: string[]
