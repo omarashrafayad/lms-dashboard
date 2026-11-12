@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Search, SlidersHorizontal, RotateCcw } from "lucide-react"
+import Link from "next/link"
+import { Search, SlidersHorizontal, RotateCcw, DollarSign } from "lucide-react"
 import { FilterDropdown, FilterOption } from "@/components/shared/FilterDropdown"
 import { TeacherFilterState } from "../types/teacher.types"
 import { useTeacherSubjects } from "../hooks/useTeachers"
@@ -109,6 +110,13 @@ export function TeacherFilters({
 
       {/* Right: More Filters & Reset Buttons matching Exam */}
       <div className="flex items-center gap-2">
+        <Link
+          href="/teacher/dues"
+          className="h-10 px-3 bg-amber-50 border border-amber-200/90 rounded-xl text-xs font-semibold text-[#D97706] hover:bg-amber-100 flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+        >
+          <DollarSign className="size-3.5" />
+          <span>Teacher Dues</span>
+        </Link>
         <button
           type="button"
           onClick={onReset}

@@ -5,6 +5,10 @@ import {
   UpdateSessionPayload,
   TeacherSlotItem,
   SessionQueryParams,
+  RescheduleRequestItem,
+  CreateReschedulePayload,
+  RespondReschedulePayload,
+  RescheduleQueryParams,
 } from "../types/session.types"
 import { PaginatedResponse, normalizePaginatedResponse } from "@/types/pagination"
 
@@ -83,3 +87,48 @@ export const getTeacherSlots = async (
   }
   return []
 }
+
+export const getRescheduleRequests = async (
+  params: RescheduleQueryParams = {}
+): Promise<PaginatedResponse<RescheduleRequestItem>> => {
+  const queryParams: Record<string, any> = {}
+  if (params.page !== undefined) queryParams.page = params.page
+  if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize
+  if (params.sessionId) queryParams.sessionId = params.sessionId
+  if (params.studentId) queryParams.studentId = params.studentId
+  if (params.teacherId) queryParams.teacherId = params.teacherId
+  if (params.status && params.status !== "all") queryParams.status = params.status
+
+  const res = await clientAxios.get("/sessions/reschedule-requests", {
+    params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+  })
+  return normalizePaginatedResponse<RescheduleRequestItem>(
+    res.data,
+    params.page,
+    params.pageSize
+  )
+}
+
+export const requestReschedule = async (
+  sessionId: string,
+  payload: CreateReschedulePayload
+): Promise<RescheduleRequestItem> => {
+  const res = await clientAxios.post(
+    `/sessions/${sessionId}/reschedule-requests`,
+    payload
+  )
+  return res.data?.data || res.data?.value || res.data
+}
+
+export const respondToReschedule = async (
+  sessionId: string,
+  requestId: string,
+  payload: RespondReschedulePayload
+): Promise<RescheduleRequestItem> => {
+  const res = await clientAxios.post(
+    `/sessions/${sessionId}/reschedule-requests/${requestId}/respond`,
+    payload
+  )
+  return res.data?.data || res.data?.value || res.data
+}
+

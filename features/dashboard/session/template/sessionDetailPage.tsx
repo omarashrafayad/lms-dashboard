@@ -8,9 +8,11 @@ import {
   Trash2,
   Pencil,
   ArrowUpRight,
+  CalendarClock,
 } from "lucide-react"
 import { useSessionDetail, useDeleteSession } from "../hooks/useSessions"
 import { SessionActivityTimeline } from "../components/detail/SessionActivityTimeline"
+import { RescheduleRequestModal } from "../components/reschedule/RescheduleRequestModal"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
@@ -24,6 +26,7 @@ export default function SessionDetailPage({
   sessionId,
 }: SessionDetailPageProps) {
   const router = useRouter()
+  const [isRescheduleOpen, setIsRescheduleOpen] = React.useState(false)
   const { data: session, isLoading, isError } = useSessionDetail(sessionId)
   const deleteMutation = useDeleteSession()
 
@@ -223,8 +226,17 @@ export default function SessionDetailPage({
             </p>
           </div>
 
-          {/* Action Buttons: Delete & Edit */}
+          {/* Action Buttons: Delete & Edit & Reschedule */}
           <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setIsRescheduleOpen(true)}
+              className="h-9 px-4 rounded-xl border border-amber-300 bg-amber-50/80 text-xs font-semibold text-[#D97706] hover:bg-amber-100 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+            >
+              <CalendarClock className="size-3.5" />
+              <span>Request Reschedule</span>
+            </button>
+
             <button
               type="button"
               onClick={handleDeleteSession}
@@ -521,6 +533,19 @@ export default function SessionDetailPage({
           </div>
         </div>
       </main>
+
+      <RescheduleRequestModal
+        isOpen={isRescheduleOpen}
+        onClose={() => setIsRescheduleOpen(false)}
+        sessionId={session.id}
+        sessionTitle={session.subject || session.courseName || `Session #${session.sessionNumber || session.id.slice(0, 8)}`}
+        currentDate={dateText}
+        currentTime={startTimeText}
+        teacherId={session.teacherId}
+        teacherName={teacherNameText}
+        studentId={session.studentId}
+        studentName={session.studentName}
+      />
     </div>
   )
 }

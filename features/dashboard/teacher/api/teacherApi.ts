@@ -4,6 +4,8 @@ import {
   ApiSubject,
   ApiTeachingLevel,
   TeacherQueryParams,
+  TeacherDuesReport,
+  TeacherDuesParams,
 } from "../types/teacher.types"
 import { PaginatedResponse, normalizePaginatedResponse } from "@/types/pagination"
 
@@ -74,3 +76,31 @@ export const getTeachingLevels = async (): Promise<ApiTeachingLevel[]> => {
   }
   return []
 }
+
+export const getAllTeachersDues = async (
+  params: TeacherDuesParams = {}
+): Promise<TeacherDuesReport> => {
+  const queryParams: Record<string, string> = {}
+  if (params.from) queryParams.from = params.from
+  if (params.to) queryParams.to = params.to
+
+  const res = await clientAxios.get("/teachers/dues", {
+    params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+  })
+  return res.data?.data || res.data
+}
+
+export const getTeacherDues = async (
+  teacherId: string,
+  params: TeacherDuesParams = {}
+): Promise<TeacherDuesReport> => {
+  const queryParams: Record<string, string> = {}
+  if (params.from) queryParams.from = params.from
+  if (params.to) queryParams.to = params.to
+
+  const res = await clientAxios.get(`/teachers/${teacherId}/dues`, {
+    params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+  })
+  return res.data?.data || res.data
+}
+

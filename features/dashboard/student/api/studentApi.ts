@@ -6,6 +6,7 @@ import {
   UpdateStudentPayload,
   StudentQueryParams,
 } from "../types/student.types";
+import { BillingStudentFinanceOverview } from "../types/studentProfile.types";
 import { PaginatedResponse, normalizePaginatedResponse } from "@/types/pagination";
 
 export const getStudents = async (
@@ -66,3 +67,11 @@ export const updateStudent = async (
 export const deleteStudent = async (studentId: string): Promise<void> => {
   await clientAxios.delete(`/students/${studentId}`);
 };
+
+export const getStudentFinance = async (
+  studentId: string
+): Promise<BillingStudentFinanceOverview> => {
+  const res = await clientAxios.get(`/billing/students/${studentId}/finance`);
+  return res.data?.data || res.data;
+};
+

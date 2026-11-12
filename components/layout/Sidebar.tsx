@@ -221,12 +221,23 @@ export function Sidebar() {
                           href="/teacher/teacher_list"
                           className={cn(
                             "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                            isTeacherRoute && pathname !== "/teacher/add"
+                            isTeacherRoute && pathname !== "/teacher/add" && pathname !== "/teacher/dues"
                               ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
                               : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
                           )}
                         >
                           All Teachers
+                        </Link>
+                        <Link
+                          href="/teacher/dues"
+                          className={cn(
+                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                            pathname === "/teacher/dues"
+                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                          )}
+                        >
+                          Teacher Dues
                         </Link>
                         <Link
                           href="/teacher/add"
@@ -519,7 +530,7 @@ export function Sidebar() {
                         : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
                     )}
                   >
-                    Booking Requests
+                    Reschedule Requests
                   </Link>
                   <Link
                     href="/sessions/availability"

@@ -38,6 +38,7 @@ import {
 } from "@/features/dashboard/teacher/hooks/useTeachers"
 import { useCourses } from "@/features/dashboard/course/hooks/useCourses"
 import { ScheduleSessionPayload } from "../types/session.types"
+import { useDebounce } from "@/hooks/useDebounce"
 
 const STANDARD_TIME_SLOTS = [
   "09:00 AM",
@@ -59,29 +60,43 @@ export default function SessionSchedulePage() {
   const [currentStep, setCurrentStep] = React.useState(1)
   const scheduleMutation = useScheduleSession()
 
-  // Queries for real entities
+  // Search filters for steps
+  const [studentSearch, setStudentSearch] = React.useState("")
+  const [teacherSearch, setTeacherSearch] = React.useState("")
+  const debouncedStudentSearch = useDebounce(studentSearch, 400)
+  const debouncedTeacherSearch = useDebounce(teacherSearch, 400)
+
+  // Stored selected entities
+  const [selectedStudentObj, setSelectedStudentObj] = React.useState<any>(null)
+  const [selectedTeacherObj, setSelectedTeacherObj] = React.useState<any>(null)
+
+  // Queries for real entities via backend search (page 1, pageSize 10)
   const {
     data: studentsData,
     isLoading: isLoadingStudents,
     isError: isStudentsError,
-  } = useStudents({ pageSize: 100 })
+  } = useStudents({
+    page: 1,
+    pageSize: 10,
+    search: debouncedStudentSearch ? debouncedStudentSearch.trim() : undefined,
+  })
   const students = Array.isArray(studentsData) ? studentsData : studentsData?.items || []
 
   const {
     data: teachersData,
     isLoading: isLoadingTeachers,
     isError: isTeachersError,
-  } = useTeachers({ pageSize: 100 })
+  } = useTeachers({
+    page: 1,
+    pageSize: 10,
+    search: debouncedTeacherSearch ? debouncedTeacherSearch.trim() : undefined,
+  })
   const teachers = Array.isArray(teachersData) ? teachersData : teachersData?.items || []
 
   const { data: subjects = [], isLoading: isLoadingSubjects } =
     useTeacherSubjects()
   const { data: coursesData, isLoading: isLoadingCourses } = useCourses({ pageSize: 100 })
   const courses = Array.isArray(coursesData) ? coursesData : coursesData?.items || []
-
-  // Search filters for steps
-  const [studentSearch, setStudentSearch] = React.useState("")
-  const [teacherSearch, setTeacherSearch] = React.useState("")
 
   // Always today's date formatted
   const todayFormatted = React.useMemo(() => {
@@ -137,12 +152,16 @@ export default function SessionSchedulePage() {
 
   // Selected entities for display
   const selectedStudent = React.useMemo(
-    () => students.find((s) => s.id === selectedStudentId),
-    [students, selectedStudentId]
+    () =>
+      (selectedStudentObj?.id === selectedStudentId ? selectedStudentObj : null) ||
+      students.find((s) => s.id === selectedStudentId),
+    [selectedStudentObj, students, selectedStudentId]
   )
   const selectedTeacher = React.useMemo(
-    () => teachers.find((t) => t.id === selectedTeacherId),
-    [teachers, selectedTeacherId]
+    () =>
+      (selectedTeacherObj?.id === selectedTeacherId ? selectedTeacherObj : null) ||
+      teachers.find((t) => t.id === selectedTeacherId),
+    [selectedTeacherObj, teachers, selectedTeacherId]
   )
 
   // Query teacher slots dynamically based on selected teacher
@@ -151,30 +170,9 @@ export default function SessionSchedulePage() {
     { enabled: Boolean(selectedTeacherId) }
   )
 
-  // Filtered lists for selection
-  const filteredStudents = React.useMemo(() => {
-    if (!students || !Array.isArray(students)) return []
-    if (!studentSearch.trim()) return students
-    const q = studentSearch.toLowerCase()
-    return students.filter(
-      (s) =>
-        s.fullName?.toLowerCase().includes(q) ||
-        s.email?.toLowerCase().includes(q) ||
-        s.grade?.toLowerCase().includes(q) ||
-        s.educationStage?.toLowerCase().includes(q)
-    )
-  }, [students, studentSearch])
-
-  const filteredTeachers = React.useMemo(() => {
-    if (!teachers || !Array.isArray(teachers)) return []
-    if (!teacherSearch.trim()) return teachers
-    const q = teacherSearch.toLowerCase()
-    return teachers.filter(
-      (t) =>
-        t.fullName?.toLowerCase().includes(q) ||
-        t.email?.toLowerCase().includes(q)
-    )
-  }, [teachers, teacherSearch])
+  // Backend already returned paginated & searched items (page 1, pageSize 10)
+  const filteredStudents = students
+  const filteredTeachers = teachers
 
   // Computed slots for step 3
   const computedSlots = React.useMemo(() => {
@@ -440,6 +438,7 @@ export default function SessionSchedulePage() {
                         <div
                           key={student.id}
                           onClick={() => {
+                            setSelectedStudentObj(student)
                             setValue("studentId", student.id, {
                               shouldValidate: true,
                             })
@@ -532,6 +531,7 @@ export default function SessionSchedulePage() {
                         <div
                           key={teacher.id}
                           onClick={() => {
+                            setSelectedTeacherObj(teacher)
                             setValue("teacherId", teacher.id, {
                               shouldValidate: true,
                             })

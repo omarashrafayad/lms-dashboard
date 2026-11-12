@@ -104,6 +104,42 @@ export interface CreateTeacherPayload {
   availabilitySlotsJson?: string
 }
 
+export interface TeacherDuesTotals {
+  teachers: number
+  deliveredSessions: number
+  deliveredMinutes: number
+  grossAmount: number
+  commissionAmount: number
+  netAmount: number
+}
+
+export interface TeacherDuesItem {
+  teacherId: string
+  teacherName?: string | null
+  costPerHour?: number | null
+  applicationPercentage: number
+  applicationPercentageSource?: string | null
+  deliveredSessions: number
+  deliveredMinutes: number
+  deliveredHours: number
+  grossAmount?: number | null
+  commissionAmount?: number | null
+  netAmount?: number | null
+}
+
+export interface TeacherDuesReport {
+  from?: string | null
+  to?: string | null
+  totals: TeacherDuesTotals
+  items: TeacherDuesItem[] | null
+}
+
+export interface TeacherDuesParams {
+  from?: string
+  to?: string
+}
+
+
 export interface UpdateTeacherPayload {
   fullName: string
   phoneNumber: string
@@ -125,3 +161,39 @@ export interface UpdateTeacherPayload {
   universityDegreeCertificate?: File | null
   availabilitySlotsJson?: string
 }
+
+export interface TeacherDuesTotals {
+  teachers: number
+  deliveredSessions: number
+  deliveredMinutes: number
+  grossAmount: number
+  commissionAmount: number
+  netAmount: number
+}
+
+export interface TeacherDuesItem {
+  teacherId: string
+  teacherName?: string | null
+  costPerHour?: number | null
+  applicationPercentage: number
+  applicationPercentageSource?: string | null
+  deliveredSessions: number
+  deliveredMinutes: number
+  deliveredHours: number
+  grossAmount?: number | null
+  commissionAmount?: number | null
+  netAmount?: number | null
+}
+
+export interface TeacherDuesReport {
+  from?: string | null
+  to?: string | null
+  totals: TeacherDuesTotals
+  items: TeacherDuesItem[] | null
+}
+
+export interface TeacherDuesParams {
+  from?: string
+  to?: string
+}
+

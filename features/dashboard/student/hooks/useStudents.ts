@@ -7,6 +7,7 @@ import {
   createStudent,
   updateStudent,
   deleteStudent,
+  getStudentFinance,
 } from "../api/studentApi";
 import {
   CreateStudentPayload,
@@ -69,3 +70,12 @@ export const useDeleteStudent = () => {
     },
   });
 };
+
+export const useStudentFinance = (studentId: string) => {
+  return useQuery({
+    queryKey: ["student-finance", studentId],
+    queryFn: () => getStudentFinance(studentId),
+    enabled: !!studentId,
+  });
+};
+

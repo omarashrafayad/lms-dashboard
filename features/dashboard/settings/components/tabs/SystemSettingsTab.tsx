@@ -1,10 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { Sliders, Clock, Users, UserCheck, AlertTriangle } from "lucide-react"
+import { Sliders, Clock, Users, UserCheck, AlertTriangle, Percent, Save, Loader2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { SystemSettings } from "../../types/settings.types"
+import { usePlatformSettings, useUpdatePlatformSettings } from "../../hooks/usePlatformSettings"
+import { toast } from "sonner"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
 
 interface SystemSettingsTabProps {
   settings: SystemSettings
@@ -15,8 +19,110 @@ export function SystemSettingsTab({
   settings,
   onChange,
 }: SystemSettingsTabProps) {
+  const { data: platformData, isLoading: isLoadingPlatform } = usePlatformSettings()
+  const updatePlatformMutation = useUpdatePlatformSettings()
+  const [platformPercentage, setPlatformPercentage] = React.useState<number | "">("")
+
+  React.useEffect(() => {
+    if (platformData && platformData.applicationPercentage !== undefined) {
+      setPlatformPercentage(platformData.applicationPercentage)
+    }
+  }, [platformData])
+
+  const handleSavePlatformPercentage = async () => {
+    if (platformPercentage === "" || isNaN(Number(platformPercentage))) {
+      toast.error("Please enter a valid percentage number")
+      return
+    }
+    const val = Number(platformPercentage)
+    if (val < 0 || val > 100) {
+      toast.error("Percentage must be between 0 and 100")
+      return
+    }
+    try {
+      await updatePlatformMutation.mutateAsync({ applicationPercentage: val })
+      toast.success("Platform commission percentage updated successfully")
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Platform Settings & Commission (GET /api/v1/platform-settings & PUT /api/v1/platform-settings) */}
+      <div className="bg-white rounded-2xl border border-amber-200/80 p-6 shadow-2xs">
+        <div className="flex items-start justify-between gap-4 pb-5 border-b border-zinc-100">
+          <div className="flex items-start gap-4">
+            <div className="size-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0 text-[#D97706]">
+              <Percent className="size-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-zinc-900 tracking-tight">
+                  Platform Settings & Commission (إعدادات المنصة)
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-[#B45309]">
+                  Live API
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Configure the platform commission percentage (نسبة المنصة) deducted from teacher payouts and service bookings.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {isLoadingPlatform ? (
+          <div className="py-6">
+            <LoadingSpinner title="Loading platform settings..." />
+          </div>
+        ) : (
+          <div className="pt-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="flex flex-col gap-1.5 max-w-sm w-full">
+              <label className="text-xs font-semibold text-zinc-700 flex items-center gap-1.5">
+                <Percent className="size-3.5 text-zinc-400" />
+                <span>Application Fee / Commission Percentage (نسبة المنصة %)</span>
+              </label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  value={platformPercentage}
+                  onChange={(e) =>
+                    setPlatformPercentage(
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    )
+                  }
+                  placeholder="e.g. 15"
+                  className="h-10 pl-3.5 pr-8 rounded-xl border border-zinc-200/90 bg-white text-xs font-semibold text-zinc-900 focus-visible:ring-amber-500/20 focus-visible:border-amber-500"
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">
+                  %
+                </span>
+              </div>
+              <span className="text-[11px] text-zinc-400">
+                Applied globally to teacher earnings across all delivered sessions.
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSavePlatformPercentage}
+              disabled={updatePlatformMutation.isPending}
+              className="h-10 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+            >
+              {updatePlatformMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Save className="size-4" />
+              )}
+              <span>Save Platform Percentage</span>
+            </button>
+          </div>
+        )}
+      </div>
       {/* Student Enrollment Rules */}
       <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-2xs">
         <div className="flex items-start gap-4 pb-5 border-b border-zinc-100">

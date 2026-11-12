@@ -196,3 +196,60 @@ export interface UpdateSessionPayload {
   status?: string
   sessionStatus?: string
 }
+
+export interface RescheduleRequestItem {
+  id: string
+  sessionId: string
+  sessionTitle?: string | null
+  teacherId: string
+  teacherName?: string | null
+  studentId?: string | null
+  studentName?: string | null
+  requestedBy?: string | null
+  requestedById: string
+  requestedByName?: string | null
+  requestNote?: string | null
+  originalStart: string
+  originalEnd: string
+  newStart: string
+  newEnd: string
+  originalDurationMinutes: number
+  newDurationMinutes: number
+  status?: string | null
+  respondedBy?: string | null
+  respondedById?: string | null
+  responseNote?: string | null
+  respondedAt?: string | null
+  createdAt: string
+  updatedAt?: string | null
+  originalDate?: string | null
+  originalTimeSlot?: string | null
+  newDate?: string | null
+  newTimeSlot?: string | null
+}
+
+export interface CreateReschedulePayload {
+  requestedBy?: string
+  requestedById: string
+  newStart: string
+  requestedByName?: string
+  durationMinutes?: number
+  note?: string
+}
+
+export interface RespondReschedulePayload {
+  respondedBy?: string
+  respondedById: string
+  decision: "Approved" | "Rejected" | string
+  note?: string
+}
+
+export interface RescheduleQueryParams {
+  sessionId?: string
+  studentId?: string
+  teacherId?: string
+  status?: string
+  page?: number
+  pageSize?: number
+}
+

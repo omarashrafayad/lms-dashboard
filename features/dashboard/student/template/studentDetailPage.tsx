@@ -352,6 +352,7 @@ export default function StudentDetailPage({ studentId }: StudentDetailPageProps)
 
         {activeTab === "finance" && (
           <StudentFinanceTab
+            studentId={studentId}
             finance={profile.finance}
             subscription={profile.subscription}
             onViewTransactions={() => setActiveTab("transactions")}

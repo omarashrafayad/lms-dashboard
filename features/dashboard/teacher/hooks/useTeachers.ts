@@ -9,8 +9,10 @@ import {
   deleteTeacher,
   getSubjects,
   getTeachingLevels,
+  getAllTeachersDues,
+  getTeacherDues,
 } from "../api/teacherApi"
-import { TeacherQueryParams } from "../types/teacher.types"
+import { TeacherQueryParams, TeacherDuesParams } from "../types/teacher.types"
 
 export const useTeachers = (params: TeacherQueryParams = {}) => {
   return useQuery({
@@ -79,3 +81,22 @@ export const useTeacherLevels = () => {
     staleTime: 5 * 60 * 1000,
   })
 }
+
+export const useAllTeachersDues = (params: TeacherDuesParams = {}) => {
+  return useQuery({
+    queryKey: ["teachers-dues", params],
+    queryFn: () => getAllTeachersDues(params),
+  })
+}
+
+export const useTeacherDues = (
+  teacherId: string,
+  params: TeacherDuesParams = {}
+) => {
+  return useQuery({
+    queryKey: ["teacher-dues", teacherId, params],
+    queryFn: () => getTeacherDues(teacherId, params),
+    enabled: !!teacherId,
+  })
+}
+

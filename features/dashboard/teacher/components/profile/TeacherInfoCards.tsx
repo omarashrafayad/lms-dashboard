@@ -22,10 +22,9 @@ export function TeacherInfoCards({ profile }: TeacherInfoCardsProps) {
               FULL NAME
             </div>
             <div className="text-sm font-medium text-zinc-800">
-              {profile.personalInfo.fullName}
+             {profile.personalInfo.fullName}
             </div>
           </div>
-
           <div>
             <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-1">
               DATE OF BIRTH

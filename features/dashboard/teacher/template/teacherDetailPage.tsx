@@ -307,10 +307,10 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
         {activeTab === "overview" && (
           <>
             {/* Earnings & Payouts Card in Overview */}
-            <TeacherFinanceCard
+            {/* <TeacherFinanceCard
               finance={profile.finance}
               onViewFinanceTab={() => setActiveTab("finance")}
-            />
+            /> */}
 
             {/* Personal & Professional Info Cards */}
             <TeacherInfoCards profile={profile} />
@@ -331,6 +331,7 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
 
         {activeTab === "finance" && (
           <TeacherFinanceTab
+            teacherId={teacherId}
             finance={profile.finance}
             onViewTransactions={() => setActiveTab("transactions")}
             onViewPaymentRequests={() => setActiveTab("payment_requests")}

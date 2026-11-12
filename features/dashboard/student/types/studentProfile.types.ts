@@ -154,3 +154,103 @@ export interface StudentProfile {
   // Activity
   activityHistory: StudentActivityItem[]
 }
+
+export interface BillingStudentFinanceTotals {
+  paymentsCount: number
+  collectedAmount: number
+  discountAmount: number
+  awaitingReviewCount: number
+  awaitingReviewAmount: number
+  refundedCount: number
+  refundedAmount: number
+  netPaidAmount: number
+}
+
+export interface BillingPaymentItem {
+  id: string
+  invoiceNumber?: string | null
+  reference?: string | null
+  subscriptionId?: string | null
+  planId?: string | null
+  planName?: string | null
+  studentId?: string | null
+  studentName?: string | null
+  studentGrade?: string | null
+  payerName?: string | null
+  itemDescription?: string | null
+  itemKind?: string | null
+  amount: number
+  discountAmount: number
+  couponCode?: string | null
+  method?: string | null
+  methodDisplay?: string | null
+  status?: string | null
+  gatewayReference?: string | null
+  paidAt: string
+  reviewedAt?: string | null
+  reviewedBy?: string | null
+  reviewNote?: string | null
+}
+
+export interface BillingSubscriptionItem {
+  id: string
+  studentId: string
+  studentName?: string | null
+  studentGrade?: string | null
+  parentId?: string | null
+  parentName?: string | null
+  parentPhone?: string | null
+  planId: string
+  planName?: string | null
+  tier?: string | null
+  billingCycle?: string | null
+  status?: string | null
+  startsAt: string
+  expiresAt: string
+  daysRemaining: number
+  amountCharged: number
+  autoRenew: boolean
+  notes?: string | null
+}
+
+export interface BillingStudentRefundItem {
+  paymentId: string
+  invoiceNumber?: string | null
+  amount: number
+  method?: string | null
+  methodDisplay?: string | null
+  refundedAt: string
+  reviewedBy?: string | null
+  note?: string | null
+}
+
+export interface BillingStudentSessionFinanceItem {
+  id?: string
+  sessionId?: string
+  title?: string
+  date?: string
+  teacherName?: string
+  status?: string
+}
+
+export interface BillingStudentSessionFinance {
+  bookedCount: number
+  upcomingCount: number
+  attendedCount: number
+  noShowCount: number
+  cancelledCount: number
+  endedUnmarkedCount: number
+  attendedMinutes: number
+  recent?: BillingStudentSessionFinanceItem[] | null
+}
+
+export interface BillingStudentFinanceOverview {
+  studentId: string
+  studentName?: string | null
+  totals: BillingStudentFinanceTotals
+  payments?: BillingPaymentItem[] | null
+  subscriptions?: BillingSubscriptionItem[] | null
+  refunds?: BillingStudentRefundItem[] | null
+  bookings?: BillingStudentSessionFinance | null
+}
+

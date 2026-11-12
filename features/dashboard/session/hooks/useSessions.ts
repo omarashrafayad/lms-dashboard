@@ -9,12 +9,18 @@ import {
   deleteSession,
   cancelSession,
   getTeacherSlots,
+  getRescheduleRequests,
+  requestReschedule,
+  respondToReschedule,
 } from "../api/sessionApi"
 import {
   ScheduleSessionPayload,
   UpdateSessionPayload,
   SessionFilterState,
   SessionQueryParams,
+  CreateReschedulePayload,
+  RespondReschedulePayload,
+  RescheduleQueryParams,
 } from "../types/session.types"
 
 export const useSessions = (
@@ -106,3 +112,53 @@ export const useTeacherSlots = (
     staleTime: 1000 * 60 * 2,
   })
 }
+
+export const useRescheduleRequests = (
+  params: RescheduleQueryParams = {},
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: ["reschedule-requests", params],
+    queryFn: () => getRescheduleRequests(params),
+    ...options,
+  })
+}
+
+export const useRequestReschedule = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      payload,
+    }: {
+      sessionId: string
+      payload: CreateReschedulePayload
+    }) => requestReschedule(sessionId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["reschedule-requests"] })
+      queryClient.invalidateQueries({ queryKey: ["sessions"] })
+      queryClient.invalidateQueries({ queryKey: ["session", variables.sessionId] })
+    },
+  })
+}
+
+export const useRespondReschedule = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      requestId,
+      payload,
+    }: {
+      sessionId: string
+      requestId: string
+      payload: RespondReschedulePayload
+    }) => respondToReschedule(sessionId, requestId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["reschedule-requests"] })
+      queryClient.invalidateQueries({ queryKey: ["sessions"] })
+      queryClient.invalidateQueries({ queryKey: ["session", variables.sessionId] })
+    },
+  })
+}
+
