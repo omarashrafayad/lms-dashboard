@@ -48,7 +48,12 @@ export const scheduleSessionSchema = z
     durationMinutes: z.string().min(1, "Duration is required"),
     sessionType: z.string().min(1, "Session type is required"),
     notes: z.string().optional(),
+maxStudents: z.coerce
+  .number({
+    error: "Please enter a valid number",
   })
+  .int("Must be a whole number")
+  .min(1, "Maximum students must be at least 1")  })
   .superRefine((data, ctx) => {
     // Validate Start Time must be in future
     if (data.startTime && !isTimeInFuture(data.startTime, data.date)) {
@@ -94,6 +99,10 @@ export const updateSessionSchema = z
     courseName: z.string().optional(),
     notes: z.string().optional(),
     status: z.string().optional(),
+    maxStudents: z.coerce.number({
+    error: "Please enter a valid number",})
+  .int("Must be a whole number")
+  .min(1, "Maximum students must be at least 1")
   })
 
 export type UpdateSessionFormData = z.infer<typeof updateSessionSchema>

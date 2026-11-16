@@ -9,10 +9,16 @@ import {
   Pencil,
   ArrowUpRight,
   CalendarClock,
+  UserCheck,
+  RefreshCw,
+  Ban,
 } from "lucide-react"
 import { useSessionDetail, useDeleteSession } from "../hooks/useSessions"
 import { SessionActivityTimeline } from "../components/detail/SessionActivityTimeline"
 import { RescheduleRequestModal } from "../components/reschedule/RescheduleRequestModal"
+import { BookSessionModal } from "../components/booking/BookSessionModal"
+import { ChangeSessionStatusModal } from "../components/booking/ChangeSessionStatusModal"
+import { CancelSessionModal } from "../components/booking/CancelSessionModal"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
@@ -27,6 +33,9 @@ export default function SessionDetailPage({
 }: SessionDetailPageProps) {
   const router = useRouter()
   const [isRescheduleOpen, setIsRescheduleOpen] = React.useState(false)
+  const [isBookOpen, setIsBookOpen] = React.useState(false)
+  const [isStatusOpen, setIsStatusOpen] = React.useState(false)
+  const [isCancelOpen, setIsCancelOpen] = React.useState(false)
   const { data: session, isLoading, isError } = useSessionDetail(sessionId)
   const deleteMutation = useDeleteSession()
 
@@ -226,31 +235,58 @@ export default function SessionDetailPage({
             </p>
           </div>
 
-          {/* Action Buttons: Delete & Edit & Reschedule */}
-          <div className="flex items-center gap-2.5">
+          {/* Action Buttons: Book, Status, Reschedule, Cancel, Delete & Edit */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsBookOpen(true)}
+              className="h-9 px-3.5 rounded-xl border border-blue-200 bg-blue-50/80 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+            >
+              <UserCheck className="size-3.5" />
+              <span>Book Student</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsStatusOpen(true)}
+              className="h-9 px-3.5 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+            >
+              <RefreshCw className="size-3.5 text-zinc-500" />
+              <span>Change Status</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setIsRescheduleOpen(true)}
-              className="h-9 px-4 rounded-xl border border-amber-300 bg-amber-50/80 text-xs font-semibold text-[#D97706] hover:bg-amber-100 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+              className="h-9 px-3.5 rounded-xl border border-amber-300 bg-amber-50/80 text-xs font-semibold text-[#D97706] hover:bg-amber-100 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
             >
               <CalendarClock className="size-3.5" />
-              <span>Request Reschedule</span>
+              <span>Reschedule</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCancelOpen(true)}
+              className="h-9 px-3.5 rounded-xl border border-rose-200 bg-rose-50/60 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+            >
+              <Ban className="size-3.5 text-rose-600" />
+              <span>Cancel Session</span>
             </button>
 
             <button
               type="button"
               onClick={handleDeleteSession}
               disabled={deleteMutation.isPending}
-              className="h-9 px-4 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98] disabled:opacity-50"
+              className="h-9 px-3.5 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98] disabled:opacity-50"
             >
               <Trash2 className="size-3.5 text-rose-500" />
-              <span>Delete Session</span>
+              <span>Delete</span>
             </button>
 
             <button
               type="button"
               onClick={() => router.push(`/sessions/${session.id}/edit`)}
-              className="h-9 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+              className="h-9 px-4 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
             >
               <Pencil className="size-3.5 stroke-[2.2]" />
               <span>Edit Session</span>
@@ -544,7 +580,30 @@ export default function SessionDetailPage({
         teacherId={session.teacherId}
         teacherName={teacherNameText}
         studentId={session.studentId}
-        studentName={session.studentName}
+        studentName={studentNameText}
+      />
+
+      <BookSessionModal
+        isOpen={isBookOpen}
+        onClose={() => setIsBookOpen(false)}
+        sessionId={session.id}
+        sessionTitle={session.subject || session.courseName || `Session #${session.sessionNumber || session.id.slice(0, 8)}`}
+      />
+
+      <ChangeSessionStatusModal
+        isOpen={isStatusOpen}
+        onClose={() => setIsStatusOpen(false)}
+        sessionId={session.id}
+        currentStatus={currentStatus}
+        sessionTitle={session.subject || session.courseName || `Session #${session.sessionNumber || session.id.slice(0, 8)}`}
+      />
+
+      <CancelSessionModal
+        isOpen={isCancelOpen}
+        onClose={() => setIsCancelOpen(false)}
+        sessionId={session.id}
+        teacherId={session.teacherId}
+        sessionTitle={session.subject || session.courseName || `Session #${session.sessionNumber || session.id.slice(0, 8)}`}
       />
     </div>
   )

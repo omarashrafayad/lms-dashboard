@@ -126,6 +126,7 @@ export default function SessionSchedulePage() {
       courseName: "",
       durationMinutes: "60",
       sessionType: "Private 1:1",
+      maxStudents:1,
       notes: "",
     },
   })
@@ -320,6 +321,7 @@ export default function SessionSchedulePage() {
         sessionType: data.sessionType,
         availableTimeSlot: data.startTime,
         timeSlot: data.startTime,
+        maxStudents:data.maxStudents,
         notes: data.notes || "",
       }
 
@@ -809,6 +811,14 @@ export default function SessionSchedulePage() {
                     label="Session Type"
                     options={sessionTypeOptions}
                     required
+                    labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
+                  />
+                  <UniInput
+                    control={control as any}
+                    name="maxStudents"
+                    label="maxStudents"
+                    required
+                    placeholder="Add maxStudents"
                     labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
                   />
                 </div>

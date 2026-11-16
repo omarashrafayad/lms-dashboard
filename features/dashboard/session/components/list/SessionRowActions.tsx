@@ -2,10 +2,22 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { MoreHorizontal, Eye, Pencil, Trash2, CalendarClock } from "lucide-react"
+import {
+  MoreHorizontal,
+  Eye,
+  Pencil,
+  Trash2,
+  CalendarClock,
+  UserCheck,
+  RefreshCw,
+  Ban,
+} from "lucide-react"
 import { SessionItem } from "../../types/session.types"
 import { useDeleteSession } from "../../hooks/useSessions"
 import { RescheduleRequestModal } from "../reschedule/RescheduleRequestModal"
+import { BookSessionModal } from "../booking/BookSessionModal"
+import { ChangeSessionStatusModal } from "../booking/ChangeSessionStatusModal"
+import { CancelSessionModal } from "../booking/CancelSessionModal"
 import { toast } from "sonner"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
@@ -17,6 +29,9 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
   const [rescheduleOpen, setRescheduleOpen] = React.useState(false)
+  const [bookOpen, setBookOpen] = React.useState(false)
+  const [statusOpen, setStatusOpen] = React.useState(false)
+  const [cancelOpen, setCancelOpen] = React.useState(false)
   const menuRef = React.useRef<HTMLDivElement>(null)
   const deleteMutation = useDeleteSession()
 
@@ -47,6 +62,11 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
     }
   }
 
+  const sessionTitle =
+    session.subject ||
+    session.courseName ||
+    `Session #${session.sessionNumber || session.id.slice(0, 8)}`
+
   return (
     <div className="relative inline-block text-left" ref={menuRef}>
       <button
@@ -62,7 +82,7 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-white border border-zinc-200/80 shadow-lg py-1.5 z-40 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl bg-white border border-zinc-200/80 shadow-lg py-1.5 z-40 animate-in fade-in zoom-in-95 duration-100">
           <button
             type="button"
             onClick={() => {
@@ -91,12 +111,48 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
             type="button"
             onClick={() => {
               setOpen(false)
+              setBookOpen(true)
+            }}
+            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-50 transition-colors text-left cursor-pointer"
+          >
+            <UserCheck className="size-3.5 text-blue-500" />
+            <span>Book Student</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false)
+              setStatusOpen(true)
+            }}
+            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors text-left cursor-pointer"
+          >
+            <RefreshCw className="size-3.5 text-zinc-500" />
+            <span>Change Status</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false)
               setRescheduleOpen(true)
             }}
             className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50 hover:text-amber-800 transition-colors text-left cursor-pointer"
           >
             <CalendarClock className="size-3.5 text-amber-500" />
             <span>Request Reschedule</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false)
+              setCancelOpen(true)
+            }}
+            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+          >
+            <Ban className="size-3.5 text-rose-500" />
+            <span>Cancel Session</span>
           </button>
 
           <div className="my-1 border-t border-zinc-100" />
@@ -117,13 +173,36 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
         isOpen={rescheduleOpen}
         onClose={() => setRescheduleOpen(false)}
         sessionId={session.id}
-        sessionTitle={session.subject || session.courseName || `Session #${session.sessionNumber || session.id.slice(0, 8)}`}
+        sessionTitle={sessionTitle}
         currentDate={session.date || session.formattedDate}
         currentTime={session.startTime || session.time}
         teacherId={session.teacherId}
         teacherName={session.teacherName}
         studentId={session.studentId}
         studentName={session.studentName}
+      />
+
+      <BookSessionModal
+        isOpen={bookOpen}
+        onClose={() => setBookOpen(false)}
+        sessionId={session.id}
+        sessionTitle={sessionTitle}
+      />
+
+      <ChangeSessionStatusModal
+        isOpen={statusOpen}
+        onClose={() => setStatusOpen(false)}
+        sessionId={session.id}
+        currentStatus={session.status || session.sessionStatus || "Upcoming"}
+        sessionTitle={sessionTitle}
+      />
+
+      <CancelSessionModal
+        isOpen={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        sessionId={session.id}
+        teacherId={session.teacherId}
+        sessionTitle={sessionTitle}
       />
     </div>
   )

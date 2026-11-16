@@ -323,6 +323,8 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
 
             {/* Sessions Tables (Upcoming & Previous) */}
             <TeacherSessionsCard
+              teacherId={teacherId}
+              teacherName={profile.name || profile.personalInfo?.fullName}
               upcomingSessions={profile.upcomingSessions}
               previousSessions={profile.previousSessions}
             />

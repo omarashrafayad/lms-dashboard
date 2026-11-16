@@ -22,6 +22,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   const user = useAuthStore().user
+
   const router = useRouter()
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false)
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
@@ -165,6 +166,7 @@ export function PageHeader({
               >
                 <Settings className="size-4 text-zinc-400" />
                 <span>Settings</span>
+                <span>{user?._id}</span>
               </Link>
 
               <div className="h-px bg-zinc-100 my-1" />

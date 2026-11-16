@@ -16,6 +16,7 @@ const rescheduleSchema = z.object({
   durationMinutes: z.number().min(15, "Minimum duration is 15 minutes"),
   requestedBy: z.string().min(1, "Please specify requester role"),
   note: z.string().min(3, "Please provide a reason or note (at least 3 characters)"),
+  requestedById:z.string()
 })
 
 type RescheduleFormValues = z.infer<typeof rescheduleSchema>
@@ -40,12 +41,9 @@ export function RescheduleRequestModal({
   sessionTitle,
   currentDate,
   currentTime,
-  teacherId,
   teacherName,
-  studentId,
-  studentName,
 }: RescheduleRequestModalProps) {
-  const currentUser = useAuthStore((s) => s.user)
+  const user = useAuthStore().user
   const rescheduleMutation = useRequestReschedule()
 
   const {
@@ -57,6 +55,7 @@ export function RescheduleRequestModal({
     resolver: zodResolver(rescheduleSchema),
     defaultValues: {
       newDate: "",
+      requestedById:"",
       newTime: "",
       durationMinutes: 60,
       requestedBy: "Admin",
@@ -69,17 +68,13 @@ export function RescheduleRequestModal({
   const onSubmit = async (values: RescheduleFormValues) => {
     try {
       const combinedDateTime = new Date(`${values.newDate}T${values.newTime}:00`).toISOString()
-      const requestedById =
-        (currentUser?._id && currentUser._id.length === 36)
-          ? currentUser._id
-          : "00000000-0000-0000-0000-000000000001"
-
+     
       await rescheduleMutation.mutateAsync({
         sessionId,
         payload: {
           requestedBy: values.requestedBy,
-          requestedById,
-          requestedByName: currentUser?.fullName || "Admin",
+          requestedById:user?.id || "102010201020",
+          requestedByName: user?.fullName || "Admin",
           newStart: combinedDateTime,
           durationMinutes: values.durationMinutes,
           note: values.note,

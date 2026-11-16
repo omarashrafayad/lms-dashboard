@@ -177,6 +177,7 @@ export interface ScheduleSessionPayload {
   educationStage?: string
   academicStage?: string
   notes?: string
+  maxStudents:number
 }
 
 export interface UpdateSessionPayload {
@@ -252,4 +253,145 @@ export interface RescheduleQueryParams {
   page?: number
   pageSize?: number
 }
+
+export interface TeacherSessionCounts {
+  upcomingCount: number
+  pastCount: number
+  liveCount: number
+  todayCount: number
+  cancelledCount: number
+  pendingBookingRequestCount: number
+  pendingRescheduleRequestCount: number
+}
+
+export interface TeacherSessionCard {
+  id: string
+  title?: string | null
+  subjectName?: string | null
+  courseName?: string | null
+  studentId?: string | null
+  studentName?: string | null
+  studentCount: number
+  pendingRequestCount: number
+  maxStudents: number
+  seatsLeft: number
+  scheduledStart: string
+  scheduledEnd: string
+  durationMinutes: number
+  sessionType?: string | null
+  status?: string | null
+  displayStatus?: string | null
+  meetingUrl?: string | null
+  completedAt?: string | null
+  createdAt: string
+  hasPendingBookingRequest: boolean
+  hasPendingRescheduleRequest: boolean
+  canReschedule: boolean
+  canCancel: boolean
+}
+
+export interface TeacherBookingRequestItem {
+  bookingId: string
+  studentId: string
+  studentName?: string | null
+  educationSystem?: string | null
+  outcome?: string | null
+  requestedAt: string
+  sessionId: string
+  sessionTitle?: string | null
+  subjectName?: string | null
+  scheduledStart: string
+  scheduledEnd: string
+  durationMinutes: number
+  sessionStatus?: string | null
+  seatsLeft: number
+}
+
+export interface TeacherBookingItem {
+  bookingId: string
+  sessionId: string
+  studentId: string
+  studentName?: string | null
+  educationSystem?: string | null
+  status?: string | null
+  outcome?: string | null
+  requestedAt: string
+  decidedAt?: string | null
+  decidedById?: string | null
+  decisionNote?: string | null
+  attendedAt?: string | null
+}
+
+export interface TeacherSessionTimelineItem {
+  order: number
+  title?: string | null
+  description?: string | null
+  occurredAt: string
+  formattedAt?: string | null
+  isPlanned: boolean
+}
+
+export interface TeacherSessionHubResponse {
+  teacherId: string
+  teacherName?: string | null
+  generatedAt: string
+  counts: TeacherSessionCounts
+  upcoming?: TeacherSessionCard[] | null
+  past?: TeacherSessionCard[] | null
+  pendingBookingRequests?: TeacherBookingRequestItem[] | null
+  pendingRescheduleRequests?: RescheduleRequestItem[] | null
+}
+
+export interface TeacherSessionDetailResponse {
+  session: TeacherSessionCard
+  bookings?: TeacherBookingItem[] | null
+  rescheduleHistory?: RescheduleRequestItem[] | null
+  timeline?: TeacherSessionTimelineItem[] | null
+  isAwaitingTeacherDecision: boolean
+}
+
+export interface TeacherSessionsQueryParams {
+  period?: "upcoming" | "past" | "today" | "all" | string
+  status?: string
+  subjectId?: string
+  from?: string
+  to?: string
+  search?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface BookSessionPayload {
+  studentId: string
+  studentName?: string
+  educationSystem?: string
+}
+
+export interface BookingDecisionPayload {
+  decision: "Approved" | "Rejected" | string
+  teacherId: string
+  note?: string
+}
+
+export interface CancelSessionPayload {
+  teacherId: string
+}
+
+export interface ChangeSessionStatusPayload {
+  status: string
+  adminId?: string
+  adminName?: string
+}
+
+export interface SessionBookingResponse {
+  id: string
+  sessionId: string
+  studentId: string
+  studentName?: string | null
+  educationSystem?: string | null
+  status?: string | null
+  createdAt: string
+  attendedAt?: string | null
+}
+
 

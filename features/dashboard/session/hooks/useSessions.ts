@@ -12,6 +12,13 @@ import {
   getRescheduleRequests,
   requestReschedule,
   respondToReschedule,
+  getTeacherHub,
+  getTeacherSessions,
+  getTeacherSessionDetail,
+  bookSession,
+  decideBooking,
+  scheduleSessionDirect,
+  changeSessionStatus,
 } from "../api/sessionApi"
 import {
   ScheduleSessionPayload,
@@ -21,6 +28,11 @@ import {
   CreateReschedulePayload,
   RespondReschedulePayload,
   RescheduleQueryParams,
+  TeacherSessionsQueryParams,
+  BookSessionPayload,
+  BookingDecisionPayload,
+  CancelSessionPayload,
+  ChangeSessionStatusPayload,
 } from "../types/session.types"
 
 export const useSessions = (
@@ -93,10 +105,18 @@ export const useDeleteSession = () => {
 export const useCancelSession = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (sessionId: string) => cancelSession(sessionId),
-    onSuccess: (_, sessionId) => {
+    mutationFn: ({
+      sessionId,
+      payload,
+    }: {
+      sessionId: string
+      payload: CancelSessionPayload
+    }) => cancelSession(sessionId, payload),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] })
-      queryClient.invalidateQueries({ queryKey: ["session", sessionId] })
+      queryClient.invalidateQueries({ queryKey: ["session", variables.sessionId] })
+      queryClient.invalidateQueries({ queryKey: ["teacher-hub"] })
+      queryClient.invalidateQueries({ queryKey: ["teacher-sessions"] })
     },
   })
 }
@@ -161,4 +181,101 @@ export const useRespondReschedule = () => {
     },
   })
 }
+
+export const useTeacherHub = (
+  teacherId: string,
+  limits?: { upcomingLimit?: number; pastLimit?: number; requestLimit?: number },
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: ["teacher-hub", teacherId, limits],
+    queryFn: () => getTeacherHub(teacherId, limits),
+    enabled: Boolean(teacherId) && (options?.enabled !== false),
+    staleTime: 1000 * 60,
+  })
+}
+
+export const useTeacherSessions = (
+  teacherId: string,
+  params: TeacherSessionsQueryParams = {},
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: ["teacher-sessions", teacherId, params],
+    queryFn: () => getTeacherSessions(teacherId, params),
+    enabled: Boolean(teacherId) && (options?.enabled !== false),
+  })
+}
+
+export const useTeacherSessionDetail = (
+  teacherId: string,
+  sessionId: string,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: ["teacher-session-detail", teacherId, sessionId],
+    queryFn: () => getTeacherSessionDetail(teacherId, sessionId),
+    enabled: Boolean(teacherId && sessionId) && (options?.enabled !== false),
+  })
+}
+
+export const useBookSession = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      payload,
+    }: {
+      sessionId: string
+      payload: BookSessionPayload
+    }) => bookSession(sessionId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] })
+      queryClient.invalidateQueries({ queryKey: ["session", variables.sessionId] })
+      queryClient.invalidateQueries({ queryKey: ["teacher-hub"] })
+      queryClient.invalidateQueries({ queryKey: ["teacher-sessions"] })
+    },
+  })
+}
+
+export const useDecideBooking = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      bookingId,
+      payload,
+    }: {
+      sessionId: string
+      bookingId: string
+      payload: BookingDecisionPayload
+    }) => decideBooking(sessionId, bookingId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] })
+      queryClient.invalidateQueries({ queryKey: ["session", variables.sessionId] })
+      queryClient.invalidateQueries({ queryKey: ["teacher-hub"] })
+      queryClient.invalidateQueries({ queryKey: ["teacher-sessions"] })
+    },
+  })
+}
+
+export const useChangeSessionStatus = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      payload,
+    }: {
+      sessionId: string
+      payload: ChangeSessionStatusPayload
+    }) => changeSessionStatus(sessionId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] })
+      queryClient.invalidateQueries({ queryKey: ["session", variables.sessionId] })
+      queryClient.invalidateQueries({ queryKey: ["teacher-hub"] })
+      queryClient.invalidateQueries({ queryKey: ["teacher-sessions"] })
+    },
+  })
+}
+
 
