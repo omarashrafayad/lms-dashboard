@@ -237,14 +237,14 @@ export default function SessionDetailPage({
 
           {/* Action Buttons: Book, Status, Reschedule, Cancel, Delete & Edit */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            {/* <button
               type="button"
               onClick={() => setIsBookOpen(true)}
               className="h-9 px-3.5 rounded-xl border border-blue-200 bg-blue-50/80 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
             >
               <UserCheck className="size-3.5" />
               <span>Book Student</span>
-            </button>
+            </button> */}
 
             <button
               type="button"
