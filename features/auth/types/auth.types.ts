@@ -2,6 +2,7 @@ import { AxiosResponse } from "axios";
 
 export interface User {
   id?: string;
+  _id?: string;
   fullName: string;
   email: string;
   active: boolean;

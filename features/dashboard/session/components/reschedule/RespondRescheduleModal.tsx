@@ -54,8 +54,8 @@ export function RespondRescheduleModal({
   const onSubmit = async (values: RespondFormValues) => {
     try {
       const respondedById =
-        (currentUser?._id && currentUser._id.length === 36)
-          ? currentUser._id
+        (currentUser?.id && currentUser.id.length === 36)
+          ? currentUser.id
           : "00000000-0000-0000-0000-000000000001"
 
       await respondMutation.mutateAsync({

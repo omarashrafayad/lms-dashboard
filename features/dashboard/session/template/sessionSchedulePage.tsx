@@ -108,7 +108,7 @@ export default function SessionSchedulePage() {
   }, [])
 
   const form = useForm<ScheduleSessionFormData>({
-    resolver: zodResolver(scheduleSessionSchema),
+    resolver: zodResolver(scheduleSessionSchema) as any,
     mode: "all",
     defaultValues: {
       studentId: "",

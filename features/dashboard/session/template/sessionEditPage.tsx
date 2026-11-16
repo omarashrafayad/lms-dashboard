@@ -59,7 +59,7 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
   const courses = Array.isArray(coursesData) ? coursesData : coursesData?.items || []
 
   const form = useForm<UpdateSessionFormData>({
-    resolver: zodResolver(updateSessionSchema),
+    resolver: zodResolver(updateSessionSchema) as any,
     mode: "all",
     defaultValues: {
       teacherId: "",

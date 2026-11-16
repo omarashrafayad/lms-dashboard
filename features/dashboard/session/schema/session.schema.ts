@@ -99,10 +99,13 @@ export const updateSessionSchema = z
     courseName: z.string().optional(),
     notes: z.string().optional(),
     status: z.string().optional(),
-    maxStudents: z.coerce.number({
-    error: "Please enter a valid number",})
-  .int("Must be a whole number")
-  .min(1, "Maximum students must be at least 1")
+    maxStudents: z.coerce
+      .number({
+        error: "Please enter a valid number",
+      })
+      .int("Must be a whole number")
+      .min(1, "Maximum students must be at least 1")
+      .optional(),
   })
 
 export type UpdateSessionFormData = z.infer<typeof updateSessionSchema>
