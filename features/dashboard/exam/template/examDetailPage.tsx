@@ -1,19 +1,18 @@
 "use client"
 
 import * as React from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import {  useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import {
   ExamDetailHeader,
   DetailTabType,
 } from "../components/detail/ExamDetailHeader"
 import { ExamOverviewTab } from "../components/detail/ExamOverviewTab"
-import { ExamQuestionsTab } from "../components/detail/ExamQuestionsTab"
 import { ExamStudentsTab } from "../components/detail/ExamStudentsTab"
 import { ExamAnalyticsTab } from "../components/detail/ExamAnalyticsTab"
 import { ExamActivityHistoryTab } from "../components/detail/ExamActivityHistoryTab"
 import { ExamFormModal } from "../components/modal/ExamFormModal"
-import { ExamPreviewModal } from "../components/modal/ExamPreviewModal"
+// import { ExamPreviewModal } from "../components/modal/ExamPreviewModal"
 import { useExam, useUpdateExam, useDuplicateExam } from "../hooks/useExams"
 import { ApiExam } from "../types/exam.types"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
@@ -25,7 +24,6 @@ interface ExamDetailPageProps {
 }
 
 export default function ExamDetailPage({ id }: ExamDetailPageProps) {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const initialTab = (searchParams.get("tab") as DetailTabType) || "overview"
 
@@ -123,24 +121,12 @@ export default function ExamDetailPage({ id }: ExamDetailPageProps) {
           onEdit={() => setIsEditModalOpen(true)}
         />
 
-        {/* Tab 1: Overview */}
         {activeTab === "overview" && <ExamOverviewTab exam={exam} />}
 
-        {/* Tab 2: Questions */}
-        {activeTab === "questions" && (
-          <ExamQuestionsTab
-            exam={exam}
-            onAddQuestion={() => setIsEditModalOpen(true)}
-          />
-        )}
-
-        {/* Tab 3: Students & Results */}
         {activeTab === "students" && <ExamStudentsTab exam={exam} />}
 
-        {/* Tab 4: Analytics */}
         {activeTab === "analytics" && <ExamAnalyticsTab exam={exam} />}
 
-        {/* Tab 5: Activity History */}
         {activeTab === "history" && <ExamActivityHistoryTab exam={exam} />}
       </main>
 
@@ -151,15 +137,6 @@ export default function ExamDetailPage({ id }: ExamDetailPageProps) {
           initialData={exam}
           onClose={() => setIsEditModalOpen(false)}
           onSave={handleUpdateExam}
-        />
-      )}
-
-      {/* Preview Exam Modal */}
-      {isPreviewModalOpen && (
-        <ExamPreviewModal
-          isOpen={isPreviewModalOpen}
-          exam={exam}
-          onClose={() => setIsPreviewModalOpen(false)}
         />
       )}
     </div>

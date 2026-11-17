@@ -49,13 +49,6 @@ export function SubscriptionsNavTabs({
       label: "Transactions & Invoices",
       icon: CreditCard,
     },
-    // {
-    //   key: "requests" as const,
-    //   label: "Offline Verifications",
-    //   icon: Clock,
-    //   count: requestsCount,
-    //   countVariant: "amber",
-    // },
   ]
 
   return (

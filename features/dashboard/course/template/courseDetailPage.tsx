@@ -181,14 +181,6 @@ export default function CourseDetailPage({ courseId }: CourseDetailPageProps) {
         {activeTab === "Course Content" && (
           <CourseContentTab initialLessons={course.lessons || []} courseId={course.id} />
         )}
-        {/* {activeTab === "Course Exam" && (
-          <CourseExamTab
-            courseId={course.id}
-            courseTitle={course.title || course.name || "Course"}
-            courseLevel={course.level || "Beginner"}
-            initialExam={course.exam}
-          />
-        )} */}
         {activeTab === "Students" && (
           <CourseStudentsTab
             students={course.students || []}

@@ -86,6 +86,10 @@ export type ScheduleSessionFormData = z.infer<typeof scheduleSessionSchema>
 
 export const updateSessionSchema = z
   .object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    studentId: z.string().optional(),
+    studentName: z.string().optional(),
     teacherId: z.string().optional(),
     teacherName: z.string().optional(),
     date: z.string().optional(),
@@ -97,6 +101,8 @@ export const updateSessionSchema = z
     subjectName: z.string().optional(),
     courseId: z.string().optional(),
     courseName: z.string().optional(),
+    meetingUrl: z.string().optional(),
+    isLive: z.boolean().optional(),
     notes: z.string().optional(),
     status: z.string().optional(),
     maxStudents: z.coerce

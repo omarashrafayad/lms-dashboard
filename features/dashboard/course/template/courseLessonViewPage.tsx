@@ -45,9 +45,9 @@ export default function CourseLessonViewPage({
 
   React.useEffect(() => {
     if (serverVideos.length > 0 && !activeVideoUrl) {
-      const firstWithUrl = serverVideos.find((v: any) => v.url || v.filePath)
+      const firstWithUrl = serverVideos.find((v: any) => v.url || (v as any).fileUrl)
       if (firstWithUrl) {
-        setActiveVideoUrl(firstWithUrl.url || firstWithUrl.filePath || null)
+        setActiveVideoUrl((firstWithUrl as any).fileUrl || firstWithUrl.url || null)
       }
     }
   }, [serverVideos, activeVideoUrl])

@@ -1,12 +1,7 @@
 "use client"
-
-import * as React from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
-  Eye,
-  Copy,
-  Archive,
   Pencil,
   ChevronRight,
 } from "lucide-react"
@@ -16,7 +11,6 @@ import { cn } from "@/lib/utils"
 
 export type DetailTabType =
   | "overview"
-  | "questions"
   | "students"
   | "analytics"
   | "history"
@@ -35,25 +29,19 @@ export function ExamDetailHeader({
   exam,
   activeTab,
   onTabChange,
-  onPreview,
-  onDuplicate,
-  onArchive,
   onEdit,
 }: ExamDetailHeaderProps) {
   const tabs: { key: DetailTabType; label: string }[] = [
     { key: "overview", label: "Overview" },
-    { key: "questions", label: "Questions" },
     { key: "students", label: "Students & Results" },
     { key: "analytics", label: "Analytics" },
     { key: "history", label: "Activity History" },
   ]
 
-  // Type badge in the header of Image 2 is formatted as "Monthly Exam" (light gray badge)
   const typeDisplay = exam.type === "Monthly" ? "Monthly Exam" : exam.type === "Subject" ? "Subject Exam" : "Course Exam"
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Back to Exams Link matching Image 2 */}
       <div>
         <Link
           href="/academic/exams"
@@ -86,38 +74,8 @@ export function ExamDetailHeader({
           </div>
         </div>
 
-        {/* Right Action Buttons matching Image 2 */}
+
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Preview Button linking to Student Preview */}
-          <Link
-            href={`/academic/exams/${exam.slug || exam.id}/preview`}
-            className="h-10 px-4 rounded-xl border border-zinc-200/90 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors shadow-2xs flex items-center gap-2 cursor-pointer active:scale-[0.98]"
-          >
-            <Eye className="size-3.5 text-zinc-500" />
-            <span>Preview</span>
-          </Link>
-
-          {/* Duplicate Button */}
-          <button
-            type="button"
-            onClick={onDuplicate}
-            className="h-10 px-4 rounded-xl border border-zinc-200/90 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors shadow-2xs flex items-center gap-2 cursor-pointer active:scale-[0.98]"
-          >
-            <Copy className="size-3.5 text-zinc-500" />
-            <span>Duplicate</span>
-          </button>
-
-          {/* Archive Button */}
-          <button
-            type="button"
-            onClick={onArchive}
-            className="h-10 px-4 rounded-xl border border-zinc-200/90 bg-white text-xs font-semibold text-[#DC2626] hover:bg-rose-50 hover:border-rose-200 transition-colors shadow-2xs flex items-center gap-2 cursor-pointer active:scale-[0.98]"
-          >
-            <Archive className="size-3.5 text-[#DC2626]" />
-            <span>Archive</span>
-          </button>
-
-          {/* Edit Exam Button */}
           <button
             type="button"
             onClick={onEdit}

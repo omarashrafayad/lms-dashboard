@@ -39,12 +39,6 @@ const CATEGORY_OPTIONS = [
   { label: "Other", value: "Other" },
 ]
 
-const DIFFICULTY_OPTIONS = [
-  { label: "Beginner", value: "Beginner" },
-  { label: "Intermediate", value: "Intermediate" },
-  { label: "Advanced", value: "Advanced" },
-]
-
 const LANGUAGE_OPTIONS = [
   { label: "English", value: "English" },
   { label: "Arabic", value: "Arabic" },
@@ -70,7 +64,6 @@ export default function CourseEditPage({ courseId }: CourseEditPageProps) {
   const { data: teachingLevels = [], isLoading: isLoadingLevels } = useTeachingLevels()
 
   const levelOptions = React.useMemo(() => {
-    if (!teachingLevels || teachingLevels.length === 0) return DIFFICULTY_OPTIONS
     return teachingLevels.map((lvl) => ({ label: lvl.name, value: lvl.name }))
   }, [teachingLevels])
 

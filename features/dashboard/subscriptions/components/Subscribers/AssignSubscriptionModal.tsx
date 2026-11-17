@@ -40,7 +40,7 @@ export function AssignSubscriptionModal({
 
   const studentOptions = React.useMemo(() => {
     return students.map((s) => ({
-      label: `${s.fullName} (${s.email || "No Email"})`,
+      label: `${s.fullName}`,
       value: s.id,
     }))
   }, [students])

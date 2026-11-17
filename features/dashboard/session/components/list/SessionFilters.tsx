@@ -63,9 +63,8 @@ export function SessionFilters({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      {/* Left: Search input + dropdowns */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Search Sessions input */}
+
         <div className="relative w-64 md:w-72">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 pointer-events-none" />
           <input

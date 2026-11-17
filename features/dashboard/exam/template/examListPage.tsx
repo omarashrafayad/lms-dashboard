@@ -7,14 +7,11 @@ import { toast } from "sonner"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { ExamFilters } from "../components/list/ExamFilters"
 import { ExamTable } from "../components/list/ExamTable"
-import { ExamFormModal } from "../components/modal/ExamFormModal"
-import { ExamPreviewModal } from "../components/modal/ExamPreviewModal"
-import { useExams, useUpdateExam } from "../hooks/useExams"
-import { ExamFilterState, ApiExam } from "../types/exam.types"
+import { useExams, } from "../hooks/useExams"
+import { ExamFilterState, } from "../types/exam.types"
 import { useDebounce } from "@/hooks/useDebounce"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
-import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 
 export default function ExamListPage() {
   const [filters, setFilters] = React.useState<ExamFilterState>({
@@ -48,11 +45,6 @@ export default function ExamListPage() {
     level: filters.level,
   })
 
-  const updateExamMutation = useUpdateExam()
-
-  // Modal states
-  const [editingExam, setEditingExam] = React.useState<ApiExam | null>(null)
-  const [previewingExam, setPreviewingExam] = React.useState<ApiExam | null>(null)
 
   const handleFilterChange = (key: keyof ExamFilterState, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
@@ -112,40 +104,6 @@ export default function ExamListPage() {
     }
   }, [totalCount])
 
-  // Action handlers
-  const handleSaveExam = async (examData: Partial<ApiExam>) => {
-    if (!editingExam) return
-    try {
-      await updateExamMutation.mutateAsync({
-        examId: editingExam.id,
-        data: {
-          title: examData.title,
-          description: examData.description,
-          examType: (examData.examType || examData.type) as any,
-          level: examData.level as any,
-          educationStage: examData.educationStage,
-          academicYear: examData.academicYear,
-          term: examData.term,
-          month: examData.month,
-          subjects: examData.subjects,
-          courseId: examData.courseId,
-          courseName: examData.courseName,
-          durationMinutes: examData.durationMinutes,
-          attemptsAllowed: examData.attemptsAllowed,
-          passingScore:
-            typeof examData.passingScore === "number"
-              ? examData.passingScore
-              : examData.passingScorePercent,
-          status: examData.status,
-        },
-      })
-      toast.success("Exam updated successfully")
-      setEditingExam(null)
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err))
-    }
-  }
-
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
@@ -202,29 +160,11 @@ export default function ExamListPage() {
                 setPage(1)
               },
             }}
-            onEdit={(exam) => setEditingExam(exam)}
           />
         )}
       </main>
 
-      {/* Edit Exam Modal */}
-      {editingExam && (
-        <ExamFormModal
-          isOpen={!!editingExam}
-          initialData={editingExam}
-          onClose={() => setEditingExam(null)}
-          onSave={handleSaveExam}
-        />
-      )}
 
-      {/* Preview Exam Modal */}
-      {previewingExam && (
-        <ExamPreviewModal
-          isOpen={!!previewingExam}
-          exam={previewingExam}
-          onClose={() => setPreviewingExam(null)}
-        />
-      )}
     </div>
   )
 }

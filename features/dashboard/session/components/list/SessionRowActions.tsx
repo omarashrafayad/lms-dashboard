@@ -111,42 +111,6 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
             type="button"
             onClick={() => {
               setOpen(false)
-              setBookOpen(true)
-            }}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-50 transition-colors text-left cursor-pointer"
-          >
-            <UserCheck className="size-3.5 text-blue-500" />
-            <span>Book Student</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              setStatusOpen(true)
-            }}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors text-left cursor-pointer"
-          >
-            <RefreshCw className="size-3.5 text-zinc-500" />
-            <span>Change Status</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              setRescheduleOpen(true)
-            }}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50 hover:text-amber-800 transition-colors text-left cursor-pointer"
-          >
-            <CalendarClock className="size-3.5 text-amber-500" />
-            <span>Request Reschedule</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
               setCancelOpen(true)
             }}
             className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 transition-colors text-left cursor-pointer"
@@ -168,34 +132,6 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
           </button>
         </div>
       )}
-
-      <RescheduleRequestModal
-        isOpen={rescheduleOpen}
-        onClose={() => setRescheduleOpen(false)}
-        sessionId={session.id}
-        sessionTitle={sessionTitle}
-        currentDate={session.date || session.formattedDate}
-        currentTime={session.startTime || session.time}
-        teacherId={session.teacherId}
-        teacherName={session.teacherName}
-        studentId={session.studentId}
-        studentName={session.studentName}
-      />
-
-      <BookSessionModal
-        isOpen={bookOpen}
-        onClose={() => setBookOpen(false)}
-        sessionId={session.id}
-        sessionTitle={sessionTitle}
-      />
-
-      <ChangeSessionStatusModal
-        isOpen={statusOpen}
-        onClose={() => setStatusOpen(false)}
-        sessionId={session.id}
-        currentStatus={session.status || session.sessionStatus || "Upcoming"}
-        sessionTitle={sessionTitle}
-      />
 
       <CancelSessionModal
         isOpen={cancelOpen}

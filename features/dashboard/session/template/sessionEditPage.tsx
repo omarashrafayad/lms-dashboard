@@ -5,29 +5,56 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ChevronLeft, Loader2, Save } from "lucide-react"
+import { ChevronLeft, ArrowRight, ArrowLeft, Loader2, Save } from "lucide-react"
 import { toast } from "sonner"
 import { Form } from "@/components/ui/form"
-import { UniInput } from "@/components/shared/UniInput"
-import { UniSelect } from "@/components/shared/UniSelect"
+import { getErrorMessage } from "@/components/shared/globalErrorMessage"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
-import { getErrorMessage } from "@/components/shared/globalErrorMessage"
+
+import { ScheduleSessionStepper } from "../components/schedule/ScheduleSessionStepper"
 import {
   updateSessionSchema,
   UpdateSessionFormData,
+  isTimeInFuture,
 } from "../schema/session.schema"
-import { useSessionDetail, useUpdateSession } from "../hooks/useSessions"
+import {
+  useSessionDetail,
+  useUpdateSession,
+  useTeacherSlots,
+} from "../hooks/useSessions"
+import { useStudents } from "@/features/dashboard/student/hooks/useStudents"
 import {
   useTeachers,
   useTeacherSubjects,
 } from "@/features/dashboard/teacher/hooks/useTeachers"
 import { useCourses } from "@/features/dashboard/course/hooks/useCourses"
 import { UpdateSessionPayload } from "../types/session.types"
+import { useDebounce } from "@/hooks/useDebounce"
+
+import { ScheduleStudentStep } from "../components/schedule/ScheduleStudentStep"
+import { ScheduleTeacherStep } from "../components/schedule/ScheduleTeacherStep"
+import { ScheduleDateTimeStep } from "../components/schedule/ScheduleDateTimeStep"
+import { ScheduleDetailsStep } from "../components/schedule/ScheduleDetailsStep"
 
 export interface SessionEditPageProps {
   sessionId: string
 }
+
+const STANDARD_TIME_SLOTS = [
+  "09:00 AM",
+  "10:00 AM",
+  "11:00 AM",
+  "12:00 PM",
+  "01:00 PM",
+  "02:00 PM",
+  "03:00 PM",
+  "04:00 PM",
+  "05:00 PM",
+  "06:00 PM",
+  "07:00 PM",
+  "08:00 PM",
+]
 
 const DURATION_OPTIONS = [
   { label: "30 min", value: "30" },
@@ -41,38 +68,81 @@ const SESSION_TYPE_OPTIONS = [
   { label: "Group", value: "Group" },
 ]
 
-const TARGET_TYPE_OPTIONS = [
-  { label: "Subject", value: "subject" },
-  { label: "Course", value: "course" },
-]
-
 export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
   const router = useRouter()
-  const { data: session, isLoading, isError } = useSessionDetail(sessionId)
+  const [currentStep, setCurrentStep] = React.useState(1)
+
+  const { data: session, isLoading: isSessionLoading, isError: isSessionError } =
+    useSessionDetail(sessionId)
   const updateMutation = useUpdateSession(sessionId)
 
-  const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers({ pageSize: 100 })
+  // Search filters
+  const [studentSearch, setStudentSearch] = React.useState("")
+  const [teacherSearch, setTeacherSearch] = React.useState("")
+  const debouncedStudentSearch = useDebounce(studentSearch, 400)
+  const debouncedTeacherSearch = useDebounce(teacherSearch, 400)
+
+  // Selected entities
+  const [selectedStudentObj, setSelectedStudentObj] = React.useState<any>(null)
+  const [selectedTeacherObj, setSelectedTeacherObj] = React.useState<any>(null)
+
+  // Queries for real entities via backend search
+  const {
+    data: studentsData,
+    isLoading: isLoadingStudents,
+    isError: isStudentsError,
+  } = useStudents({
+    page: 1,
+    pageSize: 10,
+    search: debouncedStudentSearch ? debouncedStudentSearch.trim() : undefined,
+  })
+  const students = Array.isArray(studentsData) ? studentsData : studentsData?.items || []
+
+  const {
+    data: teachersData,
+    isLoading: isLoadingTeachers,
+    isError: isTeachersError,
+  } = useTeachers({
+    page: 1,
+    pageSize: 10,
+    search: debouncedTeacherSearch ? debouncedTeacherSearch.trim() : undefined,
+  })
   const teachers = Array.isArray(teachersData) ? teachersData : teachersData?.items || []
-  const { data: subjects = [], isLoading: isLoadingSubjects } =
-    useTeacherSubjects()
-  const { data: coursesData, isLoading: isLoadingCourses } = useCourses({ pageSize: 100 })
+
+  const { data: subjects = [] } = useTeacherSubjects()
+  const { data: coursesData } = useCourses({ pageSize: 100 })
   const courses = Array.isArray(coursesData) ? coursesData : coursesData?.items || []
+
+  const todayFormatted = React.useMemo(() => {
+    return new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+    })
+  }, [])
 
   const form = useForm<UpdateSessionFormData>({
     resolver: zodResolver(updateSessionSchema) as any,
     mode: "all",
     defaultValues: {
+      title: "",
+      description: "",
+      studentId: "",
+      studentName: "",
       teacherId: "",
       teacherName: "",
-      date: "",
+      date: new Date().toISOString().split("T")[0],
       startTime: "",
-      durationMinutes: "60",
-      sessionType: "Private 1:1",
       targetType: "subject",
       subjectId: "",
       subjectName: "",
       courseId: "",
       courseName: "",
+      durationMinutes: "60",
+      sessionType: "Private 1:1",
+      maxStudents: 1,
+      meetingUrl: "",
+      isLive: false,
       notes: "",
       status: "Upcoming",
     },
@@ -81,22 +151,45 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
+    watch,
     reset,
+    trigger,
     formState: { isSubmitting },
   } = form
 
-  const selectedTargetType = watch("targetType")
+  const selectedStudentId = watch("studentId")
+  const selectedTeacherId = watch("teacherId")
+  const selectedDate = watch("date")
+  const selectedStartTime = watch("startTime")
+  const selectedTargetType = watch("targetType") || "subject"
 
+  // Prefill form from existing session
   React.useEffect(() => {
     if (session) {
       const isCourse = Boolean(session.courseId || session.courseName)
+      const rawDate = session.date || session.formattedDate || session.scheduledStart
+      let dateValue = new Date().toISOString().split("T")[0]
+      if (rawDate) {
+        try {
+          const d = new Date(rawDate)
+          if (!isNaN(d.getTime())) {
+            dateValue = d.toISOString().split("T")[0]
+          }
+        } catch {
+          // fallback
+        }
+      }
+
       reset({
+        title: session.title || "",
+        description: session.description || "",
+        studentId: session.studentId || session.student?.id || "",
+        studentName: session.studentName || session.student?.name || "",
         teacherId: session.teacherId || session.teacher?.id || "",
         teacherName: session.teacherName || session.teacher?.name || "",
-        date: session.date || session.formattedDate || "",
-        startTime: session.startTime || session.time || "",
+        date: dateValue,
+        startTime: session.startTime || session.time || "10:00 AM",
         durationMinutes: String(session.durationMinutes || "60"),
         sessionType: session.sessionType || "Private 1:1",
         targetType: isCourse ? "course" : "subject",
@@ -104,24 +197,59 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
         subjectName: session.subjectName || session.subject || "",
         courseId: session.courseId || "",
         courseName: session.courseName || "",
+        maxStudents: session.maxStudents || 1,
+        meetingUrl: session.meetingUrl || "",
+        isLive: Boolean(session.isLive),
         notes: session.notes || "",
         status: session.status || session.sessionStatus || "Upcoming",
       })
+
+      if (session.student || session.studentName || session.studentId) {
+        setSelectedStudentObj({
+          id: session.studentId || session.student?.id,
+          fullName: session.studentName || session.student?.name,
+          academicStage: session.student?.academicStage || session.educationStage,
+          grade: session.student?.academicYear || session.academicStage,
+        })
+      }
+
+      if (session.teacher || session.teacherName || session.teacherId) {
+        setSelectedTeacherObj({
+          id: session.teacherId || session.teacher?.id,
+          fullName: session.teacherName || session.teacher?.name,
+          subject: session.teacherSubject || session.teacher?.subject || session.subject,
+          isAvailable: session.isTeacherAvailable ?? session.teacher?.isAvailable ?? true,
+        })
+      }
     }
   }, [session, reset])
 
-  const teacherOptions = React.useMemo(() => {
-    return teachers.map((t) => ({
-      label: t.fullName || t.email,
-      value: t.id,
+  // Teacher slots query
+  const { data: teacherSlots } = useTeacherSlots(
+    selectedTeacherId || "",
+    { enabled: Boolean(selectedTeacherId) }
+  )
+
+  // Computed slots for step 3
+  const computedSlots = React.useMemo(() => {
+    if (teacherSlots && teacherSlots.length > 0) {
+      return teacherSlots.map((slot) => {
+        const time = slot.startTime || slot.time || "10:00 AM"
+        return {
+          time,
+          available: slot.isAvailable !== false,
+        }
+      })
+    }
+
+    return STANDARD_TIME_SLOTS.map((time) => ({
+      time,
+      available: true,
     }))
-  }, [teachers])
+  }, [teacherSlots])
 
   const subjectOptions = React.useMemo(() => {
-    return subjects.map((s) => ({
-      label: s.name,
-      value: s.id,
-    }))
+    return subjects.map((s) => ({ label: s.name, value: s.id }))
   }, [subjects])
 
   const courseOptions = React.useMemo(() => {
@@ -131,37 +259,90 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
     }))
   }, [courses])
 
+  // Navigation handlers
+  const handleNext = async () => {
+    if (currentStep === 1) {
+      if (!selectedStudentId) {
+        toast.error("Please select a student from the list.")
+        return
+      }
+      setCurrentStep(2)
+      return
+    }
+
+    if (currentStep === 2) {
+      if (!selectedTeacherId) {
+        toast.error("Please select a teacher from the list.")
+        return
+      }
+      setCurrentStep(3)
+      return
+    }
+
+    if (currentStep === 3) {
+      if (!selectedStartTime) {
+        toast.error("Please select a time slot.")
+        return
+      }
+      setCurrentStep(4)
+      return
+    }
+  }
+
+  const handleBack = () => {
+    setCurrentStep((prev) => Math.max(1, prev - 1))
+  }
+
   const onSubmit = async (data: UpdateSessionFormData) => {
     try {
+      const parsedDate = data.date ? new Date(data.date).toISOString() : new Date().toISOString()
+
       const payload: UpdateSessionPayload = {
-        teacherId: data.teacherId,
-        teacherName:
-          teachers.find((t) => t.id === data.teacherId)?.fullName ||
-          data.teacherName,
-        date: data.date,
+        title:
+          data.title ||
+          session?.title ||
+          `Session: ${selectedTeacherObj?.fullName || data.teacherName || "Teacher"} with ${selectedStudentObj?.fullName || data.studentName || "Student"}`,
+        description: data.description || "",
+        teacherId: data.teacherId || selectedTeacherObj?.id,
+        teacherName: selectedTeacherObj?.fullName || data.teacherName,
+        studentId: data.studentId || selectedStudentObj?.id,
+        studentName: selectedStudentObj?.fullName || data.studentName,
+        date: parsedDate,
         startTime: data.startTime,
-        durationMinutes: Number(data.durationMinutes),
-        sessionType: data.sessionType,
+        durationMinutes: Number(data.durationMinutes) || 60,
+        sessionType: data.sessionType || "Private 1:1",
+        availableTimeSlot: data.startTime,
+        timeSlot: data.startTime,
+        maxStudents: Number(data.maxStudents) || 1,
+        meetingUrl: data.meetingUrl || "",
+        isLive: Boolean(data.isLive),
         notes: data.notes || "",
-        status: data.status,
+        status: data.status || "Upcoming",
       }
 
       if (data.targetType === "subject") {
         payload.subjectId = data.subjectId
-        payload.subjectName =
-          subjects.find((s) => s.id === data.subjectId)?.name || data.subjectName
+        const foundSub = subjects.find((s) => s.id === data.subjectId)
+        payload.subjectName = foundSub?.name || data.subjectName || ""
+        payload.courseId = undefined
+        payload.courseName = undefined
       } else {
         payload.courseId = data.courseId
         const foundCourse = courses.find((c) => c.id === data.courseId)
         payload.courseName =
-          foundCourse?.title || foundCourse?.name || data.courseName
+          foundCourse?.title || foundCourse?.name || data.courseName || ""
+        payload.subjectId = undefined
+        payload.subjectName = undefined
       }
 
-      await updateMutation.mutateAsync({
-        sessionId,
-        data: payload,
-      })
+      if (selectedStudentObj?.educationStage) {
+        payload.educationStage = selectedStudentObj.educationStage
+      }
+      if (selectedStudentObj?.grade) {
+        payload.academicStage = selectedStudentObj.grade
+      }
 
+      await updateMutation.mutateAsync({ sessionId, data: payload })
       toast.success("Session updated successfully!")
       router.push(`/sessions/${sessionId}`)
     } catch (err: unknown) {
@@ -169,15 +350,15 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
     }
   }
 
-  if (isLoading) {
+  if (isSessionLoading) {
     return (
       <div className="flex-1 p-8">
-        <LoadingSpinner title="loading session details" />
+        <LoadingSpinner title="Loading session data..." />
       </div>
     )
   }
 
-  if (isError || !session) {
+  if (isSessionError || !session) {
     return (
       <div className="flex-1 p-8">
         <GlobalError />
@@ -192,176 +373,150 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
       <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1300px] w-full mx-auto pb-24 animate-in fade-in duration-200">
         <div>
           <Link
-            href="/sessions"
+            href={`/sessions/${sessionId}`}
             className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 transition-colors cursor-pointer"
           >
             <ChevronLeft className="size-4 text-zinc-500" />
-            <span>Back to All Sessions</span>
+            <span>Back to Session Details</span>
           </Link>
         </div>
 
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
-            Edit Session
+            Edit Session #{session.sessionNumber || sessionId.slice(0, 8)}
           </h1>
-          <p className="text-xs text-zinc-500 font-normal">
-            Session {session.sessionNumber || session.sessionId || `#${sessionId}`}
+          <p className="text-xs text-zinc-500">
+            Update participant assignments, scheduled timing, or session details.
           </p>
         </div>
 
+        {/* Stepper identical to Add */}
+        <ScheduleSessionStepper
+          currentStep={currentStep}
+          onStepClick={(step) => {
+            setCurrentStep(step)
+          }}
+        />
+
         <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
-            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-8 flex flex-col gap-6">
-              {/* Teacher Select */}
-              <UniSelect
-                control={control as any}
-                name="teacherId"
-                label="Teacher"
-                placeholder={isLoadingTeachers ? "Loading..." : "Select teacher"}
-                options={teacherOptions}
-                isLoading={isLoadingTeachers}
-                required
-                labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
-                onChangeCallback={(val) => {
-                  const found = teachers.find((t) => t.id === val)
-                  if (found) setValue("teacherName", found.fullName)
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+            {/* Step 1: Select Student */}
+            {currentStep === 1 && (
+              <ScheduleStudentStep
+                selectedStudent={selectedStudentObj}
+                onSelectStudent={(student) => {
+                  setSelectedStudentObj(student)
+                  setValue("studentId", student.id, { shouldValidate: true })
+                  setValue("studentName", student.fullName || student.name || "")
                 }}
+                onClearStudent={() => {
+                  setSelectedStudentObj(null)
+                  setValue("studentId", "", { shouldValidate: true })
+                  setValue("studentName", "")
+                }}
+                students={students}
+                isLoadingStudents={isLoadingStudents}
+                isErrorStudents={isStudentsError}
+                search={studentSearch}
+                onSearchChange={setStudentSearch}
               />
+            )}
 
-              {/* Target Type & Dependent Selector */}
-              <div className="space-y-4 p-4 rounded-xl border border-zinc-100 bg-zinc-50/50">
-                <UniSelect
-                  control={control as any}
-                  name="targetType"
-                  label="Curriculum Target (Course or Subject)"
-                  options={TARGET_TYPE_OPTIONS}
-                  required
-                  labelClassName="text-xs font-bold text-zinc-700 uppercase tracking-wider"
-                  onChangeCallback={(val) => {
-                    if (val === "subject") {
-                      setValue("courseId", "")
-                      setValue("courseName", "")
-                    } else {
-                      setValue("subjectId", "")
-                      setValue("subjectName", "")
-                    }
-                  }}
-                />
+            {/* Step 2: Select Teacher */}
+            {currentStep === 2 && (
+              <ScheduleTeacherStep
+                selectedTeacher={selectedTeacherObj}
+                onSelectTeacher={(teacher) => {
+                  setSelectedTeacherObj(teacher)
+                  setValue("teacherId", teacher.id, { shouldValidate: true })
+                  setValue("teacherName", teacher.fullName || teacher.name || "")
+                }}
+                onClearTeacher={() => {
+                  setSelectedTeacherObj(null)
+                  setValue("teacherId", "", { shouldValidate: true })
+                  setValue("teacherName", "")
+                }}
+                teachers={teachers}
+                isLoadingTeachers={isLoadingTeachers}
+                isErrorTeachers={isTeachersError}
+                search={teacherSearch}
+                onSearchChange={setTeacherSearch}
+              />
+            )}
 
-                {selectedTargetType === "subject" ? (
-                  <UniSelect
-                    control={control as any}
-                    name="subjectId"
-                    label="Select Subject"
-                    placeholder={
-                      isLoadingSubjects
-                        ? "Loading subjects..."
-                        : "Choose a subject"
-                    }
-                    options={subjectOptions}
-                    isLoading={isLoadingSubjects}
-                    required
-                    labelClassName="text-xs font-bold text-zinc-700 uppercase tracking-wider"
-                    onChangeCallback={(val) => {
-                      const found = subjects.find((s) => s.id === val)
-                      if (found) setValue("subjectName", found.name)
-                    }}
-                  />
-                ) : (
-                  <UniSelect
-                    control={control as any}
-                    name="courseId"
-                    label="Select Course"
-                    placeholder={
-                      isLoadingCourses ? "Loading courses..." : "Choose a course"
-                    }
-                    options={courseOptions}
-                    isLoading={isLoadingCourses}
-                    required
-                    labelClassName="text-xs font-bold text-zinc-700 uppercase tracking-wider"
-                    onChangeCallback={(val) => {
-                      const found = courses.find((c) => c.id === val)
-                      if (found)
-                        setValue("courseName", found.title || found.name || "")
-                    }}
-                  />
-                )}
-              </div>
+            {/* Step 3: Select Date & Time */}
+            {currentStep === 3 && (
+              <ScheduleDateTimeStep
+                selectedDate={selectedDate || new Date().toISOString().split("T")[0]}
+                onDateChange={(date) => setValue("date", date, { shouldValidate: true })}
+                selectedTime={selectedStartTime || "10:00 AM"}
+                onTimeChange={(time) => setValue("startTime", time, { shouldValidate: true })}
+                computedSlots={computedSlots}
+                todayFormatted={todayFormatted}
+                selectedTeacherName={selectedTeacherObj?.fullName}
+              />
+            )}
 
-              {/* Date & Start Time */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <UniInput
-                  control={control as any}
-                  name="date"
-                  label="Date"
-                  placeholder="e.g. Sep 23, 2026"
-                  labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
-                  inputClassName="h-10 text-xs rounded-xl"
-                />
-
-                <UniInput
-                  control={control as any}
-                  name="startTime"
-                  label="Start Time"
-                  placeholder="e.g. 11:00 AM"
-                  labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
-                  inputClassName="h-10 text-xs rounded-xl"
-                />
-              </div>
-
-              {/* Duration & Session Type */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <UniSelect
-                  control={control as any}
-                  name="durationMinutes"
-                  label="Duration"
-                  options={DURATION_OPTIONS}
-                  required
-                  labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
-                />
-
-                <UniSelect
-                  control={control as any}
-                  name="sessionType"
-                  label="Session Type"
-                  options={SESSION_TYPE_OPTIONS}
-                  required
-                  labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
-                />
-              </div>
-
-              {/* Notes */}
-              <UniInput
+            {/* Step 4: Session Details */}
+            {currentStep === 4 && (
+              <ScheduleDetailsStep
                 control={control as any}
-                name="notes"
-                label="Notes"
-                placeholder="Add any notes for this session."
-                labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
-                inputClassName="h-10 text-xs rounded-xl"
+                selectedDate={selectedDate || "Today"}
+                selectedTime={selectedStartTime || "10:00 AM"}
+                targetType={selectedTargetType}
+                onTargetTypeChange={(type) => setValue("targetType", type, { shouldValidate: true })}
+                subjectOptions={subjectOptions}
+                courseOptions={courseOptions}
+                sessionTypeOptions={SESSION_TYPE_OPTIONS}
+                durationOptions={DURATION_OPTIONS}
               />
-            </div>
+            )}
 
-            {/* Actions */}
+            {/* Stepper Footer Navigation */}
             <div className="flex items-center justify-between pt-2">
               <Link
                 href={`/sessions/${sessionId}`}
-                className="h-10 px-5 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
+                className="h-9 px-4 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-600 hover:bg-zinc-50 transition-colors flex items-center justify-center cursor-pointer"
               >
                 Cancel
               </Link>
 
-              <button
-                type="submit"
-                disabled={isFormLoading}
-                className="h-10 px-6 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-50"
-              >
-                {isFormLoading ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Save className="size-3.5" />
+              <div className="flex items-center gap-3">
+                {currentStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="h-9 px-4 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowLeft className="size-3.5" />
+                    <span>Back</span>
+                  </button>
                 )}
-                <span>Save Changes</span>
-              </button>
+
+                {currentStep < 4 ? (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="h-9 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+                  >
+                    <span>Continue</span>
+                    <ArrowRight className="size-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={isFormLoading}
+                    className="h-9 px-6 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {isFormLoading ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Save className="size-3.5" />
+                    )}
+                    <span>Save Changes</span>
+                  </button>
+                )}
+              </div>
             </div>
           </form>
         </Form>

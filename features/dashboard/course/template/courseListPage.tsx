@@ -50,14 +50,6 @@ export default function CourseListPage() {
   const totalCount = response?.totalCount ?? 0
   const totalPages = response?.totalPages ?? 1
 
-  const publishedCount = courses.filter(
-    (c) => c.status?.toLowerCase() === "published" || c.status?.toLowerCase() === "active"
-  ).length
-  const draftCount = courses.filter((c) => c.status?.toLowerCase() === "draft").length
-  const archivedCount = courses.filter(
-    (c) => c.status?.toLowerCase() === "archived" || c.status?.toLowerCase() === "inactive"
-  ).length
-
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
@@ -83,9 +75,9 @@ export default function CourseListPage() {
 
         <CourseMetricsCards
           total={totalCount}
-          published={publishedCount}
-          draft={draftCount}
-          archived={archivedCount}
+          published="0"
+          draft="0"
+          archived="0"
         />
 
         <CourseFilters

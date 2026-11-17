@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { createPortal } from "react-dom"
-import { MoreVertical, Eye, Pencil, Copy, Trash2, Loader2 } from "lucide-react"
+import { MoreVertical, Eye, Trash2, Loader2 } from "lucide-react"
 import { ApiExam } from "../../types/exam.types"
 import { useDeleteExam, useDuplicateExam } from "../../hooks/useExams"
 import { toast } from "sonner"
@@ -79,16 +79,6 @@ export function ExamRowActions({ exam, onEdit }: ExamRowActionsProps) {
     }
   }
 
-  const handleDuplicate = async () => {
-    setIsOpen(false)
-    try {
-      await duplicateExamMutation.mutateAsync(exam.id)
-      toast.success(`Exam "${exam.title}" duplicated successfully`)
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err))
-    }
-  }
-
   const isPending =
     deleteExamMutation.isPending || duplicateExamMutation.isPending
 
@@ -129,48 +119,6 @@ export function ExamRowActions({ exam, onEdit }: ExamRowActionsProps) {
               <Eye className="size-3.5 text-zinc-400" />
               <span>View Details</span>
             </Link>
-
-            <Link
-              href={`/academic/exams/${exam.slug || exam.id}/preview`}
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 transition-colors cursor-pointer"
-            >
-              <Eye className="size-3.5 text-zinc-400" />
-              <span>Student Preview</span>
-            </Link>
-
-            {onEdit ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOpen(false)
-                  onEdit(exam)
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 transition-colors text-left cursor-pointer"
-              >
-                <Pencil className="size-3.5 text-zinc-400" />
-                <span>Edit Exam</span>
-              </button>
-            ) : (
-              <Link
-                href={`/academic/exams/${exam.id}/edit`}
-                onClick={() => setIsOpen(false)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 transition-colors text-left cursor-pointer"
-              >
-                <Pencil className="size-3.5 text-zinc-400" />
-                <span>Edit Exam</span>
-              </Link>
-            )}
-
-            <button
-              type="button"
-              onClick={handleDuplicate}
-              disabled={isPending}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 transition-colors text-left cursor-pointer disabled:opacity-50"
-            >
-              <Copy className="size-3.5 text-zinc-400" />
-              <span>Duplicate</span>
-            </button>
 
             <div className="my-1 border-t border-zinc-100" />
 

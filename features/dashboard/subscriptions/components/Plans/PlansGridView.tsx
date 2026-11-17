@@ -220,7 +220,7 @@ export function PlansGridView({
                 {/* Features List */}
                 <div className="mt-4 pt-3 border-t border-zinc-100 flex flex-col gap-2">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                    What's Included:
+                    What is Included:
                   </span>
                   {features.map((feature, idx) => (
                     <div

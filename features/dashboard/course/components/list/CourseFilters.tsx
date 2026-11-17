@@ -4,6 +4,7 @@ import * as React from "react"
 import { Search, SlidersHorizontal, RotateCcw } from "lucide-react"
 import { FilterDropdown, FilterOption } from "@/components/shared/FilterDropdown"
 import { CourseFilterState } from "../../types/course.types"
+import { useTeachingLevels } from "@/features/dashboard/reference-data/hooks/useReferenceData"
 
 export interface CourseFiltersProps {
   filters: CourseFilterState
@@ -13,6 +14,8 @@ export interface CourseFiltersProps {
 
 export function CourseFilters({ filters, onChange, onReset }: CourseFiltersProps) {
   const [openDropdown, setOpenDropdown] = React.useState<string | null>(null)
+  const { data: teachingLevelsData } = useTeachingLevels()
+  const teachingLevels = Array.isArray(teachingLevelsData) ? teachingLevelsData : []
 
   const categoryOptions: FilterOption[] = [
     { label: "All Categories", value: "all" },
@@ -24,12 +27,25 @@ export function CourseFilters({ filters, onChange, onReset }: CourseFiltersProps
     { label: "Humanities", value: "Humanities" },
   ]
 
-  const levelOptions: FilterOption[] = [
-    { label: "All Levels", value: "all" },
-    { label: "Beginner", value: "Beginner" },
-    { label: "Intermediate", value: "Intermediate" },
-    { label: "Advanced", value: "Advanced" },
-  ]
+  const levelOptions: FilterOption[] = React.useMemo(() => {
+    const dynamicOptions = teachingLevels
+      .filter((lvl) => lvl.isActive !== false)
+      .map((lvl) => ({
+        label: lvl.name,
+        value: lvl.name,
+      }))
+
+    if (dynamicOptions.length > 0) {
+      return [{ label: "All Levels", value: "all" }, ...dynamicOptions]
+    }
+
+    return [
+      { label: "All Levels", value: "all" },
+      { label: "Beginner", value: "Beginner" },
+      { label: "Intermediate", value: "Intermediate" },
+      { label: "Advanced", value: "Advanced" },
+    ]
+  }, [teachingLevels])
 
   const statusOptions: FilterOption[] = [
     { label: "All Statuses", value: "all" },

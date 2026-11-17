@@ -29,11 +29,14 @@ export interface TeacherSlotItem {
 
 export interface SessionItem {
   id: string
+  title?: string
+  description?: string
   sessionId?: string
   sessionCode?: string
   sessionNumber?: string
   formattedSessionId?: string
   sessionType: string
+  maxStudents?: number
   studentId?: string
   studentName?: string
   studentGrade?: string
@@ -181,18 +184,29 @@ export interface ScheduleSessionPayload {
 }
 
 export interface UpdateSessionPayload {
+  title?: string
   teacherId?: string
   teacherName?: string
+  scheduledStart?: string
+  scheduledEnd?: string
+  description?: string
+  courseId?: string
+  courseName?: string
+  subjectId?: string
+  subjectName?: string
+  educationStage?: string
+  academicStage?: string
+  maxStudents?: number
+  meetingUrl?: string
+  isLive?: boolean
+  studentId?: string
+  studentName?: string
   date?: string
   startTime?: string
   durationMinutes?: number
   sessionType?: string
-  subjectId?: string
-  subjectName?: string
-  courseId?: string
-  courseName?: string
-  educationStage?: string
-  academicStage?: string
+  availableTimeSlot?: string
+  timeSlot?: string
   notes?: string
   status?: string
   sessionStatus?: string

@@ -13,7 +13,6 @@ export const SCHEDULE_STEPS: ScheduleStepItem[] = [
   { id: 2, title: "Select Teacher" },
   { id: 3, title: "Select Date & Time" },
   { id: 4, title: "Session Details" },
-  { id: 5, title: "Review" },
 ]
 
 export interface ScheduleSessionStepperProps {

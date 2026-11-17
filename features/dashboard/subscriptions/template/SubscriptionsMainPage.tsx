@@ -56,7 +56,6 @@ interface SubscriptionsMainPageProps {
 export function SubscriptionsMainPage({
   initialTab = "overview",
 }: SubscriptionsMainPageProps) {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab") as SubscriptionsTabKey | null
 

@@ -5,16 +5,16 @@ import { BookOpen, CheckCircle2, FileEdit, Archive } from "lucide-react"
 
 export interface CourseMetricsCardsProps {
   total: number
-  published: number
-  draft: number
-  archived: number
+  published: string
+  draft: string
+  archived: string
 }
 
 export function CourseMetricsCards({
   total = 8,
-  published = 5,
-  draft = 2,
-  archived = 1,
+  published = "5",
+  draft = "2",
+  archived = "1",
 }: CourseMetricsCardsProps) {
   const cards = [
     {

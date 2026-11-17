@@ -5,7 +5,6 @@ import Link from "next/link"
 import { Plus } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { SessionMetricsCards } from "../components/list/SessionMetricsCards"
-import { SessionStatusTabs } from "../components/list/SessionStatusTabs"
 import { SessionFilters } from "../components/list/SessionFilters"
 import { SessionTable } from "../components/list/SessionTable"
 import { useSessions } from "../hooks/useSessions"
@@ -59,7 +58,6 @@ export default function SessionListPage() {
   const totalCount = response?.totalCount ?? 0
   const totalPages = response?.totalPages ?? 1
 
-  // Calculate metrics based on total data
   const upcomingCount = sessions.filter(
     (s) => (s.status || s.sessionStatus) === "Upcoming"
   ).length

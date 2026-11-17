@@ -2,9 +2,12 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { SessionItem, SessionStatus, PaymentStatus } from "../../types/session.types"
+import UniTable, { type UniTableColumn } from "@/components/shared/uniTable"
+import { SessionItem } from "../../types/session.types"
 import { SessionRowActions } from "./SessionRowActions"
-import { Pagination } from "@/components/shared/Pagination"
+import LoadingSpinner from "@/components/shared/LoadingSpinner"
+import EmptyState from "@/components/shared/EmptyState"
+import { Calendar, Video } from "lucide-react"
 
 export interface SessionTableProps {
   sessions: SessionItem[]
@@ -20,6 +23,62 @@ export interface SessionTableProps {
   pageSize?: number
 }
 
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case "In Progress":
+      return {
+        badge: "bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]",
+        dot: "bg-[#D97706]",
+      }
+    case "Upcoming":
+    case "Scheduled":
+      return {
+        badge: "bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]",
+        dot: "bg-[#0284C7]",
+      }
+    case "Completed":
+      return {
+        badge: "bg-[#DCFCE7] text-[#16A34A] border-[#BBF7D0]",
+        dot: "bg-[#16A34A]",
+      }
+    case "Missed":
+      return {
+        badge: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
+        dot: "bg-[#DC2626]",
+      }
+    case "Cancelled":
+      return {
+        badge: "bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]",
+        dot: "bg-[#64748B]",
+      }
+    default:
+      return {
+        badge: "bg-zinc-100 text-zinc-700 border-zinc-200",
+        dot: "bg-zinc-400",
+      }
+  }
+}
+
+const getPaymentBadge = (payment: string) => {
+  switch (payment) {
+    case "Paid":
+      return {
+        badge: "bg-[#DCFCE7] text-[#16A34A] border-[#BBF7D0]",
+        dot: "bg-[#16A34A]",
+      }
+    case "Refunded":
+      return {
+        badge: "bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]",
+        dot: "bg-[#0284C7]",
+      }
+    default:
+      return {
+        badge: "bg-zinc-100 text-zinc-700 border-zinc-200",
+        dot: "bg-zinc-400",
+      }
+  }
+}
+
 export function SessionTable({
   sessions,
   isLoading = false,
@@ -28,209 +87,176 @@ export function SessionTable({
 }: SessionTableProps) {
   const router = useRouter()
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "In Progress":
-        return {
-          badge: "bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]",
-          dot: "bg-[#D97706]",
-        }
-      case "Upcoming":
-        return {
-          badge: "bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]",
-          dot: "bg-[#0284C7]",
-        }
-      case "Completed":
-        return {
-          badge: "bg-[#DCFCE7] text-[#16A34A] border-[#BBF7D0]",
-          dot: "bg-[#16A34A]",
-        }
-      case "Missed":
-        return {
-          badge: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
-          dot: "bg-[#DC2626]",
-        }
-      case "Cancelled":
-        return {
-          badge: "bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]",
-          dot: "bg-[#64748B]",
-        }
-      default:
-        return {
-          badge: "bg-zinc-100 text-zinc-700 border-zinc-200",
-          dot: "bg-zinc-400",
-        }
-    }
-  }
+  const columns: UniTableColumn<SessionItem>[] = React.useMemo(
+    () => [
+      {
+        id: "session",
+        header: "SESSION",
+        cell: (_val, item) => {
+          const sessionCode =
+            item.sessionNumber ||
+            item.sessionId ||
+            item.sessionCode ||
+            `#${item.id.slice(0, 6)}`
+          return (
+            <button
+              type="button"
+              onClick={() => router.push(`/sessions/${item.id}`)}
+              className="flex flex-col gap-0.5 text-left cursor-pointer group"
+            >
+              <span className="font-bold text-zinc-900 group-hover:text-amber-700 transition-colors">
+                Session {sessionCode}
+              </span>
+              <span className="text-[11px] text-zinc-400 font-normal">
+                {item.sessionType || "Private 1:1"}
+              </span>
+            </button>
+          )
+        },
+      },
+      {
+        id: "student",
+        header: "STUDENT",
+        cell: (_val, item) => (
+          <div className="flex flex-col gap-0.5">
+            <span className="font-semibold text-zinc-900">
+              {item.studentName || item.student?.name || "Student"}
+            </span>
+            <span className="text-[11px] text-zinc-400 font-normal">
+              {item.studentGrade ||
+                item.student?.academicYear ||
+                item.educationStage ||
+                "Grade 10"}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "teacher",
+        header: "TEACHER",
+        cell: (_val, item) => (
+          <div className="flex flex-col gap-0.5">
+            <span className="font-semibold text-zinc-900">
+              {item.teacherName || item.teacher?.name || "Teacher"}
+            </span>
+            <span className="text-[11px] text-zinc-400 font-normal">
+              {item.teacherSubject || item.teacher?.subject || "Instructor"}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "subjectOrCourse",
+        header: "SUBJECT / COURSE",
+        cell: (_val, item) => (
+          <span className="font-medium text-zinc-800">
+            {item.subject ||
+              item.subjectOrCourse ||
+              item.courseName ||
+              item.subjectName ||
+              "General"}
+          </span>
+        ),
+      },
+      {
+        id: "dateTime",
+        header: "DATE & TIME",
+        cell: (_val, item) => {
+          const date =
+            item.date ||
+            item.formattedDate ||
+            (item.formattedDateTime ? item.formattedDateTime.split(" ")[0] : null) ||
+            "Today"
+          const time = item.startTime || item.time || "10:00 AM"
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span className="font-medium text-zinc-900">{date}</span>
+              <span className="text-[11px] text-zinc-400 font-normal">{time}</span>
+            </div>
+          )
+        },
+      },
+      {
+        id: "duration",
+        header: "DURATION",
+        cell: (_val, item) => (
+          <span className="font-medium text-zinc-700">
+            {item.duration ||
+              (item.durationMinutes ? `${item.durationMinutes} min` : "60 min")}
+          </span>
+        ),
+      },
+      {
+        id: "status",
+        header: "SESSION STATUS",
+        cell: (_val, item) => {
+          const status = item.status || item.sessionStatus || "Upcoming"
+          const sStyle = getStatusBadge(status)
+          return (
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${sStyle.badge} shadow-2xs`}
+            >
+              <span className={`size-1.5 rounded-full ${sStyle.dot}`} />
+              {status}
+            </span>
+          )
+        },
+      },
+      {
+        id: "payment",
+        header: "PAYMENT",
+        cell: (_val, item) => {
+          const payment =
+            item.paymentStatus || item.payment || (item.isPaid ? "Paid" : "Unpaid")
+          const pStyle = getPaymentBadge(payment)
+          return (
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${pStyle.badge} shadow-2xs`}
+            >
+              <span className={`size-1.5 rounded-full ${pStyle.dot}`} />
+              {payment}
+            </span>
+          )
+        },
+      },
+      {
+        id: "actions",
+        header: "",
+        className: "text-right",
+        cell: (_val, item) => (
+          <div onClick={(e) => e.stopPropagation()} className="flex justify-end">
+            <SessionRowActions session={item} />
+          </div>
+        ),
+      },
+    ],
+    []
+  )
 
-  const getPaymentBadge = (payment: string) => {
-    switch (payment) {
-      case "Paid":
-        return {
-          badge: "bg-[#DCFCE7] text-[#16A34A] border-[#BBF7D0]",
-          dot: "bg-[#16A34A]",
-        }
-      case "Refunded":
-        return {
-          badge: "bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]",
-          dot: "bg-[#0284C7]",
-        }
-      default:
-        return {
-          badge: "bg-zinc-100 text-zinc-700 border-zinc-200",
-          dot: "bg-zinc-400",
-        }
-    }
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs p-12">
+        <LoadingSpinner title="Loading sessions..." />
+      </div>
+    )
   }
 
   return (
     <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-2xs overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-zinc-200/80 text-[11px] font-bold text-zinc-400 tracking-wider uppercase bg-zinc-50/50">
-              <th className="py-3.5 px-4 font-semibold">SESSION</th>
-              <th className="py-3.5 px-4 font-semibold">STUDENT</th>
-              <th className="py-3.5 px-4 font-semibold">TEACHER</th>
-              <th className="py-3.5 px-4 font-semibold">SUBJECT / COURSE</th>
-              <th className="py-3.5 px-4 font-semibold">DATE & TIME</th>
-              <th className="py-3.5 px-4 font-semibold">DURATION</th>
-              <th className="py-3.5 px-4 font-semibold">SESSION STATUS</th>
-              <th className="py-3.5 px-4 font-semibold">PAYMENT</th>
-              <th className="py-3.5 px-4 text-right font-semibold"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100">
-            {isLoading ? (
-              <tr>
-                <td colSpan={9} className="py-12 text-center text-zinc-400">
-                  Loading sessions...
-                </td>
-              </tr>
-            ) : sessions.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="py-12 text-center text-zinc-400">
-                  No sessions found matching your criteria.
-                </td>
-              </tr>
-            ) : (
-              sessions.map((session) => {
-                const currentStatus = session.status || session.sessionStatus || "Upcoming"
-                const currentPayment = session.paymentStatus || session.payment || (session.isPaid ? "Paid" : "Unpaid")
-
-                const statusStyle = getStatusBadge(currentStatus)
-                const paymentStyle = getPaymentBadge(currentPayment)
-
-                const sessionTitle = session.sessionNumber
-                  ? (session.sessionNumber.startsWith("Session") ? session.sessionNumber : `Session #${session.sessionNumber}`)
-                  : (session.sessionCode || session.sessionId || `#${session.id.slice(0, 6)}`)
-
-                const subjectText = session.subject || session.subjectOrCourse || session.courseName || session.subjectName || "—"
-                const dateText = session.date || session.formattedDateTime || session.dateAndTime || "—"
-                const timeText = session.time || session.startTime || ""
-                const durationText = session.duration || (session.durationMinutes ? `${session.durationMinutes} min` : "—")
-
-                return (
-                  <tr
-                    key={session.id}
-                    onClick={() => router.push(`/sessions/${session.id}`)}
-                    className="hover:bg-zinc-50/70 transition-colors cursor-pointer group"
-                  >
-                    {/* Session Column: Session #10484 + Private 1:1 */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-zinc-900 group-hover:text-amber-600 transition-colors">
-                          {sessionTitle}
-                        </span>
-                        <span className="text-[11px] text-zinc-400 font-normal">
-                          {session.sessionType || "Private 1:1"}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Student */}
-                    <td className="py-4 px-4 whitespace-nowrap font-medium text-zinc-900">
-                      {session.studentName || session.student?.name || "—"}
-                    </td>
-
-                    {/* Teacher */}
-                    <td className="py-4 px-4 whitespace-nowrap font-medium text-zinc-800">
-                      {session.teacherName || session.teacher?.name || "—"}
-                    </td>
-
-                    {/* Subject / Course */}
-                    <td className="py-4 px-4 whitespace-nowrap text-zinc-600">
-                      {subjectText}
-                    </td>
-
-                    {/* Date & Time */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-zinc-800">
-                          {dateText}
-                        </span>
-                        {timeText && (
-                          <span className="text-[11px] text-zinc-400 font-normal">
-                            {timeText}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Duration */}
-                    <td className="py-4 px-4 whitespace-nowrap text-zinc-600">
-                      {durationText}
-                    </td>
-
-                    {/* Session Status */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusStyle.badge}`}
-                      >
-                        <span className={`size-1.5 rounded-full ${statusStyle.dot}`} />
-                        {currentStatus}
-                      </span>
-                    </td>
-
-                    {/* Payment Status */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${paymentStyle.badge}`}
-                      >
-                        <span className={`size-1.5 rounded-full ${paymentStyle.dot}`} />
-                        {currentPayment}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td
-                      className="py-4 px-4 text-right whitespace-nowrap"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <SessionRowActions session={session} />
-                    </td>
-                  </tr>
-                )
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {serverPagination && (
-        <div className="border-t border-zinc-200/80 p-4">
-          <Pagination
-            currentPage={serverPagination.currentPage}
-            totalPages={serverPagination.totalPages}
-            totalItems={serverPagination.totalItems}
-            pageSize={pageSize}
-            onPageChange={serverPagination.onPageChange}
-            itemLabel="sessions"
-            pageSizeOptions={serverPagination.pageSizeOptions}
-            onPageSizeChange={serverPagination.onPageSizeChange}
+      <UniTable
+        data={sessions}
+        columns={columns}
+        serverPagination={serverPagination}
+        pageSize={pageSize}
+        itemLabel="sessions"
+        emptyMessage={
+          <EmptyState
+            icon={Calendar}
+            title="No sessions found"
+            description="No scheduled or past sessions match the selected filters."
           />
-        </div>
-      )}
+        }
+      />
     </div>
   )
 }

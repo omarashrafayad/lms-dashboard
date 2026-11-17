@@ -209,33 +209,6 @@ export function TransactionsTable({
               <FileText className="size-3.5 text-zinc-400" />
               <span>Invoice</span>
             </Button>
-
-            {/* Pending actions */}
-            {(t.status === "Pending" || t.status === "In Review") && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onApprove?.(t.id)}
-                  className="h-8 px-2.5 rounded-lg text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 gap-1 cursor-pointer font-medium"
-                >
-                  <CheckCircle2 className="size-3.5" />
-                  <span>Approve</span>
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onReject?.(t.id)}
-                  className="h-8 px-2.5 rounded-lg text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 cursor-pointer font-medium"
-                >
-                  <XCircle className="size-3.5" />
-                  <span>Reject</span>
-                </Button>
-              </>
-            )}
-
-            {/* Paid actions */}
             {t.status === "Paid" && (
               <>
                 <Button
@@ -246,21 +219,6 @@ export function TransactionsTable({
                 >
                   <RotateCcw className="size-3.5" />
                   <span>Refund</span>
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (confirm("Are you sure you want to mark this payment as Failed?")) {
-                      onMarkFailed?.(t.id)
-                    }
-                  }}
-                  className="h-8 px-2 rounded-lg text-xs text-zinc-400 hover:text-rose-600 hover:bg-rose-50 gap-1 cursor-pointer"
-                  title="Mark as Failed"
-                >
-                  <Ban className="size-3.5" />
-                  <span>Fail</span>
                 </Button>
               </>
             )}

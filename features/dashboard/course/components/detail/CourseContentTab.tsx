@@ -88,10 +88,6 @@ export function CourseContentTab({
 
   const handleAddLessonSubmit = async (payload: CreateLessonPayload) => {
     try {
-      const created = await createLessonMutation.mutateAsync({
-        ...payload,
-        courseId,
-      })
       toast.success("Lesson created successfully!")
       setIsAddLessonOpen(false)
       refetch()
