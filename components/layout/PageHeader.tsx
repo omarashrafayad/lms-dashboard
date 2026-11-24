@@ -7,6 +7,7 @@ import { Bell, ChevronDown, LogOut, Loader2, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { logoutAction } from "@/features/auth/api/auth"
+import { queryClient } from "@/app/providers"
 
 export interface PageHeaderProps {
   title: string
@@ -61,6 +62,7 @@ export function PageHeader({
       setIsLoggingOut(true)
       await logoutAction()
       useAuthStore.getState().logout()
+      queryClient.clear()
       setIsDropdownOpen(false)
       router.push("/login")
     } catch (error) {

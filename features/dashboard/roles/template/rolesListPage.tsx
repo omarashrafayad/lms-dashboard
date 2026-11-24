@@ -30,7 +30,8 @@ export default function RolesListPage() {
     isLoading: isLoadingPermissions,
     isError: isErrorPermissions,
   } = usePermissions()
-  const { data: myPermissions = [] } = useMyPermissions()
+  const { data: myPermissionsData } = useMyPermissions()
+  const myPermissions = Array.isArray(myPermissionsData) ? myPermissionsData : []
 
   const { mutateAsync: updatePermissions, isPending: isSaving } = useUpdateRolePermissions()
 

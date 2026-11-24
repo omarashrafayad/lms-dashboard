@@ -20,6 +20,7 @@ import { ChangeSessionStatusModal } from "../booking/ChangeSessionStatusModal"
 import { CancelSessionModal } from "../booking/CancelSessionModal"
 import { toast } from "sonner"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
+import { PermissionGate } from "@/components/shared/PermissionGate"
 
 export interface SessionRowActionsProps {
   session: SessionItem
@@ -83,53 +84,61 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
 
       {open && (
         <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl bg-white border border-zinc-200/80 shadow-lg py-1.5 z-40 animate-in fade-in zoom-in-95 duration-100">
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              router.push(`/sessions/${session.id}`)
-            }}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors text-left cursor-pointer"
-          >
-            <Eye className="size-3.5 text-zinc-400" />
-            <span>View Details</span>
-          </button>
+          <PermissionGate permission="curriculum.session.view">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                router.push(`/sessions/${session.id}`)
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors text-left cursor-pointer"
+            >
+              <Eye className="size-3.5 text-zinc-400" />
+              <span>View Details</span>
+            </button>
+          </PermissionGate>
 
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              router.push(`/sessions/${session.id}/edit`)
-            }}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors text-left cursor-pointer"
-          >
-            <Pencil className="size-3.5 text-zinc-400" />
-            <span>Edit Session</span>
-          </button>
+          <PermissionGate permission="curriculum.session.update">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                router.push(`/sessions/${session.id}/edit`)
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors text-left cursor-pointer"
+            >
+              <Pencil className="size-3.5 text-zinc-400" />
+              <span>Edit Session</span>
+            </button>
+          </PermissionGate>
 
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              setCancelOpen(true)
-            }}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 transition-colors text-left cursor-pointer"
-          >
-            <Ban className="size-3.5 text-rose-500" />
-            <span>Cancel Session</span>
-          </button>
+          <PermissionGate permission="curriculum.session.update">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                setCancelOpen(true)
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+            >
+              <Ban className="size-3.5 text-rose-500" />
+              <span>Cancel Session</span>
+            </button>
+          </PermissionGate>
 
-          <div className="my-1 border-t border-zinc-100" />
+          <PermissionGate permission="curriculum.session.delete">
+            <div className="my-1 border-t border-zinc-100" />
 
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={deleteMutation.isPending}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
-          >
-            <Trash2 className="size-3.5 text-rose-500" />
-            <span>Delete Session</span>
-          </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+            >
+              <Trash2 className="size-3.5 text-rose-500" />
+              <span>Delete Session</span>
+            </button>
+          </PermissionGate>
         </div>
       )}
 

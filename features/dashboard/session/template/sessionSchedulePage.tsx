@@ -128,6 +128,8 @@ export default function SessionSchedulePage() {
       sessionType: "Private 1:1",
       maxStudents: 1,
       notes: "",
+      allowStudentPublish: true,
+      allowStudentScreenShare: true,
     },
   })
 
@@ -236,6 +238,9 @@ export default function SessionSchedulePage() {
         timeSlot: data.startTime,
         maxStudents: data.maxStudents,
         notes: data.notes || "",
+        allowStudentPublish: Boolean(data.allowStudentPublish),
+        allowStudentScreenShare: Boolean(data.allowStudentScreenShare),
+        
       }
 
       if (data.targetType === "subject") {

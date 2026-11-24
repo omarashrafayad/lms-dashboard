@@ -10,6 +10,7 @@ import {
   getUserRoles,
   updateUserRoles,
 } from "../api/rolesApi"
+import { usePermissions as useRbacPermissions } from "@/lib/rbac/usePermissions"
 import {
   UpdateRolePermissionsPayload,
   UpdateUserRolesPayload,
@@ -59,10 +60,13 @@ export const usePermissions = () => {
 }
 
 export const useMyPermissions = () => {
-  return useQuery({
-    queryKey: ["permissions", "me"],
-    queryFn: getMyPermissions,
-  })
+  const { permissions, isLoading, isError, profile } = useRbacPermissions()
+  return {
+    data: permissions,
+    isLoading,
+    isError,
+    profile,
+  }
 }
 
 export const useUserRoles = (userId: string) => {

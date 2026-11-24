@@ -20,7 +20,7 @@ export function RolesStats({
   const statsData = [
     {
       title: "System Roles",
-      value: totalRoles.toLocaleString(),
+      value: (totalRoles ?? 0).toLocaleString(),
       change: "Active",
       period: "Security role groups",
       dotColor: "bg-cyan-400",
@@ -28,7 +28,7 @@ export function RolesStats({
     },
     {
       title: "System Permissions",
-      value: totalPermissions.toLocaleString(),
+      value: (totalPermissions ?? 0).toLocaleString(),
       change: "Catalog",
       period: "Granular capability rules",
       dotColor: "bg-lime-400",
@@ -36,7 +36,7 @@ export function RolesStats({
     },
     {
       title: "Users Assigned Roles",
-      value: totalAssignedUsers.toLocaleString(),
+      value: (totalAssignedUsers ?? 0).toLocaleString(),
       change: "Assigned",
       period: "Across institutional users",
       dotColor: "bg-purple-400",
@@ -44,7 +44,7 @@ export function RolesStats({
     },
     {
       title: "My Permissions",
-      value: myPermissionsCount.toLocaleString(),
+      value: (myPermissionsCount ?? 0).toLocaleString(),
       change: "Granted",
       period: "Active on your session",
       dotColor: "bg-amber-400",

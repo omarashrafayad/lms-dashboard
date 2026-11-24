@@ -181,6 +181,8 @@ export interface ScheduleSessionPayload {
   academicStage?: string
   notes?: string
   maxStudents:number
+  allowStudentPublish: boolean
+  allowStudentScreenShare: boolean
 }
 
 export interface UpdateSessionPayload {

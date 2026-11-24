@@ -24,7 +24,6 @@ export function ScheduleDateTimeStep({
   selectedTime,
   onTimeChange,
   computedSlots,
-  todayFormatted,
   selectedTeacherName,
 }: ScheduleDateTimeStepProps) {
   return (

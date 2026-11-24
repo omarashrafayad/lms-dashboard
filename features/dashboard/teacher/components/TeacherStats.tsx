@@ -5,6 +5,7 @@ import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { PermissionGate } from "@/components/shared/PermissionGate"
 
 export interface TeacherStatsProps {
   totalCount: number
@@ -55,14 +56,16 @@ export function TeacherStats({
         <span className="text-sm font-medium text-zinc-500">
           {totalCount} {totalCount === 1 ? "teacher" : "teachers"} found
         </span>
-        <Link href="/teacher/add">
-          <Button
-            className="bg-brand-orange hover:bg-amber-500 text-white font-medium rounded-xl h-10 px-5 gap-2 shadow-2xs cursor-pointer transition-all hover:brightness-95 active:scale-[0.99]"
-          >
-            <Plus className="size-4 stroke-[2.5]" />
-            <span>Add Teacher</span>
-          </Button>
-        </Link>
+        <PermissionGate anyPermissions={["identity.teacher.create", "identity.user.create"]}>
+          <Link href="/teacher/add">
+            <Button
+              className="bg-brand-orange hover:bg-amber-500 text-white font-medium rounded-xl h-10 px-5 gap-2 shadow-2xs cursor-pointer transition-all hover:brightness-95 active:scale-[0.99]"
+            >
+              <Plus className="size-4 stroke-[2.5]" />
+              <span>Add Teacher</span>
+            </Button>
+          </Link>
+        </PermissionGate>
       </div>
 
       {/* 4 Stat Cards */}

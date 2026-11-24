@@ -12,6 +12,7 @@ import { CourseFilterState } from "../types/course.types"
 import { useDebounce } from "@/hooks/useDebounce"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
+import { PermissionGate } from "@/components/shared/PermissionGate"
 
 const initialFilters: CourseFilterState = {
   search: "",
@@ -64,13 +65,15 @@ export default function CourseListPage() {
             <strong className="font-bold text-zinc-800">{totalCount}</strong> courses
           </span>
 
-          <Link
-            href="/courses/add"
-            className="h-10 px-5 rounded-xl bg-brand-orange hover:bg-brand-orange/90 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
-          >
-            <Plus className="size-4 stroke-[2.5]" />
-            <span>Add Course</span>
-          </Link>
+          <PermissionGate permission="curriculum.course.create">
+            <Link
+              href="/courses/add"
+              className="h-10 px-5 rounded-xl bg-brand-orange hover:bg-brand-orange/90 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+            >
+              <Plus className="size-4 stroke-[2.5]" />
+              <span>Add Course</span>
+            </Link>
+          </PermissionGate>
         </div>
 
         <CourseMetricsCards

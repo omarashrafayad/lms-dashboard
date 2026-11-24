@@ -1,10 +1,10 @@
 "use client"
-
-import * as React from "react"
 import { Control } from "react-hook-form"
 import { UniInput } from "@/components/shared/UniInput"
 import { UniSelect } from "@/components/shared/UniSelect"
-import { Calendar, Clock, Video } from "lucide-react"
+import { FormField, FormItem, FormControl } from "@/components/ui/form"
+import { Switch } from "@/components/ui/switch"
+import { Calendar, Clock } from "lucide-react"
 
 export interface ScheduleDetailsStepProps {
   control: Control<any>
@@ -134,6 +134,60 @@ export function ScheduleDetailsStep({
         required
         labelClassName="text-[11px] font-bold tracking-wider text-zinc-500 uppercase"
       />
+
+      {/* Student Permissions Switches */}
+      <div className="flex flex-col gap-3">
+        <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
+          Student Permissions
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={control}
+            name="allowStudentPublish"
+            render={({ field }) => (
+              <FormItem className="rounded-xl border border-zinc-200/80 p-3.5 px-4 flex items-center justify-between bg-zinc-50/40 space-y-0">
+                <div className="flex flex-col pr-3">
+                  <span className="text-xs font-semibold text-zinc-900">
+                    Allow Student Publish
+                  </span>
+                  <span className="text-[11px] text-zinc-400">
+                    Students can turn on mic & camera
+                  </span>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="allowStudentScreenShare"
+            render={({ field }) => (
+              <FormItem className="rounded-xl border border-zinc-200/80 p-3.5 px-4 flex items-center justify-between bg-zinc-50/40 space-y-0">
+                <div className="flex flex-col pr-3">
+                  <span className="text-xs font-semibold text-zinc-900">
+                    Allow Screen Share
+                  </span>
+                  <span className="text-[11px] text-zinc-400">
+                    Students can share their screen
+                  </span>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
 
       {/* Notes */}
       <UniInput

@@ -1,4 +1,5 @@
 import clientAxios from "@/lib/axios/clientAxios"
+import { fetchMyPermissions } from "@/lib/rbac/api"
 import {
   RoleItem,
   PermissionItem,
@@ -38,12 +39,8 @@ export const getPermissions = async (): Promise<PermissionItem[]> => {
 }
 
 export const getMyPermissions = async (): Promise<string[]> => {
-  const res = await clientAxios.get("/permissions/me")
-  const data = res.data?.data ?? res.data
-  if (Array.isArray(data)) {
-    return data.map((item) => (typeof item === "string" ? item : item.code || ""))
-  }
-  return []
+  const profile = await fetchMyPermissions()
+  return profile.permissions
 }
 
 export const getUserRoles = async (userId: string): Promise<UserRoleItem> => {

@@ -4,74 +4,91 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  GraduationCap,
   LayoutGrid,
-  Calendar,
-  CreditCard,
-  HelpCircle,
   Settings,
   ChevronRight,
   ChevronDown,
-  Database,
-  Ticket,
-  Bell,
-  Image as ImageIcon,
-  ShieldCheck,
-  Video,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { usePermissions } from "@/lib/rbac/usePermissions"
+import {
+  SIDEBAR_ITEMS,
+  filterSidebarItems,
+} from "./sidebarConfig"
 
 export function Sidebar() {
   const pathname = usePathname()
-  const isOverviewActive = pathname === "/" || pathname === "/overview"
-  const isStudentRoute = pathname.startsWith("/student")
-  const isTeacherRoute = pathname.startsWith("/teacher")
-  const isParentRoute = pathname.startsWith("/parent") || pathname.startsWith("/parents")
-  const isUsersActive = isStudentRoute || isTeacherRoute || isParentRoute
-  const isCurriculumRoute = pathname.startsWith("/curriculum")
-  const isChaptersRoute = pathname.startsWith("/curriculum/chapters")
-  const isUnitsRoute = pathname.startsWith("/curriculum/units")
-  const isLessonsRoute = pathname.startsWith("/curriculum/lessons") || pathname.startsWith("/lessons") || pathname.startsWith("/academic/lessons")
-  const isCoursesRoute = pathname.startsWith("/courses") || pathname.startsWith("/academic/courses")
-  const isSessionsRoute = pathname.startsWith("/sessions")
-  const isExamsRoute = pathname.startsWith("/academic/exams") || pathname.startsWith("/exams")
-  const isAcademicActive = isCurriculumRoute || pathname.startsWith("/academic") || isLessonsRoute || isCoursesRoute || isExamsRoute
-  const isVideosRoute = pathname.startsWith("/content/videos")
-  const isPdfsRoute = pathname.startsWith("/content/pdfs")
-  const isQuizzesRoute = pathname.startsWith("/content/quizzes")
-  const isContentActive = pathname.startsWith("/content") || isVideosRoute || isPdfsRoute || isQuizzesRoute
-  const isRefAcademicStagesRoute = pathname.startsWith("/reference-data/academic-stages")
-  const isRefEducationSystemsRoute = pathname.startsWith("/reference-data/education-systems")
-  const isRefGradesRoute = pathname.startsWith("/reference-data/grades")
-  const isRefTermsRoute = pathname.startsWith("/reference-data/terms")
-  const isRefTeachingLevelsRoute = pathname.startsWith("/reference-data/teaching-levels")
-  const isRefGendersRoute = pathname.startsWith("/reference-data/genders")
-  const isReferenceDataActive = pathname.startsWith("/reference-data")
-  const isSubscriptionsRoute = pathname.startsWith("/subscriptions")
-  const isCouponsActive = pathname.startsWith("/coupons")
-  const isBannersActive = pathname.startsWith("/banners")
-  const isNotificationsActive = pathname.startsWith("/notifications")
-  const isRolesActive = pathname.startsWith("/roles")
-  const isSupportActive = pathname.startsWith("/support")
-  const isSettingsActive = pathname.startsWith("/settings")
+  const { can } = usePermissions()
+  const [mounted, setMounted] = React.useState(false)
 
-  const [usersExpanded, setUsersExpanded] = React.useState<boolean>(isUsersActive)
-  const [studentsExpanded, setStudentsExpanded] = React.useState<boolean>(isStudentRoute || false)
-  const [teachersExpanded, setTeachersExpanded] = React.useState<boolean>(isTeacherRoute || false)
-  const [parentsExpanded, setParentsExpanded] = React.useState<boolean>(isParentRoute || false)
-  const [academicExpanded, setAcademicExpanded] = React.useState<boolean>(isAcademicActive || false)
-  const [contentExpanded, setContentExpanded] = React.useState<boolean>(isContentActive || false)
-  const [referenceDataExpanded, setReferenceDataExpanded] = React.useState<boolean>(isReferenceDataActive || false)
-  const [sessionsExpanded, setSessionsExpanded] = React.useState<boolean>(isSessionsRoute || false)
-  const [subscriptionsExpanded, setSubscriptionsExpanded] = React.useState<boolean>(isSubscriptionsRoute || false)
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Filter items dynamically based on the current user's permissions
+  const filteredItems = React.useMemo(() => {
+    return filterSidebarItems(SIDEBAR_ITEMS, can)
+  }, [can])
+
+  // Track expanded parent groups and sub-groups
+  const [expandedParents, setExpandedParents] = React.useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    SIDEBAR_ITEMS.forEach((item) => {
+      if (item.type === "parent") {
+        initial[item.group.id] = item.group.isActive ? item.group.isActive(pathname) : false
+      }
+    })
+    return initial
+  })
+
+  const [expandedSubGroups, setExpandedSubGroups] = React.useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    SIDEBAR_ITEMS.forEach((item) => {
+      if (item.type === "parent" && item.group.subGroups) {
+        item.group.subGroups.forEach((sub) => {
+          initial[sub.id] = sub.isActive ? sub.isActive(pathname) : false
+        })
+      }
+    })
+    return initial
+  })
+
+  // Auto-expand parent and subgroup when navigating to a matching route
+  React.useEffect(() => {
+    SIDEBAR_ITEMS.forEach((item) => {
+      if (item.type === "parent") {
+        if (item.group.isActive && item.group.isActive(pathname)) {
+          setExpandedParents((prev) => ({ ...prev, [item.group.id]: true }))
+        }
+        if (item.group.subGroups) {
+          item.group.subGroups.forEach((sub) => {
+            if (sub.isActive && sub.isActive(pathname)) {
+              setExpandedParents((prev) => ({ ...prev, [item.group.id]: true }))
+              setExpandedSubGroups((prev) => ({ ...prev, [sub.id]: true }))
+            }
+          })
+        }
+      }
+    })
+  }, [pathname])
+
+  const toggleParent = (groupId: string) => {
+    setExpandedParents((prev) => ({ ...prev, [groupId]: !prev[groupId] }))
+  }
+
+  const toggleSubGroup = (subId: string) => {
+    setExpandedSubGroups((prev) => ({ ...prev, [subId]: !prev[subId] }))
+  }
+
+  const isSettingsActive = pathname.startsWith("/settings")
 
   return (
     <aside className="w-64 min-w-[16rem] h-screen sticky top-0 flex flex-col justify-between bg-white border-r border-zinc-200/80 px-4 py-6 select-none z-30 overflow-y-auto">
       {/* Top: Brand Logo */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3 px-2">
-          <div className="size-10  flex items-center bg-transparent justify-center shrink-0">
-           <img src="/INNOVATION LOGO.png" alt="logo"  />
+          <div className="size-10 flex items-center bg-transparent justify-center shrink-0">
+            <img src="/INNOVATION LOGO.png" alt="logo" />
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-base text-zinc-900 tracking-tight leading-tight">
@@ -88,748 +105,175 @@ export function Sidebar() {
           <div className="px-3 mb-2 text-[11px] font-semibold text-zinc-400 tracking-wider uppercase">
             MAIN
           </div>
+
           <nav className="flex flex-col gap-1">
-            {/* Overview */}
-            <Link
-              href="/"
-              className={cn(
-                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                isOverviewActive
-                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <LayoutGrid
-                  className={cn(
-                    "size-[18px] transition-colors",
-                    isOverviewActive
-                      ? "text-zinc-900"
-                      : "text-zinc-400 group-hover:text-zinc-600"
-                  )}
-                />
-                <span>Overview</span>
+            {/* Dynamically Filtered RBAC Items */}
+            {!mounted ? (
+              <div className="flex flex-col gap-1.5 py-1 px-1">
+                <div className="h-9 w-full rounded-xl bg-zinc-100/70 animate-pulse" />
+                <div className="h-9 w-full rounded-xl bg-zinc-100/70 animate-pulse" />
+                <div className="h-9 w-full rounded-xl bg-zinc-100/70 animate-pulse" />
+                <div className="h-9 w-full rounded-xl bg-zinc-100/70 animate-pulse" />
+                <div className="h-9 w-full rounded-xl bg-zinc-100/70 animate-pulse" />
+                <div className="h-9 w-full rounded-xl bg-zinc-100/70 animate-pulse" />
               </div>
-            </Link>
+            ) : (
+              filteredItems.map((sidebarItem) => {
+                if (sidebarItem.type === "single") {
+                const item = sidebarItem.item
+                const Icon = item.icon
+                const active = item.isActive ? item.isActive(pathname) : pathname.startsWith(item.href)
 
-            {/* Users (Parent Group) */}
-            <div className="flex flex-col gap-1">
-              <button
-                type="button"
-                onClick={() => setUsersExpanded(!usersExpanded)}
-                className={cn(
-                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
-                  isUsersActive
-                    ? "text-zinc-900 font-semibold"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <LayoutGrid
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href}
                     className={cn(
-                      "size-[18px] transition-colors rotate-45",
-                      isUsersActive
-                        ? "text-zinc-900"
-                        : "text-zinc-400 group-hover:text-zinc-600"
+                      "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                      active
+                        ? "bg-zinc-100/80 text-zinc-900 font-semibold"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
                     )}
-                  />
-                  <span>Users</span>
-                </div>
-                {usersExpanded ? (
-                  <ChevronDown className="size-4 text-zinc-600" />
-                ) : (
-                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
-                )}
-              </button>
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon
+                        className={cn(
+                          "size-[18px] transition-colors",
+                          active
+                            ? item.id === "overview"
+                              ? "text-zinc-900"
+                              : "text-brand-orange"
+                            : "text-zinc-400 group-hover:text-zinc-600"
+                        )}
+                      />
+                      <span>{item.label}</span>
+                    </div>
+                  </Link>
+                )
+              }
 
-              {/* Sub-groups inside Users */}
-              {usersExpanded && (
-                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
-                  {/* Students Sub-group */}
-                  <div className="flex flex-col gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setStudentsExpanded(!studentsExpanded)}
-                      className={cn(
-                        "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group cursor-pointer text-left",
-                        isStudentRoute
-                          ? "text-zinc-900 font-semibold"
-                          : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                      )}
-                    >
-                      <span>Students</span>
-                      {studentsExpanded ? (
-                        <ChevronDown className="size-3.5 text-zinc-500" />
-                      ) : (
-                        <ChevronRight className="size-3.5 text-zinc-400" />
-                      )}
-                    </button>
+              // Parent group
+              const group = sidebarItem.group
+              const Icon = group.icon
+              const isGroupActive = group.isActive ? group.isActive(pathname) : false
+              const isExpanded = !!expandedParents[group.id]
 
-                    {studentsExpanded && (
-                      <div className="flex flex-col gap-1 pl-4 mt-0.5">
-                        <Link
-                          href="/student/student_list"
-                          className={cn(
-                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                            isStudentRoute &&
-                              pathname !== "/student/add" &&
-                              pathname !== "/student/requests"
-                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                          )}
-                        >
-                          All Students
-                        </Link>
-                        <Link
-                          href="/student/add"
-                          className={cn(
-                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                            pathname === "/student/add"
-                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                          )}
-                        >
-                          Add Student
-                        </Link>
-                      </div>
+              return (
+                <div key={group.id} className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleParent(group.id)}
+                    className={cn(
+                      "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
+                      isGroupActive
+                        ? "text-zinc-900 font-semibold"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
                     )}
-                  </div>
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon
+                        className={cn(
+                          "size-[18px] transition-colors",
+                          group.iconClassName,
+                          isGroupActive
+                            ? "text-zinc-900"
+                            : "text-zinc-400 group-hover:text-zinc-600"
+                        )}
+                      />
+                      <span>{group.label}</span>
+                    </div>
+                    {isExpanded ? (
+                      <ChevronDown className="size-4 text-zinc-600" />
+                    ) : (
+                      <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
+                    )}
+                  </button>
 
-                  {/* Teachers Sub-group */}
-                  <div className="flex flex-col gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setTeachersExpanded(!teachersExpanded)}
-                      className={cn(
-                        "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group cursor-pointer text-left",
-                        isTeacherRoute
-                          ? "text-zinc-900 font-semibold"
-                          : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                      )}
-                    >
-                      <span>Teachers</span>
-                      {teachersExpanded ? (
-                        <ChevronDown className="size-3.5 text-zinc-500" />
-                      ) : (
-                        <ChevronRight className="size-3.5 text-zinc-400" />
-                      )}
-                    </button>
+                  {/* Render Nested Content when Expanded */}
+                  {isExpanded && (
+                    <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
+                      {/* Sub-groups (e.g. Users -> Students / Teachers / Parents) */}
+                      {group.subGroups &&
+                        group.subGroups.map((sub) => {
+                          const isSubActive = sub.isActive ? sub.isActive(pathname) : false
+                          const isSubExpanded = !!expandedSubGroups[sub.id]
 
-                    {teachersExpanded && (
-                      <div className="flex flex-col gap-1 pl-4 mt-0.5">
-                        <Link
-                          href="/teacher/teacher_list"
-                          className={cn(
-                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                            isTeacherRoute && pathname !== "/teacher/add" && pathname !== "/teacher/dues"
-                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                          )}
-                        >
-                          All Teachers
-                        </Link>
-                        <Link
-                          href="/teacher/dues"
-                          className={cn(
-                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                            pathname === "/teacher/dues"
-                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                          )}
-                        >
-                          Teacher Dues
-                        </Link>
-                        <Link
-                          href="/teacher/add"
-                          className={cn(
-                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                            pathname === "/teacher/add"
-                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                          )}
-                        >
-                          Add Teacher
-                        </Link>
-                      </div>
-                    )}
-                  </div>
+                          return (
+                            <div key={sub.id} className="flex flex-col gap-1">
+                              <button
+                                type="button"
+                                onClick={() => toggleSubGroup(sub.id)}
+                                className={cn(
+                                  "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group cursor-pointer text-left",
+                                  isSubActive
+                                    ? "text-zinc-900 font-semibold"
+                                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                                )}
+                              >
+                                <span>{sub.label}</span>
+                                {isSubExpanded ? (
+                                  <ChevronDown className="size-3.5 text-zinc-500" />
+                                ) : (
+                                  <ChevronRight className="size-3.5 text-zinc-400" />
+                                )}
+                              </button>
 
-                  {/* Parents Sub-group */}
-                  <div className="flex flex-col gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setParentsExpanded(!parentsExpanded)}
-                      className={cn(
-                        "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group cursor-pointer text-left",
-                        isParentRoute
-                          ? "text-zinc-900 font-semibold"
-                          : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                      )}
-                    >
-                      <span>Parents</span>
-                      {parentsExpanded ? (
-                        <ChevronDown className="size-3.5 text-zinc-500" />
-                      ) : (
-                        <ChevronRight className="size-3.5 text-zinc-400" />
-                      )}
-                    </button>
+                              {isSubExpanded && (
+                                <div className="flex flex-col gap-1 pl-4 mt-0.5">
+                                  {sub.children.map((child) => {
+                                    const isChildActive = child.isActive
+                                      ? child.isActive(pathname)
+                                      : pathname === child.href
 
-                    {parentsExpanded && (
-                      <div className="flex flex-col gap-1 pl-4 mt-0.5">
-                        <Link
-                          href="/parent/parent_list"
-                          className={cn(
-                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                            isParentRoute && pathname !== "/parent/add"
-                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                          )}
-                        >
-                          All Parents
-                        </Link>
-                        <Link
-                          href="/parent/add"
-                          className={cn(
-                            "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                            pathname === "/parent/add"
-                              ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                          )}
-                        >
-                          Add Parent
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+                                    return (
+                                      <Link
+                                        key={child.id}
+                                        href={child.href}
+                                        className={cn(
+                                          "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                                          isChildActive
+                                            ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                                            : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                                        )}
+                                      >
+                                        {child.label}
+                                      </Link>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
 
-            {/* Academic Management */}
-            <div className="flex flex-col gap-1">
-              <button
-                type="button"
-                onClick={() => setAcademicExpanded(!academicExpanded)}
-                className={cn(
-                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
-                  isAcademicActive
-                    ? "text-zinc-900 font-semibold"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <GraduationCap
-                    className={cn(
-                      "size-[18px] transition-colors",
-                      isAcademicActive
-                        ? "text-zinc-900"
-                        : "text-zinc-400 group-hover:text-zinc-600"
-                    )}
-                  />
-                  <span>Academic Management</span>
-                </div>
-                {academicExpanded ? (
-                  <ChevronDown className="size-4 text-zinc-600" />
-                ) : (
-                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
-                )}
-              </button>
+                      {/* Direct Child Links (e.g. Academic -> Subjects, Courses, Exams) */}
+                      {group.directLinks &&
+                        group.directLinks.map((link) => {
+                          const isLinkActive = link.isActive
+                            ? link.isActive(pathname)
+                            : pathname === link.href
 
-              {academicExpanded && (
-                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
-                  <Link
-                    href="/curriculum"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      pathname === "/curriculum" || (isCurriculumRoute && !isChaptersRoute && !isUnitsRoute && !pathname.startsWith("/curriculum/lessons"))
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Subjects
-                  </Link>
-                  <Link
-                    href="/courses"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      pathname.startsWith("/courses") || pathname.startsWith("/academic/courses")
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Courses
-                  </Link>
-                  <Link
-                    href="/academic/exams"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isExamsRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Exams
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* Reference Data */}
-            <div className="flex flex-col gap-1">
-              <button
-                type="button"
-                onClick={() => setReferenceDataExpanded(!referenceDataExpanded)}
-                className={cn(
-                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
-                  isReferenceDataActive
-                    ? "text-zinc-900 font-semibold"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <Database
-                    className={cn(
-                      "size-[18px] transition-colors",
-                      isReferenceDataActive
-                        ? "text-zinc-900"
-                        : "text-zinc-400 group-hover:text-zinc-600"
-                    )}
-                  />
-                  <span>Reference Data</span>
-                </div>
-                {referenceDataExpanded ? (
-                  <ChevronDown className="size-4 text-zinc-600" />
-                ) : (
-                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
-                )}
-              </button>
-
-              {referenceDataExpanded && (
-                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
-                  <Link
-                    href="/reference-data/academic-stages"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isRefAcademicStagesRoute || pathname === "/reference-data"
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Academic Stages
-                  </Link>
-                  <Link
-                    href="/reference-data/education-systems"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isRefEducationSystemsRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Education Systems
-                  </Link>
-                  <Link
-                    href="/reference-data/grades"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isRefGradesRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Grades
-                  </Link>
-                  <Link
-                    href="/reference-data/terms"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isRefTermsRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Academic Terms
-                  </Link>
-                  <Link
-                    href="/reference-data/teaching-levels"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isRefTeachingLevelsRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Teaching Levels
-                  </Link>
-                  <Link
-                    href="/reference-data/genders"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isRefGendersRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Genders
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* Sessions & Bookings matching Screenshots */}
-            <div className="flex flex-col gap-1">
-              <button
-                type="button"
-                onClick={() => setSessionsExpanded(!sessionsExpanded)}
-                className={cn(
-                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
-                  isSessionsRoute
-                    ? "text-zinc-900 font-semibold"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <Calendar
-                    className={cn(
-                      "size-[18px] transition-colors",
-                      isSessionsRoute
-                        ? "text-zinc-900"
-                        : "text-zinc-400 group-hover:text-zinc-600"
-                    )}
-                  />
-                  <span>Sessions & Bookings</span>
-                </div>
-                {sessionsExpanded ? (
-                  <ChevronDown className="size-4 text-zinc-600" />
-                ) : (
-                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
-                )}
-              </button>
-
-              {sessionsExpanded && (
-                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
-                  <Link
-                    href="/sessions"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isSessionsRoute &&
-                        !pathname.startsWith("/sessions/requests") &&
-                        !pathname.startsWith("/sessions/availability")
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    All Sessions
-                  </Link>
-                  <Link
-                    href="/sessions/requests"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      pathname.startsWith("/sessions/requests")
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Reschedule Requests
-                  </Link>
-                  <Link
-                    href="/sessions/availability"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      pathname.startsWith("/sessions/availability")
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Availability
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* Subscriptions & Payments */}
-            <div className="flex flex-col gap-1">
-              <button
-                type="button"
-                onClick={() => setSubscriptionsExpanded(!subscriptionsExpanded)}
-                className={cn(
-                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
-                  isSubscriptionsRoute
-                    ? "text-zinc-900 font-semibold"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <CreditCard
-                    className={cn(
-                      "size-[18px] transition-colors",
-                      isSubscriptionsRoute
-                        ? "text-zinc-900"
-                        : "text-zinc-400 group-hover:text-zinc-600"
-                    )}
-                  />
-                  <span>Subscriptions & Payments</span>
-                </div>
-                {subscriptionsExpanded ? (
-                  <ChevronDown className="size-4 text-zinc-600" />
-                ) : (
-                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
-                )}
-              </button>
-
-              {subscriptionsExpanded && (
-                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
-                  <Link
-                    href="/subscriptions"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      pathname === "/subscriptions"
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Overview & All
-                  </Link>
-                  <Link
-                    href="/subscriptions/plans"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      pathname === "/subscriptions/plans"
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Pricing Plans
-                  </Link>
-                  <Link
-                    href="/subscriptions/transactions"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      pathname === "/subscriptions/transactions"
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Transactions & Invoices
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* Content Library */}
-            <div className="flex flex-col gap-1">
-              <button
-                type="button"
-                onClick={() => setContentExpanded(!contentExpanded)}
-                className={cn(
-                  "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-left cursor-pointer",
-                  isContentActive
-                    ? "text-zinc-900 font-semibold"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <Video
-                    className={cn(
-                      "size-[18px] transition-colors",
-                      isContentActive
-                        ? "text-zinc-900"
-                        : "text-zinc-400 group-hover:text-zinc-600"
-                    )}
-                  />
-                  <span>Content</span>
-                </div>
-                {contentExpanded ? (
-                  <ChevronDown className="size-4 text-zinc-600" />
-                ) : (
-                  <ChevronRight className="size-4 text-zinc-400 group-hover:text-zinc-500" />
-                )}
-              </button>
-
-              {contentExpanded && (
-                <div className="flex flex-col gap-1 pl-4 pr-1 mt-0.5">
-                  <Link
-                    href="/content/videos"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isVideosRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Videos
-                  </Link>
-                  <Link
-                    href="/content/pdfs"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isPdfsRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    PDFs & Books
-                  </Link>
-                  <Link
-                    href="/content/quizzes"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isQuizzesRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Quizzes
-                  </Link>
-                   <Link
-                    href="/curriculum/chapters"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isChaptersRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Chapters
-                  </Link>
-                  <Link
-                    href="/curriculum/units"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isUnitsRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Units
-                  </Link>
-                  <Link
-                    href="/curriculum/lessons"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      isLessonsRoute
-                        ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
-                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    Lessons
-                  </Link>
-                </div>
-              )}
-            </div>
-            <Link
-              href="/banners"
-              className={cn(
-                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                isBannersActive
-                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <ImageIcon
-                  className={cn(
-                    "size-[18px] transition-colors",
-                    isBannersActive
-                      ? "text-brand-orange"
-                      : "text-zinc-400 group-hover:text-zinc-600"
+                          return (
+                            <Link
+                              key={link.id}
+                              href={link.href}
+                              className={cn(
+                                "flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                                isLinkActive
+                                  ? "bg-[#FFF9F2] text-[#D97706] font-semibold border-l-2 border-[#FFB543] pl-2.5 shadow-2xs"
+                                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                              )}
+                            >
+                              {link.label}
+                            </Link>
+                          )
+                        })}
+                    </div>
                   )}
-                />
-                <span>Banners</span>
-              </div>
-            </Link>
-
-            {/* Coupons */}
-            <Link
-              href="/coupons"
-              className={cn(
-                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                isCouponsActive
-                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <Ticket
-                  className={cn(
-                    "size-[18px] transition-colors",
-                    isCouponsActive
-                      ? "text-brand-orange"
-                      : "text-zinc-400 group-hover:text-zinc-600"
-                  )}
-                />
-                <span>Coupons</span>
-              </div>
-            </Link>
-
-            {/* Notifications */}
-            <Link
-              href="/notifications"
-              className={cn(
-                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                isNotificationsActive
-                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <Bell
-                  className={cn(
-                    "size-[18px] transition-colors",
-                    isNotificationsActive
-                      ? "text-brand-orange"
-                      : "text-zinc-400 group-hover:text-zinc-600"
-                  )}
-                />
-                <span>Notifications</span>
-              </div>
-            </Link>
-
-            {/* Roles & Permissions */}
-            <Link
-              href="/roles"
-              className={cn(
-                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                isRolesActive
-                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <ShieldCheck
-                  className={cn(
-                    "size-[18px] transition-colors",
-                    isRolesActive
-                      ? "text-brand-orange"
-                      : "text-zinc-400 group-hover:text-zinc-600"
-                  )}
-                />
-                <span>Roles & Permissions</span>
-              </div>
-            </Link>
-
-            {/* Support */}
-            <Link
-              href="/support"
-              className={cn(
-                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                isSupportActive
-                  ? "bg-zinc-100/80 text-zinc-900 font-semibold"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <HelpCircle
-                  className={cn(
-                    "size-[18px] transition-colors",
-                    isSupportActive
-                      ? "text-brand-orange"
-                      : "text-zinc-400 group-hover:text-zinc-600"
-                  )}
-                />
-                <span>Support</span>
-              </div>
-            </Link>
+                </div>
+              )
+            })
+          )}
           </nav>
         </div>
       </div>

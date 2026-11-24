@@ -27,6 +27,8 @@ export function isTimeInFuture(timeStr: string, dateStr?: string): boolean {
 export const scheduleSessionSchema = z
   .object({
     studentId: z.string().min(1, "Please select a student"),
+    allowStudentPublish: z.boolean().default(true),
+  allowStudentScreenShare: z.boolean().default(true),
     studentName: z.string().optional(),
     educationStage: z.string().optional(),
     academicStage: z.string().optional(),
@@ -62,6 +64,7 @@ maxStudents: z.coerce
         message: "Start time must be in the future",
         path: ["startTime"],
       })
+      
     }
 
     // Validate Subject or Course based on targetType
@@ -80,6 +83,7 @@ maxStudents: z.coerce
         path: ["courseId"],
       })
     }
+
   })
 
 export type ScheduleSessionFormData = z.infer<typeof scheduleSessionSchema>

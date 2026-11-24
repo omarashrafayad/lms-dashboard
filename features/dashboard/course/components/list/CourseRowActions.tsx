@@ -8,6 +8,7 @@ import { ApiCourse } from "../../types/course.types"
 import { useDeleteCourse } from "../../hooks/useCourses"
 import { toast } from "sonner"
 import { getErrorMessage } from "@/components/shared/globalErrorMessage"
+import { PermissionGate } from "@/components/shared/PermissionGate"
 
 export interface CourseRowActionsProps {
   course: ApiCourse
@@ -112,32 +113,38 @@ export function CourseRowActions({ course, onDelete }: CourseRowActionsProps) {
             }}
             className="z-50 w-40 rounded-xl bg-white border border-zinc-200/90 shadow-lg py-1.5 animate-in fade-in zoom-in-95 duration-100"
           >
-            <Link
-              href={`/courses/${course.id}`}
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 transition-colors cursor-pointer"
-            >
-              <Eye className="size-3.5 text-zinc-400" />
-              <span>View Course</span>
-            </Link>
-            <Link
-              href={`/courses/${course.id}/edit`}
-              onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 transition-colors text-left cursor-pointer"
-            >
-              <Pencil className="size-3.5 text-zinc-400" />
-              <span>Edit Course</span>
-            </Link>
-            <div className="my-1 border-t border-zinc-100" />
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleteCourseMutation.isPending}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer disabled:opacity-50"
-            >
-              <Trash2 className="size-3.5 text-red-400" />
-              <span>Delete</span>
-            </button>
+            <PermissionGate permission="curriculum.course.view">
+              <Link
+                href={`/courses/${course.id}`}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 transition-colors cursor-pointer"
+              >
+                <Eye className="size-3.5 text-zinc-400" />
+                <span>View Course</span>
+              </Link>
+            </PermissionGate>
+            <PermissionGate permission="curriculum.course.update">
+              <Link
+                href={`/courses/${course.id}/edit`}
+                onClick={() => setIsOpen(false)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 transition-colors text-left cursor-pointer"
+              >
+                <Pencil className="size-3.5 text-zinc-400" />
+                <span>Edit Course</span>
+              </Link>
+            </PermissionGate>
+            <PermissionGate permission="curriculum.course.delete">
+              <div className="my-1 border-t border-zinc-100" />
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteCourseMutation.isPending}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="size-3.5 text-red-400" />
+                <span>Delete</span>
+              </button>
+            </PermissionGate>
           </div>,
           document.body
         )}

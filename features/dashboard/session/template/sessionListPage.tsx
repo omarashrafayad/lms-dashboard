@@ -12,6 +12,7 @@ import { SessionFilterState } from "../types/session.types"
 import { useDebounce } from "@/hooks/useDebounce"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
+import { PermissionGate } from "@/components/shared/PermissionGate"
 
 export default function SessionListPage() {
   const [filters, setFilters] = React.useState<SessionFilterState>({
@@ -81,13 +82,15 @@ export default function SessionListPage() {
             Showing <strong className="font-bold text-zinc-800">{totalCount}</strong> sessions
           </span>
 
-          <Link
-            href="/sessions/schedule"
-            className="h-10 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
-          >
-            <Plus className="size-4 stroke-[2.5]" />
-            <span>Schedule Session</span>
-          </Link>
+          <PermissionGate permission="curriculum.session.create">
+            <Link
+              href="/sessions/schedule"
+              className="h-10 px-5 rounded-xl bg-[#F59E0B] hover:bg-amber-500 text-xs font-semibold text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+            >
+              <Plus className="size-4 stroke-[2.5]" />
+              <span>Schedule Session</span>
+            </Link>
+          </PermissionGate>
         </div>
 
         <SessionMetricsCards
