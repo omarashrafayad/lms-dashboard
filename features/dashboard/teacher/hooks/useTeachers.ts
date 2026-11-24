@@ -11,6 +11,8 @@ import {
   getTeachingLevels,
   getAllTeachersDues,
   getTeacherDues,
+  getMyTeacherProfile,
+  getMyTeacherFinance,
 } from "../api/teacherApi"
 import { TeacherQueryParams, TeacherDuesParams } from "../types/teacher.types"
 
@@ -21,11 +23,15 @@ export const useTeachers = (params: TeacherQueryParams = {}) => {
   })
 }
 
-export const useTeacher = (teacherId: string) => {
+export const useTeacher = (
+  teacherId: string,
+  options?: { enabled?: boolean; retry?: boolean | number } & Record<string, any>
+) => {
   return useQuery({
     queryKey: ["teacher", teacherId],
     queryFn: () => getTeacherById(teacherId),
-    enabled: !!teacherId,
+    enabled: options?.enabled !== undefined ? options.enabled && !!teacherId : !!teacherId,
+    ...options,
   })
 }
 
@@ -91,12 +97,35 @@ export const useAllTeachersDues = (params: TeacherDuesParams = {}) => {
 
 export const useTeacherDues = (
   teacherId: string,
-  params: TeacherDuesParams = {}
+  params: TeacherDuesParams = {},
+  options?: { enabled?: boolean; retry?: boolean | number } & Record<string, any>
 ) => {
   return useQuery({
     queryKey: ["teacher-dues", teacherId, params],
     queryFn: () => getTeacherDues(teacherId, params),
-    enabled: !!teacherId,
+    enabled: options?.enabled !== undefined ? options.enabled && !!teacherId : !!teacherId,
+    ...options,
+  })
+}
+
+export const useMyTeacherProfile = (
+  options?: { enabled?: boolean; retry?: boolean | number } & Record<string, any>
+) => {
+  return useQuery({
+    queryKey: ["teacher", "me"],
+    queryFn: () => getMyTeacherProfile(),
+    ...options,
+  })
+}
+
+export const useMyTeacherFinance = (
+  params: TeacherDuesParams = {},
+  options?: { enabled?: boolean; retry?: boolean | number } & Record<string, any>
+) => {
+  return useQuery({
+    queryKey: ["teacher-finance", "me", params],
+    queryFn: () => getMyTeacherFinance(params),
+    ...options,
   })
 }
 

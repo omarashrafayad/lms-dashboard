@@ -8,24 +8,35 @@ import { cn } from "@/lib/utils"
 
 interface TeacherProfileHeaderProps {
   profile: TeacherProfile
+  backHref?: string | null
+  backLabel?: string
+  editHref?: string
 }
 
-export function TeacherProfileHeader({ profile }: TeacherProfileHeaderProps) {
+export function TeacherProfileHeader({
+  profile,
+  backHref = "/teacher/teacher_list",
+  backLabel = "Back to All Teachers",
+  editHref,
+}: TeacherProfileHeaderProps) {
   const isActive = profile.status === "Active"
   const isAvailable = profile.availabilityStatus === "Available"
+  const targetEditHref = editHref || `/teacher/${profile.id}/edit`
 
   return (
     <div className="flex flex-col gap-5">
       {/* Back link */}
-      <div>
-        <Link
-          href="/teacher/teacher_list"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors group cursor-pointer"
-        >
-          <ChevronLeft className="size-4 text-zinc-400 group-hover:text-zinc-700 transition-colors" />
-          <span>Back to All Teachers</span>
-        </Link>
-      </div>
+      {backHref && (
+        <div>
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors group cursor-pointer"
+          >
+            <ChevronLeft className="size-4 text-zinc-400 group-hover:text-zinc-700 transition-colors" />
+            <span>{backLabel}</span>
+          </Link>
+        </div>
+      )}
 
       {/* Main Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -82,7 +93,7 @@ export function TeacherProfileHeader({ profile }: TeacherProfileHeaderProps) {
         {/* Right: Edit Teacher Button */}
         <div>
           <Link
-            href={`/teacher/${profile.id}/edit`}
+            href={targetEditHref}
             className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-xs font-medium text-white bg-brand-orange hover:bg-amber-500 transition-all shadow-2xs cursor-pointer active:scale-[0.98]"
           >
             Edit Teacher

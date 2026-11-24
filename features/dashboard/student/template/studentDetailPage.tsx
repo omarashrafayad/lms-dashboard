@@ -18,7 +18,7 @@ import { StudentExamsTable } from "../components/profile/StudentExamsTable"
 import { StudentSessionsCard } from "../components/profile/StudentSessionsCard"
 import { StudentSubscriptionAndParent } from "../components/profile/StudentSubscriptionAndParent"
 import { StudentActivityHistory } from "../components/profile/StudentActivityHistory"
-import { useStudent } from "../hooks/useStudents"
+import { useStudent, useMyStudentProfile } from "../hooks/useStudents"
 import {
   StudentProfile,
   StudentTransaction,
@@ -28,7 +28,8 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 
 interface StudentDetailPageProps {
-  studentId: string
+  studentId?: string
+  isMe?: boolean
 }
 
 const AVATAR_COLORS = [
@@ -49,10 +50,28 @@ function getAvatarColor(key: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export default function StudentDetailPage({ studentId }: StudentDetailPageProps) {
+export default function StudentDetailPage({
+  studentId = "",
+  isMe = false,
+}: StudentDetailPageProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = React.useState<StudentTabKey>("overview")
-  const { data: apiStudent, isLoading, isError } = useStudent(studentId)
+
+  const {
+    data: myStudentData,
+    isLoading: isMyLoading,
+    isError: isMyError,
+  } = useMyStudentProfile({ enabled: isMe })
+
+  const {
+    data: otherStudentData,
+    isLoading: isOtherLoading,
+    isError: isOtherError,
+  } = useStudent(studentId, { enabled: !isMe && !!studentId })
+
+  const apiStudent = isMe ? myStudentData : otherStudentData
+  const isLoading = isMe ? isMyLoading : isOtherLoading
+  const isError = isMe ? isMyError : isOtherError
 
   const profile: StudentProfile | null = React.useMemo(() => {
     if (!apiStudent) return null
@@ -300,8 +319,13 @@ export default function StudentDetailPage({ studentId }: StudentDetailPageProps)
       {/* 1. Header with Back link, Avatar, Active Badge, Code/Grade, Edit button */}
       <StudentProfileHeader
         profile={profile}
+        backHref={isMe ? null : "/student/student_list"}
         onEdit={() => {
-          router.push(`/student/${studentId}/edit`)
+          if (isMe) {
+            router.push("/settings")
+          } else {
+            router.push(`/student/${studentId || profile.id}/edit`)
+          }
         }}
       />
 
@@ -352,7 +376,8 @@ export default function StudentDetailPage({ studentId }: StudentDetailPageProps)
 
         {activeTab === "finance" && (
           <StudentFinanceTab
-            studentId={studentId}
+            studentId={studentId || profile.id}
+            isMe={isMe}
             finance={profile.finance}
             subscription={profile.subscription}
             onViewTransactions={() => setActiveTab("transactions")}

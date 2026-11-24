@@ -17,6 +17,16 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     setMounted(true)
   }, [])
 
+  // Auto-redirect to /profile if user visits / or /overview without overview permissions
+  React.useEffect(() => {
+    if (mounted && !isLoading && (pathname === "/" || pathname === "/overview")) {
+      const canOverview = can({ anyPermissions: ["billing.dashboard.view", "identity.dashboard.view"] })
+      if (!canOverview && can({ permission: "identity.profile.view" })) {
+        router.replace("/profile")
+      }
+    }
+  }, [mounted, isLoading, pathname, can, router])
+
   const rule = React.useMemo(() => getRoutePermissionRule(pathname), [pathname])
 
   // If there's no restriction on this route, render children immediately

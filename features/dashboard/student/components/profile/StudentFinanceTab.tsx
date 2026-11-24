@@ -21,12 +21,13 @@ import {
   BillingSubscriptionItem,
   BillingStudentRefundItem,
 } from "../../types/studentProfile.types"
-import { useStudentFinance } from "../../hooks/useStudents"
+import { useStudentFinance, useMyStudentFinance } from "../../hooks/useStudents"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 
 export interface StudentFinanceTabProps {
   studentId?: string
+  isMe?: boolean
   finance?: StudentFinanceSummary
   subscription?: StudentProfile["subscription"]
   onViewTransactions?: () => void
@@ -37,6 +38,7 @@ type FinanceSubTab = "payments" | "subscriptions" | "refunds" | "bookings"
 
 export function StudentFinanceTab({
   studentId,
+  isMe = false,
   finance,
   subscription,
   onViewTransactions,
@@ -45,10 +47,20 @@ export function StudentFinanceTab({
   const [activeSubTab, setActiveSubTab] = React.useState<FinanceSubTab>("payments")
 
   const {
-    data: financeData,
-    isLoading,
-    isError,
-  } = useStudentFinance(studentId || "")
+    data: otherFinance,
+    isLoading: isOtherLoading,
+    isError: isOtherError,
+  } = useStudentFinance(studentId || "", { enabled: !isMe && !!studentId })
+
+  const {
+    data: myFinance,
+    isLoading: isMyLoading,
+    isError: isMyError,
+  } = useMyStudentFinance({ enabled: isMe })
+
+  const financeData = isMe ? myFinance : otherFinance
+  const isLoading = isMe ? isMyLoading : isOtherLoading
+  const isError = isMe ? isMyError : isOtherError
 
   const totals = financeData?.totals
   const payments = financeData?.payments || []

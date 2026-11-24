@@ -123,11 +123,13 @@ export const useCancelSession = () => {
 
 export const useTeacherSlots = (
   teacherId: string,
+  date?: string,
   options?: { enabled?: boolean }
 ) => {
+  const targetDate = date || new Date().toISOString().split("T")[0]
   return useQuery({
-    queryKey: ["teacher-slots", teacherId],
-    queryFn: () => getTeacherSlots(teacherId),
+    queryKey: ["teacher-slots", teacherId, targetDate],
+    queryFn: () => getTeacherSlots(teacherId, targetDate),
     enabled: Boolean(teacherId) && (options?.enabled !== false),
     staleTime: 1000 * 60 * 2,
   })

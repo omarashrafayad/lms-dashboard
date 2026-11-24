@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   ShieldCheck,
   Video,
+  User,
 } from "lucide-react"
 import { AppPermission, CheckPermissionOptions } from "@/lib/rbac/permissions"
 
@@ -71,6 +72,19 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
       icon: LayoutGrid,
       anyPermissions: ["billing.dashboard.view", "identity.dashboard.view"],
       isActive: (p) => p === "/" || p === "/overview",
+    },
+  },
+
+  // Profile (Guarded by identity.profile.view)
+  {
+    type: "single",
+    item: {
+      id: "profile",
+      label: "Profile",
+      href: "/profile",
+      icon: User,
+      permission: "identity.profile.view",
+      isActive: (p) => p === "/profile" || p.startsWith("/profile/"),
     },
   },
 

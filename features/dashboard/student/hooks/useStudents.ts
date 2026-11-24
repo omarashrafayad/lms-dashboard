@@ -8,6 +8,8 @@ import {
   updateStudent,
   deleteStudent,
   getStudentFinance,
+  getMyStudentProfile,
+  getMyStudentFinance,
 } from "../api/studentApi";
 import {
   CreateStudentPayload,
@@ -26,11 +28,15 @@ export const useStudents = (
   });
 };
 
-export const useStudent = (studentId: string) => {
+export const useStudent = (
+  studentId: string,
+  options?: { enabled?: boolean; retry?: boolean | number } & Record<string, any>
+) => {
   return useQuery({
     queryKey: ["student", studentId],
     queryFn: () => getStudentById(studentId),
-    enabled: !!studentId,
+    enabled: options?.enabled !== undefined ? options.enabled && !!studentId : !!studentId,
+    ...options,
   });
 };
 
@@ -71,11 +77,35 @@ export const useDeleteStudent = () => {
   });
 };
 
-export const useStudentFinance = (studentId: string) => {
+export const useStudentFinance = (
+  studentId: string,
+  options?: { enabled?: boolean; retry?: boolean | number } & Record<string, any>
+) => {
   return useQuery({
     queryKey: ["student-finance", studentId],
     queryFn: () => getStudentFinance(studentId),
-    enabled: !!studentId,
+    enabled: options?.enabled !== undefined ? options.enabled && !!studentId : !!studentId,
+    ...options,
+  });
+};
+
+export const useMyStudentProfile = (
+  options?: { enabled?: boolean; retry?: boolean | number } & Record<string, any>
+) => {
+  return useQuery({
+    queryKey: ["student", "me"],
+    queryFn: () => getMyStudentProfile(),
+    ...options,
+  });
+};
+
+export const useMyStudentFinance = (
+  options?: { enabled?: boolean; retry?: boolean | number } & Record<string, any>
+) => {
+  return useQuery({
+    queryKey: ["student-finance", "me"],
+    queryFn: () => getMyStudentFinance(),
+    ...options,
   });
 };
 

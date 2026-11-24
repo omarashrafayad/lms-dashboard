@@ -58,6 +58,30 @@ export interface ApiTeacher {
   role?: string | null
   specializations?: ApiTeacherSpecialization[] | null
   availabilitySlots?: ApiTeacherAvailabilitySlot[] | null
+  sessions?: ApiTeacherSessionsGroup | null
+  audioPointsPerMinute?: number | null
+  videoPointsPerMinute?: number | null
+}
+
+export interface ApiTeacherSessionItem {
+  id: string
+  title?: string
+  courseOrSubject?: string
+  studentName?: string
+  studentCount?: number
+  scheduledStart: string
+  scheduledEnd: string
+  durationMinutes?: number
+  sessionType?: string
+  status?: string
+  displayStatus?: string
+}
+
+export interface ApiTeacherSessionsGroup {
+  upcomingCount?: number
+  previousCount?: number
+  upcoming?: ApiTeacherSessionItem[]
+  previous?: ApiTeacherSessionItem[]
 }
 
 export interface ApiSubject {

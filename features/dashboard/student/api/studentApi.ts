@@ -75,3 +75,31 @@ export const getStudentFinance = async (
   return res.data?.data || res.data;
 };
 
+export const getMyStudentProfile = async (): Promise<ApiStudentWithProfile> => {
+  const res = await clientAxios.get("/students/me");
+  const data = res.data?.data || res.data;
+
+  const profile = data?.profile || {};
+  return {
+    ...profile,
+    ...data,
+    id: profile.id || data.id || "",
+    fullName: profile.fullName || data.fullName || "",
+    email: profile.email || data.email || "",
+    phoneNumber: profile.phoneNumber || data.phoneNumber || "",
+    isActive: profile.isActive ?? data.isActive ?? true,
+    gender: profile.gender || data.gender || "",
+    educationStage: profile.educationStage || data.educationStage || "",
+    grade: profile.grade || data.grade || "",
+    educationSystem: profile.educationSystem || data.educationSystem || "",
+    dateOfBirth: profile.dateOfBirth || data.dateOfBirth || "",
+    status: profile.status || data.status || "Active",
+    createdAt: profile.createdAt || data.createdAt || "",
+  };
+};
+
+export const getMyStudentFinance = async (): Promise<BillingStudentFinanceOverview> => {
+  const res = await clientAxios.get("/billing/students/me/finance");
+  return res.data?.data || res.data;
+};
+

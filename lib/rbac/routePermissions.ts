@@ -14,6 +14,13 @@ export interface RoutePermissionRule {
  * Sorted by specificity: more specific nested routes (e.g. `/student/add`) must precede parent paths (`/student`).
  */
 export const ROUTE_PERMISSION_RULES: RoutePermissionRule[] = [
+  // Profile
+  {
+    pathPrefix: "/profile",
+    requirement: { permission: "identity.profile.view" },
+    title: "Profile",
+  },
+
   // Students
   {
     pathPrefix: "/student/add",

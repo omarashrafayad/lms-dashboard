@@ -12,7 +12,7 @@ import { TeacherTransactionsTab } from "../components/profile/TeacherTransaction
 import { TeacherInfoCards } from "../components/profile/TeacherInfoCards"
 import { TeacherAvailabilityCard } from "../components/profile/TeacherAvailabilityCard"
 import { TeacherSessionsCard } from "../components/profile/TeacherSessionsCard"
-import { useTeacher } from "../hooks/useTeachers"
+import { useTeacher, useMyTeacherProfile } from "../hooks/useTeachers"
 import {
   TeacherProfile,
   TeacherPaymentRequest,
@@ -22,7 +22,8 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 
 interface TeacherDetailPageProps {
-  teacherId: string
+  teacherId?: string
+  isMe?: boolean
 }
 
 const AVATAR_COLORS = [
@@ -43,9 +44,27 @@ function getAvatarColor(key: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps) {
+export default function TeacherDetailPage({
+  teacherId = "",
+  isMe = false,
+}: TeacherDetailPageProps) {
   const [activeTab, setActiveTab] = React.useState<TeacherTabKey>("overview")
-  const { data: apiTeacher, isLoading, isError } = useTeacher(teacherId)
+
+  const {
+    data: myTeacherData,
+    isLoading: isMyLoading,
+    isError: isMyError,
+  } = useMyTeacherProfile({ enabled: isMe })
+
+  const {
+    data: otherTeacherData,
+    isLoading: isOtherLoading,
+    isError: isOtherError,
+  } = useTeacher(teacherId, { enabled: !isMe && !!teacherId })
+
+  const apiTeacher = isMe ? myTeacherData : otherTeacherData
+  const isLoading = isMe ? isMyLoading : isOtherLoading
+  const isError = isMe ? isMyError : isOtherError
 
   const profile: TeacherProfile | null = React.useMemo(() => {
     if (!apiTeacher) return null
@@ -198,6 +217,30 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
       },
     ]
 
+    const formatSession = (s: any) => {
+      const start = s.scheduledStart ? new Date(s.scheduledStart) : null
+      return {
+        id: s.id,
+        studentName: s.studentName || "Student",
+        subject: s.courseOrSubject || s.title || "Live Session",
+        date: start ? start.toLocaleDateString() : "—",
+        time: start
+          ? start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : "—",
+        sessionType: (s.sessionType === "Group" ? "Group" : "Private") as "Group" | "Private",
+        status: (s.status === "Cancelled"
+          ? "Cancelled"
+          : s.status === "Completed"
+          ? "Completed"
+          : s.status === "Pending"
+          ? "Pending"
+          : "Confirmed") as "Cancelled" | "Completed" | "Pending" | "Confirmed",
+      }
+    }
+
+    const upcomingSessions = (apiTeacher.sessions?.upcoming || []).map(formatSession)
+    const previousSessions = (apiTeacher.sessions?.previous || []).map(formatSession)
+
     return {
       id: apiTeacher.id,
       name: fullName,
@@ -211,9 +254,15 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
         ? "Offline"
         : "Available"),
       kpis: {
-        totalStudents: 18,
-        upcomingSessions: apiTeacher.availabilitySlots?.length ?? 0,
-        completedSessions: 42,
+        totalStudents:
+          apiTeacher.sessions?.upcoming?.reduce(
+            (acc: number, s: any) => acc + (s.studentCount || 1),
+            0
+          ) || 18,
+        upcomingSessions:
+          apiTeacher.sessions?.upcomingCount ??
+          (apiTeacher.availabilitySlots?.length ?? 0),
+        completedSessions: apiTeacher.sessions?.previousCount ?? 42,
         averageRating: 4.9,
         teachingHours,
       },
@@ -266,8 +315,8 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
           : undefined,
       },
       weeklyAvailability,
-      upcomingSessions: [],
-      previousSessions: [],
+      upcomingSessions,
+      previousSessions,
       finance,
       pointsDetails,
       paymentRequests,
@@ -294,7 +343,11 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
   return (
     <main className="flex-1 p-6 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto pb-16">
       {/* 1. Header with Back link, Avatar, Active Badge, Code/Availability, Edit button */}
-      <TeacherProfileHeader profile={profile} />
+      <TeacherProfileHeader
+        profile={profile}
+        backHref={isMe ? null : "/teacher/teacher_list"}
+        editHref={isMe ? "/settings" : `/teacher/${teacherId || profile.id}/edit`}
+      />
 
       {/* 2. Top 5 KPI Cards */}
       <TeacherKpiCards kpis={profile.kpis} />
@@ -323,7 +376,7 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
 
             {/* Sessions Tables (Upcoming & Previous) */}
             <TeacherSessionsCard
-              teacherId={teacherId}
+              teacherId={teacherId || profile.id}
               teacherName={profile.name || profile.personalInfo?.fullName}
               upcomingSessions={profile.upcomingSessions}
               previousSessions={profile.previousSessions}
@@ -333,7 +386,8 @@ export default function TeacherDetailPage({ teacherId }: TeacherDetailPageProps)
 
         {activeTab === "finance" && (
           <TeacherFinanceTab
-            teacherId={teacherId}
+            teacherId={teacherId || profile.id}
+            isMe={isMe}
             finance={profile.finance}
             onViewTransactions={() => setActiveTab("transactions")}
             onViewPaymentRequests={() => setActiveTab("payment_requests")}

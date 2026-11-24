@@ -104,3 +104,21 @@ export const getTeacherDues = async (
   return res.data?.data || res.data
 }
 
+export const getMyTeacherProfile = async (): Promise<ApiTeacher> => {
+  const res = await clientAxios.get("/teachers/me")
+  return res.data?.data || res.data
+}
+
+export const getMyTeacherFinance = async (
+  params: TeacherDuesParams = {}
+): Promise<TeacherDuesReport> => {
+  const queryParams: Record<string, string> = {}
+  if (params.from) queryParams.from = params.from
+  if (params.to) queryParams.to = params.to
+
+  const res = await clientAxios.get("/billing/teachers/me/finance", {
+    params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+  })
+  return res.data?.data || res.data
+}
+

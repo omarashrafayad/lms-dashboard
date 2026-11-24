@@ -16,7 +16,6 @@ import { ScheduleSessionStepper } from "../components/schedule/ScheduleSessionSt
 import {
   updateSessionSchema,
   UpdateSessionFormData,
-  isTimeInFuture,
 } from "../schema/session.schema"
 import {
   useSessionDetail,
@@ -40,21 +39,6 @@ import { ScheduleDetailsStep } from "../components/schedule/ScheduleDetailsStep"
 export interface SessionEditPageProps {
   sessionId: string
 }
-
-const STANDARD_TIME_SLOTS = [
-  "09:00 AM",
-  "10:00 AM",
-  "11:00 AM",
-  "12:00 PM",
-  "01:00 PM",
-  "02:00 PM",
-  "03:00 PM",
-  "04:00 PM",
-  "05:00 PM",
-  "06:00 PM",
-  "07:00 PM",
-  "08:00 PM",
-]
 
 const DURATION_OPTIONS = [
   { label: "30 min", value: "30" },
@@ -160,8 +144,8 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
 
   const selectedStudentId = watch("studentId")
   const selectedTeacherId = watch("teacherId")
-  const selectedDate = watch("date")
-  const selectedStartTime = watch("startTime")
+  const selectedDate = watch("date") || new Date().toISOString().split("T")[0]
+  const selectedStartTime = watch("startTime") || ""
   const selectedTargetType = watch("targetType") || "subject"
 
   // Prefill form from existing session
@@ -224,29 +208,75 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
     }
   }, [session, reset])
 
-  // Teacher slots query
-  const { data: teacherSlots } = useTeacherSlots(
+  // Teacher slots query based on selected teacher and selected date
+  const {
+    data: teacherSlots,
+    isLoading: isLoadingSlots,
+  } = useTeacherSlots(
     selectedTeacherId || "",
+    selectedDate,
     { enabled: Boolean(selectedTeacherId) }
   )
 
-  // Computed slots for step 3
+  // Helper to format slot time from raw backend string
+  const formatSlotTime = React.useCallback((rawTime: string): string => {
+    if (!rawTime) return ""
+    if (/^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(rawTime.trim())) {
+      return rawTime.trim().toUpperCase()
+    }
+    if (rawTime.includes("T")) {
+      const d = new Date(rawTime)
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }
+    }
+    const parts = rawTime.split(":")
+    if (parts.length >= 2) {
+      const h = parseInt(parts[0], 10)
+      const m = parseInt(parts[1], 10)
+      if (!isNaN(h) && !isNaN(m)) {
+        const period = h >= 12 ? "PM" : "AM"
+        const hour12 = h % 12 === 0 ? 12 : h % 12
+        const padHour = String(hour12).padStart(2, "0")
+        const padMin = String(m).padStart(2, "0")
+        return `${padHour}:${padMin} ${period}`
+      }
+    }
+    return rawTime
+  }, [])
+
+  // Computed slots for step 3 strictly from backend response
   const computedSlots = React.useMemo(() => {
-    if (teacherSlots && teacherSlots.length > 0) {
-      return teacherSlots.map((slot) => {
-        const time = slot.startTime || slot.time || "10:00 AM"
-        return {
-          time,
-          available: slot.isAvailable !== false,
-        }
-      })
+    if (!teacherSlots || teacherSlots.length === 0) {
+      return []
     }
 
-    return STANDARD_TIME_SLOTS.map((time) => ({
-      time,
-      available: true,
-    }))
-  }, [teacherSlots])
+    return teacherSlots.map((slot: any) => {
+      const raw = slot.startTime || slot.time || slot.formattedTime || ""
+      const time = formatSlotTime(raw) || raw
+
+      let available = true
+      if (typeof slot.isAvailable === "boolean") {
+        available = slot.isAvailable
+      } else if (typeof slot.available === "boolean") {
+        available = slot.available
+      } else if (slot.isBooked === true || slot.isUnavailable === true) {
+        available = false
+      } else if (typeof slot.status === "string") {
+        const s = slot.status.toLowerCase()
+        if (s === "booked" || s === "unavailable" || s === "busy" || s === "cancelled") {
+          available = false
+        } else if (s === "available" || s === "free" || s === "open") {
+          available = true
+        }
+      }
+
+      return {
+        time,
+        available,
+      }
+    })
+  }, [teacherSlots, formatSlotTime])
 
   const subjectOptions = React.useMemo(() => {
     return subjects.map((s) => ({ label: s.name, value: s.id }))
@@ -280,6 +310,10 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
     }
 
     if (currentStep === 3) {
+      if (!selectedDate) {
+        toast.error("Please select a date.")
+        return
+      }
       if (!selectedStartTime) {
         toast.error("Please select a time slot.")
         return
@@ -447,13 +481,17 @@ export default function SessionEditPage({ sessionId }: SessionEditPageProps) {
             {/* Step 3: Select Date & Time */}
             {currentStep === 3 && (
               <ScheduleDateTimeStep
-                selectedDate={selectedDate || new Date().toISOString().split("T")[0]}
-                onDateChange={(date) => setValue("date", date, { shouldValidate: true })}
-                selectedTime={selectedStartTime || "10:00 AM"}
+                selectedDate={selectedDate}
+                onDateChange={(date) => {
+                  setValue("date", date, { shouldValidate: true })
+                  setValue("startTime", "", { shouldValidate: true })
+                }}
+                selectedTime={selectedStartTime}
                 onTimeChange={(time) => setValue("startTime", time, { shouldValidate: true })}
                 computedSlots={computedSlots}
                 todayFormatted={todayFormatted}
                 selectedTeacherName={selectedTeacherObj?.fullName}
+                isLoadingSlots={isLoadingSlots}
               />
             )}
 

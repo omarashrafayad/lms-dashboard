@@ -88,24 +88,38 @@ export const changeSessionStatus = async (
 }
 
 export const getTeacherSlots = async (
-  teacherId: string
+  teacherId: string,
+  date?: string
 ): Promise<TeacherSlotItem[]> => {
-  const res = await clientAxios.get(
-    `/curriculum/sessions/teachers/${teacherId}/slots`
-  )
-  if (Array.isArray(res.data)) {
-    return res.data
+  const targetDate = date || new Date().toISOString().split("T")[0]
+  const queryParams = { date: targetDate }
+
+  const extractSlots = (data: any): TeacherSlotItem[] => {
+    if (Array.isArray(data)) return data
+    if (data && Array.isArray(data.data)) return data.data
+    if (data && Array.isArray(data.value)) return data.value
+    if (data && Array.isArray(data.availableSlots)) return data.availableSlots
+    if (data && Array.isArray(data.slots)) return data.slots
+    if (data && Array.isArray(data.items)) return data.items
+    return []
   }
-  if (res.data && Array.isArray(res.data.data)) {
-    return res.data.data
+
+  try {
+    const res = await clientAxios.get(
+      `/teachers/${teacherId}/slots`,
+      { params: queryParams }
+    )
+    return extractSlots(res.data)
+  } catch (err: any) {
+    if (err?.response?.status === 404) {
+      const resFallback = await clientAxios.get(
+        `/curriculum/sessions/teachers/${teacherId}/slots`,
+        { params: queryParams }
+      )
+      return extractSlots(resFallback.data)
+    }
+    throw err
   }
-  if (res.data && Array.isArray(res.data.value)) {
-    return res.data.value
-  }
-  if (res.data && Array.isArray(res.data.availableSlots)) {
-    return res.data.availableSlots
-  }
-  return []
 }
 
 export const getRescheduleRequests = async (

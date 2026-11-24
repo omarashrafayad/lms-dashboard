@@ -50,23 +50,14 @@ export const scheduleSessionSchema = z
     durationMinutes: z.string().min(1, "Duration is required"),
     sessionType: z.string().min(1, "Session type is required"),
     notes: z.string().optional(),
-maxStudents: z.coerce
-  .number({
-    error: "Please enter a valid number",
-  })
-  .int("Must be a whole number")
-  .min(1, "Maximum students must be at least 1")  })
-  .superRefine((data, ctx) => {
-    // Validate Start Time must be in future
-    if (data.startTime && !isTimeInFuture(data.startTime, data.date)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Start time must be in the future",
-        path: ["startTime"],
+    maxStudents: z.coerce
+      .number({
+        error: "Please enter a valid number",
       })
-      
-    }
-
+      .int("Must be a whole number")
+      .min(1, "Maximum students must be at least 1"),
+  })
+  .superRefine((data, ctx) => {
     // Validate Subject or Course based on targetType
     if (data.targetType === "subject" && (!data.subjectId || !data.subjectId.trim())) {
       ctx.addIssue({
@@ -83,7 +74,6 @@ maxStudents: z.coerce
         path: ["courseId"],
       })
     }
-
   })
 
 export type ScheduleSessionFormData = z.infer<typeof scheduleSessionSchema>

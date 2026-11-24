@@ -13,12 +13,13 @@ import {
   FileText,
 } from "lucide-react"
 import { TeacherFinanceSummary } from "../../types/teacherProfile.types"
-import { useTeacherDues } from "../../hooks/useTeachers"
+import { useTeacherDues, useMyTeacherFinance } from "../../hooks/useTeachers"
 import LoadingSpinner from "@/components/shared/LoadingSpinner"
 import GlobalError from "@/components/shared/globalerror"
 
 export interface TeacherFinanceTabProps {
   teacherId?: string
+  isMe?: boolean
   finance?: TeacherFinanceSummary
   onViewTransactions?: () => void
   onViewPaymentRequests?: () => void
@@ -26,6 +27,7 @@ export interface TeacherFinanceTabProps {
 
 export function TeacherFinanceTab({
   teacherId,
+  isMe = false,
   finance,
   onViewTransactions,
   onViewPaymentRequests,
@@ -33,14 +35,26 @@ export function TeacherFinanceTab({
   const [fromDate, setFromDate] = React.useState("")
   const [toDate, setToDate] = React.useState("")
 
-  const {
-    data: duesReport,
-    isLoading,
-    isError,
-  } = useTeacherDues(teacherId || "", {
+  const dateParams = React.useMemo(() => ({
     from: fromDate ? new Date(fromDate).toISOString() : undefined,
     to: toDate ? new Date(toDate).toISOString() : undefined,
-  })
+  }), [fromDate, toDate])
+
+  const {
+    data: otherDues,
+    isLoading: isOtherLoading,
+    isError: isOtherError,
+  } = useTeacherDues(teacherId || "", dateParams, { enabled: !isMe && !!teacherId })
+
+  const {
+    data: myDues,
+    isLoading: isMyLoading,
+    isError: isMyError,
+  } = useMyTeacherFinance(dateParams, { enabled: isMe })
+
+  const duesReport = isMe ? myDues : otherDues
+  const isLoading = isMe ? isMyLoading : isOtherLoading
+  const isError = isMe ? isMyError : isOtherError
 
   // Extract primary teacher dues item or totals
   const teacherDuesItem = duesReport?.items?.[0]

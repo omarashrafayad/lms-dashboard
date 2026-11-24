@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Bell, ChevronDown, LogOut, Loader2, Settings } from "lucide-react"
+import { Bell, ChevronDown, LogOut, Loader2, Settings, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { logoutAction } from "@/features/auth/api/auth"
@@ -159,6 +159,16 @@ export function PageHeader({
                   </span>
                 </div>
               </div>
+
+              {/* Profile Link */}
+              <Link
+                href="/profile"
+                onClick={() => setIsDropdownOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/70 transition-colors"
+              >
+                <User className="size-4 text-zinc-400" />
+                <span>Profile</span>
+              </Link>
 
               {/* Settings Link */}
               <Link

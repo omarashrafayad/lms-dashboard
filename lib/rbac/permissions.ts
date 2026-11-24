@@ -106,6 +106,7 @@ export type AppPermission =
   | "identity.permission.view"
   | "identity.platform-setting.update"
   | "identity.platform-setting.view"
+  | "identity.profile.view"
   | "identity.reference.create"
   | "identity.reference.delete"
   | "identity.reference.update"
