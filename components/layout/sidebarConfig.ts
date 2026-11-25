@@ -13,6 +13,17 @@ import {
   ShieldCheck,
   Video,
   User,
+  BookOpen,
+  FileCheck,
+  ClipboardList,
+  Award,
+  Scroll,
+  MessageSquare,
+  BarChart3,
+  DollarSign,
+  FolderKanban,
+  CheckCircle2,
+  Users,
 } from "lucide-react"
 import { AppPermission, CheckPermissionOptions } from "@/lib/rbac/permissions"
 
@@ -72,19 +83,6 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
       icon: LayoutGrid,
       anyPermissions: ["billing.dashboard.view", "identity.dashboard.view"],
       isActive: (p) => p === "/" || p === "/overview",
-    },
-  },
-
-  // Profile (Guarded by identity.profile.view)
-  {
-    type: "single",
-    item: {
-      id: "profile",
-      label: "Profile",
-      href: "/profile",
-      icon: User,
-      permission: "identity.profile.view",
-      isActive: (p) => p === "/profile" || p.startsWith("/profile/"),
     },
   },
 
@@ -564,3 +562,156 @@ export function filterSidebarItems(
 
   return result
 }
+
+export const STUDENT_SIDEBAR_ITEMS: NavSingleItem[] = [
+  {
+    id: "student-overview",
+    label: "Overview",
+    href: "/student/dashboard",
+    icon: LayoutGrid,
+    isActive: (p) => p === "/student/dashboard" || p === "/student",
+  },
+  {
+    id: "student-courses",
+    label: "My Courses",
+    href: "/student/courses",
+    icon: BookOpen,
+    isActive: (p) => p.startsWith("/student/courses"),
+  },
+  {
+    id: "student-subjects",
+    label: "My Subjects",
+    href: "/student/subjects",
+    icon: GraduationCap,
+    isActive: (p) => p.startsWith("/student/subjects"),
+  },
+  {
+    id: "student-sessions",
+    label: "My Sessions",
+    href: "/student/sessions",
+    icon: Video,
+    isActive: (p) => p.startsWith("/student/sessions"),
+  },
+  {
+    id: "student-exams",
+    label: "Exams & Quizzes",
+    href: "/student/exams",
+    icon: FileCheck,
+    isActive: (p) => p.startsWith("/student/exams"),
+  },
+  {
+    id: "student-results",
+    label: "Results & Stats",
+    href: "/student/results",
+    icon: Award,
+    isActive: (p) => p.startsWith("/student/results"),
+  },
+  {
+    id: "student-subscriptions",
+    label: "Subscriptions & Plans",
+    href: "/student/subscriptions",
+    icon: CreditCard,
+    isActive: (p) => p.startsWith("/student/subscriptions"),
+  },
+  {
+    id: "student-notifications",
+    label: "Notifications",
+    href: "/student/notifications",
+    icon: Bell,
+    isActive: (p) => p.startsWith("/student/notifications"),
+  },
+  {
+    id: "student-profile",
+    label: "Profile & Settings",
+    href: "/student/profile",
+    icon: User,
+    isActive: (p) => p.startsWith("/student/profile"),
+  },
+]
+
+export const TEACHER_SIDEBAR_ITEMS: NavSingleItem[] = [
+  {
+    id: "teacher-overview",
+    label: "Overview",
+    href: "/teacher/dashboard",
+    icon: LayoutGrid,
+    isActive: (p) => p === "/teacher/dashboard" || p === "/teacher",
+  },
+  {
+    id: "teacher-courses",
+    label: "My Courses",
+    href: "/teacher/courses",
+    icon: BookOpen,
+    isActive: (p) => p.startsWith("/teacher/courses"),
+  },
+  {
+    id: "teacher-content",
+    label: "Content Management",
+    href: "/teacher/content",
+    icon: FolderKanban,
+    isActive: (p) => p.startsWith("/teacher/content"),
+  },
+  {
+    id: "teacher-students",
+    label: "My Students",
+    href: "/teacher/students",
+    icon: Users,
+    isActive: (p) => p.startsWith("/teacher/students"),
+  },
+  {
+    id: "teacher-sessions",
+    label: "Sessions Management",
+    href: "/teacher/sessions",
+    icon: Video,
+    isActive: (p) => p.startsWith("/teacher/sessions"),
+  },
+  {
+    id: "teacher-exams",
+    label: "Exams & Quizzes",
+    href: "/teacher/exams",
+    icon: FileCheck,
+    isActive: (p) => p.startsWith("/teacher/exams"),
+  },
+  {
+    id: "teacher-assignments",
+    label: "Assignments",
+    href: "/teacher/assignments",
+    icon: ClipboardList,
+    isActive: (p) => p.startsWith("/teacher/assignments"),
+  },
+  {
+    id: "teacher-grading",
+    label: "Grading & Results",
+    href: "/teacher/grading",
+    icon: CheckCircle2,
+    isActive: (p) => p.startsWith("/teacher/grading"),
+  },
+  {
+    id: "teacher-communication",
+    label: "Communication & Q&A",
+    href: "/teacher/communication",
+    icon: MessageSquare,
+    isActive: (p) => p.startsWith("/teacher/communication"),
+  },
+  {
+    id: "teacher-analytics",
+    label: "Course Analytics",
+    href: "/teacher/analytics",
+    icon: BarChart3,
+    isActive: (p) => p.startsWith("/teacher/analytics"),
+  },
+  {
+    id: "teacher-earnings",
+    label: "Teacher Earnings",
+    href: "/teacher/earnings",
+    icon: DollarSign,
+    isActive: (p) => p.startsWith("/teacher/earnings"),
+  },
+  {
+    id: "teacher-profile",
+    label: "Profile & Settings",
+    href: "/teacher/profile",
+    icon: User,
+    isActive: (p) => p.startsWith("/teacher/profile"),
+  },
+]

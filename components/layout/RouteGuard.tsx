@@ -6,28 +6,50 @@ import { usePathname, useRouter } from "next/navigation"
 import { ShieldAlert, ArrowLeft, Home, RefreshCw } from "lucide-react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { getRoutePermissionRule } from "@/lib/rbac/routePermissions"
+import { useAuthStore } from "@/stores/useAuthStore"
+import { isInstructorRole, isStudentRole } from "@/features/auth/types/auth.types"
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { can, isLoading } = usePermissions()
+  const role = useAuthStore((s) => s.role)
   const [mounted, setMounted] = React.useState(false)
+
+  // Unconditionally evaluate route rule BEFORE any conditional returns to obey Rules of Hooks
+  const rule = React.useMemo(() => getRoutePermissionRule(pathname), [pathname])
 
   React.useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Auto-redirect to /profile if user visits / or /overview without overview permissions
+  // Auto-redirect to student or teacher/instructor dashboard if visiting / or /overview
   React.useEffect(() => {
+    if (mounted && (pathname === "/" || pathname === "/overview")) {
+      if (isStudentRole(role)) {
+        router.replace("/student/dashboard")
+        return
+      }
+      if (isInstructorRole(role)) {
+        router.replace("/teacher/dashboard")
+        return
+      }
+    }
     if (mounted && !isLoading && (pathname === "/" || pathname === "/overview")) {
       const canOverview = can({ anyPermissions: ["billing.dashboard.view", "identity.dashboard.view"] })
       if (!canOverview && can({ permission: "identity.profile.view" })) {
         router.replace("/profile")
       }
     }
-  }, [mounted, isLoading, pathname, can, router])
+  }, [mounted, isLoading, pathname, can, router, role])
 
-  const rule = React.useMemo(() => getRoutePermissionRule(pathname), [pathname])
+  // Student and Teacher portal pages should never be blocked by RBAC
+  const isStudentPortalRoute = pathname.startsWith("/student/") && pathname !== "/student/student_list" && pathname !== "/student/add"
+  const isTeacherPortalRoute = pathname.startsWith("/teacher/") && pathname !== "/teacher/teacher_list" && pathname !== "/teacher/add" && pathname !== "/teacher/dues"
+
+  if (isStudentPortalRoute || isTeacherPortalRoute) {
+    return <>{children}</>
+  }
 
   // If there's no restriction on this route, render children immediately
   if (!rule) {

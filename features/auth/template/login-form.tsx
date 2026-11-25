@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { loginAction } from "@/features/auth/api/auth";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { Input } from "@/components/ui/input";
 import { Form } from "@/components/ui/form";
 import { UniInput } from "@/components/shared/UniInput";
@@ -37,6 +38,12 @@ export default function LoginForm() {
         try {
             const res = await loginAction(data);
             if (res?.success) {
+                if (res?.data?.user) {
+                    useAuthStore.getState().setAuth(res.data.user);
+                    if (res.data.accessToken) {
+                        useAuthStore.getState().setToken(res.data.accessToken);
+                    }
+                }
                 router.push("/");
             } else {
                 toast.error(res?.error || "Login failed. Please try again.");

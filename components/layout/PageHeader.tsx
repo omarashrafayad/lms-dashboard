@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { logoutAction } from "@/features/auth/api/auth"
 import { queryClient } from "@/app/providers"
+import { isInstructorRole, isStudentRole } from "@/features/auth/types/auth.types"
 
 export interface PageHeaderProps {
   title: string
@@ -22,7 +23,8 @@ export function PageHeader({
   actions,
   className,
 }: PageHeaderProps) {
-  const user = useAuthStore().user
+  const user = useAuthStore((s) => s.user)
+  const currentRole = useAuthStore((s) => s.role)
 
   const router = useRouter()
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false)
@@ -92,19 +94,19 @@ export function PageHeader({
       </div>
 
       {/* Right side: Actions / Notifications & User Profile */}
-      <div className="flex items-center gap-3 self-end md:self-auto">
+      <div className="flex items-center gap-3 self-end md:self-auto flex-wrap">
         {actions}
 
         {/* Notification Bell */}
-        <button
-          type="button"
+        <Link
+          href={isStudentRole(currentRole) ? "/student/notifications" : "/notifications"}
           aria-label="Notifications"
           className="relative size-10 rounded-xl border border-zinc-200/80 bg-white flex items-center justify-center text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors shadow-2xs cursor-pointer"
         >
           <Bell className="size-4" />
           {/* Subtle notification dot indicator */}
           <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-brand-orange ring-2 ring-white" />
-        </button>
+        </Link>
 
         {/* User Profile Pill with Interactive Dropdown */}
         <div ref={dropdownRef} className="relative">
@@ -122,7 +124,7 @@ export function PageHeader({
           >
             <div className="relative size-7 rounded-full overflow-hidden shrink-0 border border-zinc-200">
               <img
-                src="/dina-farouk.jpg"
+                src={user?.profileImg || "/dina-farouk.jpg"}
                 alt={user?.fullName || "User avatar"}
                 className="w-full h-full object-cover"
               />
@@ -145,7 +147,7 @@ export function PageHeader({
               <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-zinc-50/80 border border-zinc-100 mb-1">
                 <div className="relative size-8 rounded-full overflow-hidden shrink-0 border border-zinc-200">
                   <img
-                    src="/dina-farouk.jpg"
+                    src={user?.profileImg || "/dina-farouk.jpg"}
                     alt={user?.fullName || "User avatar"}
                     className="w-full h-full object-cover"
                   />
@@ -154,20 +156,20 @@ export function PageHeader({
                   <span className="text-xs font-bold text-zinc-900 truncate">
                     {user?.fullName || "Dina Farouk"}
                   </span>
-                  <span className="text-[11px] text-zinc-400 truncate">
-                    {(user?.roles && user.roles[0]) || "Administrator"}
+                  <span className="text-[11px] text-zinc-400 capitalize truncate">
+                    {isStudentRole(currentRole) ? "Student" : isInstructorRole(currentRole) ? "Instructor" : "Administrator"}
                   </span>
                 </div>
               </div>
 
               {/* Profile Link */}
               <Link
-                href="/profile"
+                href={isStudentRole(currentRole) ? "/student/profile" : isInstructorRole(currentRole) ? "/teacher/profile" : "/profile"}
                 onClick={() => setIsDropdownOpen(false)}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/70 transition-colors"
               >
                 <User className="size-4 text-zinc-400" />
-                <span>Profile</span>
+                <span>Profile & Settings</span>
               </Link>
 
               {/* Settings Link */}
